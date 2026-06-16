@@ -63,6 +63,7 @@ export async function getRecentLocationActionLogs(
     where: {
       seasonId,
       logType: "SYSTEM",
+      content: { startsWith: MAP_ACTION_LOG_PREFIX },
       OR: [
         { content: { contains: location.name } },
         { content: { contains: location.id } },

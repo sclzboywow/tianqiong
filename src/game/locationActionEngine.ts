@@ -31,7 +31,7 @@ export function getActionsForLocation(
   );
 }
 
-function assertUserCanExecuteAction(
+function assertUserRequirements(
   user: { level: number; reputation: number; stamina: number; spirit: number },
   action: LocationAction,
 ) {
@@ -51,6 +51,13 @@ function assertUserCanExecuteAction(
   if (user.spirit < spiritCost) {
     throw new Error(`精神不足，需要 ${spiritCost}（当前 ${user.spirit}）`);
   }
+}
+
+function formatResourceCost(staminaCost: number, spiritCost: number): string {
+  const parts: string[] = [];
+  if (staminaCost > 0) parts.push(`体力 ${staminaCost}`);
+  if (spiritCost > 0) parts.push(`精神 ${spiritCost}`);
+  return parts.join("、");
 }
 
 export async function executeLocationAction(
@@ -75,18 +82,10 @@ export async function executeLocationAction(
   if (!isLocationUnlocked(location, project)) throw new Error("地点尚未解锁");
   if (!isLocationActionUnlocked(action, project)) throw new Error("行动尚未解锁");
 
-  assertUserCanExecuteAction(user, action);
+  assertUserRequirements(user, action);
 
   const staminaCost = action.staminaCost ?? 0;
   const spiritCost = action.spiritCost ?? 0;
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      stamina: user.stamina - staminaCost,
-      spirit: user.spirit - spiritCost,
-    },
-  });
 
   const createdTasks: Task[] = [];
   const skippedTasks: LocationActionExecuteResult["skippedTasks"] = [];
@@ -112,14 +111,33 @@ export async function executeLocationAction(
   }
 
   let message: string;
-  if (createdTasks.length > 0 && skippedTasks.length > 0) {
-    message = `已生成 ${createdTasks.length} 项任务，${skippedTasks.length} 项因已有进行中任务而跳过`;
-  } else if (createdTasks.length > 0) {
-    message = `已生成 ${createdTasks.length} 项任务`;
+  let staminaDeducted = 0;
+  let spiritDeducted = 0;
+
+  if (createdTasks.length > 0) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        stamina: user.stamina - staminaCost,
+        spirit: user.spirit - spiritCost,
+      },
+    });
+    staminaDeducted = staminaCost;
+    spiritDeducted = spiritCost;
+
+    const costText = formatResourceCost(staminaCost, spiritCost);
+    if (createdTasks.length > 0 && skippedTasks.length > 0) {
+      message = `已生成 ${createdTasks.length} 项任务，${skippedTasks.length} 项已存在并跳过`;
+    } else {
+      message = `已生成 ${createdTasks.length} 项任务`;
+    }
+    if (costText) {
+      message += `，消耗${costText}`;
+    }
   } else if (skippedTasks.length > 0) {
-    message = "相关任务已在进行中，未重复生成";
+    message = "相关任务已存在，未重复生成，也未消耗体力/精神";
   } else {
-    message = "未配置可触发的任务";
+    message = "未配置可触发的任务，未消耗体力/精神";
   }
 
   const logContent = buildMapActionLogContent({
@@ -140,8 +158,8 @@ export async function executeLocationAction(
       actionId: action.id,
       createdCount: createdTasks.length,
       skippedCount: skippedTasks.length,
-      staminaCost,
-      spiritCost,
+      staminaDeducted,
+      spiritDeducted,
       message,
     }),
   });

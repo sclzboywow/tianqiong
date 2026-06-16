@@ -98,6 +98,21 @@ async function main() {
 
   {
     const actionPath = "/api/locations/owner_project_management_dept/actions/action_risk_register";
+
+    async function getUserStats(cookie: string) {
+      const { status, data } = await request("/api/auth/me", { cookie });
+      if (status !== 200) return null;
+      const user = (data as { user?: { stamina?: number; spirit?: number } }).user;
+      if (!user) return null;
+      return { stamina: user.stamina ?? 0, spirit: user.spirit ?? 0 };
+    }
+
+    const statsBefore = await getUserStats(cookies);
+    if (!statsBefore) {
+      log("8. 读取用户状态", false, "无法获取 stamina/spirit");
+      failed = true;
+    }
+
     const first = await request(actionPath, { method: "POST", cookie: cookies });
     const firstData = first.data as { ok?: boolean; createdTasks?: unknown[]; message?: string };
     const firstOk = first.status === 200 && firstData.ok === true;
@@ -105,17 +120,41 @@ async function main() {
     const msgOk =
       firstMsg.includes("已生成") ||
       firstMsg.includes("未重复生成") ||
+      firstMsg.includes("未消耗") ||
       firstMsg.includes("跳过") ||
-      firstMsg.includes("进行中");
+      firstMsg.includes("进行中") ||
+      firstMsg.includes("已存在");
     log("8. 执行地点行动", firstOk && msgOk, `HTTP ${first.status} · ${firstMsg || "无 message"}`);
     if (!firstOk || !msgOk) failed = true;
 
+    const statsAfterFirst = await getUserStats(cookies);
+    if (statsBefore && statsAfterFirst && (firstData.createdTasks?.length ?? 0) === 0) {
+      const unchanged =
+        statsAfterFirst.stamina === statsBefore.stamina &&
+        statsAfterFirst.spirit === statsBefore.spirit;
+      log("8b. 无新任务时不扣资源", unchanged, `体力 ${statsBefore.stamina}→${statsAfterFirst.stamina}`);
+      if (!unchanged) failed = true;
+    }
+
     const second = await request(actionPath, { method: "POST", cookie: cookies });
-    const secondData = second.data as { ok?: boolean; createdTasks?: unknown[] };
+    const secondData = second.data as { ok?: boolean; createdTasks?: unknown[]; message?: string };
     const secondOk = second.status === 200 && secondData.ok === true;
     const noDuplicate = (secondData.createdTasks?.length ?? 0) === 0;
     log("9. 重复执行不生成新任务", secondOk && noDuplicate, noDuplicate ? "未重复生成" : "不应再次生成");
     if (!secondOk || !noDuplicate) failed = true;
+
+    const statsAfterSecond = await getUserStats(cookies);
+    if (statsAfterFirst && statsAfterSecond && noDuplicate) {
+      const noExtraCost =
+        statsAfterSecond.stamina === statsAfterFirst.stamina &&
+        statsAfterSecond.spirit === statsAfterFirst.spirit;
+      log(
+        "10. 重复执行不扣资源",
+        noExtraCost,
+        `体力 ${statsAfterFirst.stamina}→${statsAfterSecond.stamina}，精神 ${statsAfterFirst.spirit}→${statsAfterSecond.spirit}`,
+      );
+      if (!noExtraCost) failed = true;
+    }
   }
 
   console.log(`\n=== Smoke ${failed ? "未通过" : "通过"} ===\n`);

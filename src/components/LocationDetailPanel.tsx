@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LocationOverview } from "@/game/locationEngine";
+import { getRiskTagLabel } from "@/data/riskTagLabels";
 import { LocationActionPanel } from "@/components/LocationActionPanel";
 import { LocationRecentLogs } from "@/components/LocationRecentLogs";
 
@@ -112,7 +113,7 @@ export function LocationDetailPanel({ overview }: LocationDetailPanelProps) {
               <CardContent className="flex flex-wrap gap-2">
                 {location.riskTags.map((tag) => (
                   <Badge key={tag} variant="outline">
-                    {tag}
+                    {getRiskTagLabel(tag)}
                   </Badge>
                 ))}
               </CardContent>

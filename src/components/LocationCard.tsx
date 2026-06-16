@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getRiskTagLabel } from "@/data/riskTagLabels";
 import type { LocationWithStatus } from "@/game/locationEngine";
 
 type LocationCardProps = {
@@ -29,7 +30,7 @@ export function LocationCard({ item }: LocationCardProps) {
         <div className="flex flex-wrap gap-1">
           {location.riskTags?.slice(0, 3).map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
+              {getRiskTagLabel(tag)}
             </Badge>
           ))}
         </div>
