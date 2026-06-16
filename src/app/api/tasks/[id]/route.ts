@@ -17,5 +17,27 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     story = { lines: [task.description || "暂无剧情"], choices: [], ended: true };
   }
 
-  return NextResponse.json({ task, story });
+  const submittedCount = task.participants.filter((p) => p.choiceId).length;
+  const minResolveCount = task.minResolveCount || task.requiredCount || 1;
+
+  return NextResponse.json({
+    task: {
+      ...task,
+      submittedCount,
+      minResolveCount,
+      participants: task.participants.map((p) => ({
+        id: p.id,
+        userId: p.userId,
+        nickname: p.user.nickname,
+        job: p.user.job,
+        status: p.status,
+        choiceId: p.choiceId,
+        choiceSubmittedAt: p.choiceSubmittedAt,
+        contribution: p.contribution,
+        voteWeight: p.voteWeight,
+        rewardStatus: p.rewardStatus,
+      })),
+    },
+    story,
+  });
 }

@@ -32,6 +32,9 @@ export async function generateDailyReport() {
     if (project.fireRisk > 50) risks.push("明日消防专项检查风险");
     if (project.dataIntegrity < 50) risks.push("竣工资料补齐");
     if (project.progress < 50) risks.push("开业节点冲刺");
+    if ((project.latentRisk ?? 20) > 70) {
+      risks.push("潜在风险偏高，后续可能触发集中爆发事件");
+    }
   }
 
   const npcChanges = npcRelations
@@ -48,6 +51,15 @@ export async function generateDailyReport() {
     project ? `安全：${displayProgress(project.safety)}` : "",
     project ? `资料完整度：${displayProgress(project.dataIntegrity)}` : "",
     project ? `消防风险：${displayProgress(project.fireRisk)}` : "",
+    project
+      ? `潜在风险：${displayProgress(project.latentRisk ?? 20)}，${
+          (project.latentRisk ?? 20) > 70
+            ? "历史遗留问题正在累积，建议优先处理资料、消防、质量类任务。⚠ 潜在风险偏高，后续可能触发集中爆发事件。"
+            : (project.latentRisk ?? 20) > 60
+              ? "历史遗留问题正在累积，建议优先处理资料、消防、质量类任务。"
+              : "整体可控。"
+        }`
+      : "",
     "",
     "今日大事件：",
     majorEvents.length ? majorEvents.join("\n") : "暂无重大事件",

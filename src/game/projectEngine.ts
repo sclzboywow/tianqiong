@@ -33,6 +33,7 @@ export async function applyMetricEffects(
     fireRisk: "fireRisk",
     ownerTrust: "ownerTrust",
     propertyHandover: "propertyHandover",
+    latentRisk: "latentRisk",
   };
 
   for (const [key, delta] of Object.entries(effects)) {
@@ -73,6 +74,7 @@ export async function evaluateProjectOutcome(
     state.fireRisk >= 90 ||
     state.dataIntegrity <= 15 ||
     state.progress <= 10 ||
+    state.latentRisk >= 90 ||
     state.dayCount >= totalDays;
 
   if (won) {
@@ -100,6 +102,7 @@ export function getRiskList(state: NonNullable<Awaited<ReturnType<typeof getProj
   if (state.progress < 40) risks.push("开业进度严重滞后");
   if (state.ownerTrust < 40) risks.push("甲方信任度不足");
   if (state.propertyHandover < 40) risks.push("物业移交推进缓慢");
+  if (state.latentRisk > 60) risks.push("潜在风险持续累积，可能引发集中爆发事件");
   return risks;
 }
 

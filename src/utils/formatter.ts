@@ -22,6 +22,19 @@ export function formatMetricDelta(delta: number): string {
   return `${delta}`;
 }
 
+export const RESOLUTION_MODE_LABELS: Record<string, string> = {
+  SOLO: "单人任务",
+  VOTE: "多人投票",
+  ROLE_CHECKLIST: "岗位协作",
+};
+
+export function getLatentRiskLabel(value: number): string {
+  if (value <= 30) return "可控";
+  if (value <= 60) return "需关注";
+  if (value <= 80) return "偏高";
+  return "危险";
+}
+
 export function formatDate(date: Date): string {
   return date.toLocaleString("zh-CN", {
     month: "2-digit",

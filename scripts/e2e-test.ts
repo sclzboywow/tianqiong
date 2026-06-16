@@ -106,28 +106,38 @@ async function main() {
     );
   }
 
-  // 6. 任务大厅
+  // 6. 任务大厅 - 优先找 R 级单人任务
   let taskId = "";
   let taskTitle = "";
+  let soloTaskId = "";
   {
     const { status, data } = await request("/api/tasks");
-    const d = data as { tasks?: { id: string; title: string; inkFile: string; status: string }[] };
-    const fireTask = d.tasks?.find((t) => t.inkFile === "fire_corridor_blocked" && t.status === "PENDING");
-    const task = fireTask || d.tasks?.find((t) => t.status === "PENDING" || t.status === "IN_PROGRESS");
+    const d = data as {
+      tasks?: { id: string; title: string; inkFile: string; status: string; rarity: string; resolutionMode?: string }[];
+    };
+    const soloTask = d.tasks?.find(
+      (t) => t.rarity === "R" && (t.status === "PENDING" || t.status === "IN_PROGRESS"),
+    );
+    soloTaskId = soloTask?.id || "";
+    const task = soloTask || d.tasks?.find((t) => t.status === "PENDING" || t.status === "IN_PROGRESS");
     taskId = task?.id || "";
     taskTitle = task?.title || "";
-    log("6. 任务大厅有可用任务", status === 200 && !!taskId, taskTitle || "无任务");
+    log("6. 任务大厅有可用任务", status === 200 && !!taskId, `${taskTitle} (${task?.rarity || "?"})`);
   }
 
   if (!taskId) {
     console.log("\n⚠ 无可用任务，尝试 seed...");
     await request("/api/admin/seed", { method: "POST" });
     const { data } = await request("/api/tasks");
-    const d = data as { tasks?: { id: string; title: string }[] };
-    taskId = d.tasks?.[0]?.id || "";
-    taskTitle = d.tasks?.[0]?.title || "";
+    const d = data as { tasks?: { id: string; title: string; rarity: string }[] };
+    const soloTask = d.tasks?.find((t) => t.rarity === "R");
+    soloTaskId = soloTask?.id || "";
+    taskId = soloTask?.id || d.tasks?.[0]?.id || "";
+    taskTitle = soloTask?.title || d.tasks?.[0]?.title || "";
     log("6b. Seed 后获取任务", !!taskId, taskTitle);
   }
+
+  const soloResolveId = soloTaskId || taskId;
 
   if (!taskId) {
     console.log("\n=== 检测中止：无任务可测 ===\n");
@@ -135,15 +145,15 @@ async function main() {
   }
 
   // 7. 任务详情 + Ink 剧情
-  let choiceId = "strict_clear";
+  let choiceId = "immediate_fix";
   {
-    const { status, data } = await request(`/api/tasks/${taskId}`);
+    const { status, data } = await request(`/api/tasks/${soloResolveId}`);
     const d = data as {
       task?: { title: string };
       story?: { lines: string[]; choices: { choiceId: string; text: string }[] };
     };
     const choices = d.story?.choices || [];
-    choiceId = choices.find((c) => c.choiceId === "strict_clear")?.choiceId || choices[0]?.choiceId || "strict_clear";
+    choiceId = choices.find((c) => c.choiceId)?.choiceId || choices[0]?.choiceId || "immediate_fix";
     log(
       "7. Ink 剧情加载",
       status === 200 && (d.story?.lines?.length || 0) > 0 && choices.length > 0,
@@ -153,7 +163,7 @@ async function main() {
 
   // 8. 加入任务
   {
-    const { status, data } = await request(`/api/tasks/${taskId}/join`, {
+    const { status, data } = await request(`/api/tasks/${soloResolveId}/join`, {
       method: "POST",
       cookie,
     });
@@ -161,36 +171,125 @@ async function main() {
     log("8. 加入任务", status === 200, d.error);
   }
 
-  // 9. 提交选择并结算
-  let resolveResult: { success?: boolean; effects?: Record<string, number> } = {};
+  // 9. 提交选择并结算（单人任务）
+  let resolveResult: {
+    finalized?: boolean;
+    success?: boolean;
+    effects?: Record<string, number>;
+  } = {};
   {
-    const { status, data } = await request(`/api/tasks/${taskId}/resolve`, {
+    const { status, data } = await request(`/api/tasks/${soloResolveId}/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cookie,
       body: JSON.stringify({ choiceId }),
     });
-    const d = data as { result?: typeof resolveResult; error?: string };
-    resolveResult = d.result || {};
+    resolveResult = (data as typeof resolveResult) || {};
     log(
-      "9. 任务结算",
-      status === 200 && resolveResult.effects !== undefined,
+      "9. 单人任务结算",
+      status === 200 && resolveResult.finalized === true && resolveResult.effects !== undefined,
       `选择=${choiceId}, 成功=${resolveResult.success}, 效果=${JSON.stringify(resolveResult.effects)}`,
     );
   }
 
-  // 10. 项目指标变化
+  // 10. 项目指标已更新（含 latentRisk）
   {
     const { status, data } = await request("/api/project/state");
     const d = data as { project?: Record<string, number> };
     const after = d.project || {};
-    const safetyChanged = after.safety !== projectBefore.safety;
-    const fireChanged = after.fireRisk !== projectBefore.fireRisk;
+    const metricKeys = [
+      "progress",
+      "quality",
+      "safety",
+      "cost",
+      "dataIntegrity",
+      "fireRisk",
+      "ownerTrust",
+      "propertyHandover",
+      "latentRisk",
+    ];
+    const anyChanged = metricKeys.some((key) => after[key] !== projectBefore[key]);
     log(
       "10. 项目指标已更新",
-      status === 200 && (safetyChanged || fireChanged),
-      `安全 ${projectBefore.safety}→${after.safety}, 消防风险 ${projectBefore.fireRisk}→${after.fireRisk}`,
+      status === 200 && anyChanged && after.latentRisk !== undefined,
+      `潜在风险 ${projectBefore.latentRisk ?? 20}→${after.latentRisk}, 物业接管 ${projectBefore.propertyHandover}→${after.propertyHandover}`,
     );
+  }
+
+  // 15. 多人协作任务（先 seed 确保有新任务）
+  let multiTaskId = "";
+  {
+    await request("/api/admin/seed", { method: "POST" });
+    const { data } = await request("/api/tasks");
+    const d = data as {
+      tasks?: { id: string; inkFile: string; status: string; resolutionMode?: string; requiredCount?: number }[];
+    };
+    const multiTask = d.tasks?.find(
+      (t) =>
+        t.inkFile === "opening_joint_inspection" &&
+        (t.status === "PENDING" || t.status === "IN_PROGRESS") &&
+        t.resolutionMode !== "SOLO",
+    );
+    multiTaskId = multiTask?.id || "";
+    log("15. 找到多人协作任务", !!multiTaskId, multiTaskId ? "开业前联合检查预警" : "未找到");
+  }
+
+  if (multiTaskId) {
+    const qqB = String(Date.now() + 1).slice(-11);
+    let cookieB = "";
+    {
+      const { status, cookies } = await request("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nickname: "E2E协作者",
+          qqId: qqB,
+          job: "DOCUMENT_ASSISTANT",
+        }),
+      });
+      cookieB = cookies;
+      log("16. 第二玩家注册", status === 200, qqB);
+    }
+
+    let multiChoice = "full_prepare";
+    {
+      const { data } = await request(`/api/tasks/${multiTaskId}`);
+      const d = data as { story?: { choices: { choiceId: string }[] } };
+      multiChoice = d.story?.choices[0]?.choiceId || "full_prepare";
+    }
+
+    await request(`/api/tasks/${multiTaskId}/join`, { method: "POST", cookie });
+    await request(`/api/tasks/${multiTaskId}/join`, { method: "POST", cookie: cookieB });
+
+    {
+      const { status, data } = await request(`/api/tasks/${multiTaskId}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cookie,
+        body: JSON.stringify({ choiceId: multiChoice }),
+      });
+      const d = data as { finalized?: boolean; submittedCount?: number; requiredCount?: number };
+      log(
+        "17. 第一人提交后等待结算",
+        status === 200 && d.finalized === false,
+        `提交 ${d.submittedCount}/${d.requiredCount}`,
+      );
+    }
+
+    {
+      const { status, data } = await request(`/api/tasks/${multiTaskId}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cookie: cookieB,
+        body: JSON.stringify({ choiceId: multiChoice }),
+      });
+      const d = data as { finalized?: boolean; success?: boolean; finalChoiceId?: string };
+      log(
+        "18. 第二人提交后统一结算",
+        status === 200 && d.finalized === true && !!d.finalChoiceId,
+        `成功=${d.success}, 最终方案=${d.finalChoiceId}`,
+      );
+    }
   }
 
   // 11. 排行榜

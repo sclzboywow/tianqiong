@@ -39,6 +39,7 @@ model ProjectState {
   fireRisk          Float    @default(55)
   ownerTrust        Float    @default(50)
   propertyHandover  Float    @default(40)
+  latentRisk        Float    @default(20)
   currentStage      String   @default("开业倒计时")
   status            String   @default("ACTIVE")
   updatedAt         DateTime @updatedAt
@@ -79,6 +80,10 @@ model Task {
   choiceEffects    String
   baseSuccessRate  Float             @default(60)
   triggerBroadcast Boolean           @default(false)
+  resolutionMode   String            @default("SOLO")
+  finalChoiceId    String?
+  resolvedAt       DateTime?
+  minResolveCount  Int               @default(1)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   participants     TaskParticipant[]
@@ -90,9 +95,12 @@ model TaskParticipant {
   userId       String
   roleInTask   String?
   status       String   @default("JOINED")
-  contribution Int      @default(0)
-  choiceId     String?
-  createdAt    DateTime @default(now())
+  contribution       Int       @default(0)
+  choiceId           String?
+  choiceSubmittedAt  DateTime?
+  voteWeight         Float     @default(1)
+  rewardStatus       String    @default("PENDING")
+  createdAt          DateTime  @default(now())
   updatedAt    DateTime @updatedAt
   task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)

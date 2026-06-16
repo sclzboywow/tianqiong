@@ -1,3 +1,5 @@
+export type ResolutionMode = "SOLO" | "VOTE" | "ROLE_CHECKLIST";
+
 export type MetricKey =
   | "progress"
   | "quality"
@@ -33,6 +35,8 @@ export interface TaskTemplateData {
   failEffects?: MetricEffects;
   choiceEffects?: ChoiceEffectsMap;
   triggerBroadcast?: boolean;
+  resolutionMode?: ResolutionMode;
+  minResolveCount?: number;
 }
 
 export interface AchievementTemplateData {
@@ -54,4 +58,5 @@ export const METRIC_LABELS: Record<string, string> = {
   fireRisk: "消防风险",
   ownerTrust: "甲方信任",
   propertyHandover: "物业接管度",
+  latentRisk: "潜在风险",
 };

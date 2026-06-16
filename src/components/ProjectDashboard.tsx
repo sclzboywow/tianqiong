@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { displayProgress } from "@/utils/clamp";
 import { METRIC_LABELS } from "@/game/types";
 import { getRiskList } from "@/game/projectEngine";
+import { getLatentRiskLabel } from "@/utils/formatter";
 import type { ProjectState } from "@prisma/client";
 
 interface ProjectDashboardProps {
@@ -17,6 +18,7 @@ const METRICS: (keyof ProjectState)[] = [
   "cost",
   "dataIntegrity",
   "fireRisk",
+  "latentRisk",
   "ownerTrust",
   "propertyHandover",
 ];
@@ -43,7 +45,14 @@ export function ProjectDashboard({ project }: ProjectDashboardProps) {
               <div key={key} className="space-y-1">
                 <div className="flex justify-between text-sm text-zinc-300">
                   <span>{METRIC_LABELS[key] || key}</span>
-                  <span>{displayProgress(project[key] as number)}</span>
+                  <span>
+                    {displayProgress(project[key] as number)}
+                    {key === "latentRisk" && (
+                      <span className="ml-2 text-xs text-amber-400">
+                        {getLatentRiskLabel(project.latentRisk ?? 20)}
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <Progress value={displayProgress(project[key] as number)} className="h-2" />
               </div>
