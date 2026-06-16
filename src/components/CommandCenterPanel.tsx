@@ -15,7 +15,7 @@ type CommandCenterPanelProps = {
 export async function CommandCenterPanel({ project }: CommandCenterPanelProps) {
   const stageConfig = getStageConfig(project.currentStage);
   const tasks = await listTasks();
-  const recommendations = getStageRecommendations(project, tasks);
+  const recommendations = await getStageRecommendations(project, tasks);
 
   return (
     <Card className="border-amber-900/40 bg-zinc-900/80">
@@ -35,7 +35,7 @@ export async function CommandCenterPanel({ project }: CommandCenterPanelProps) {
             <p className="text-sm text-zinc-400">当前阶段推荐地点尚未解锁，请先在协同地图查看解锁条件。</p>
           ) : (
             <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-300">
-              {recommendations.map((item, index) => (
+              {recommendations.map((item) => (
                 <li key={item.location.id}>
                   <Link href={`/locations/${item.location.id}`} className="text-amber-400 hover:underline">
                     去{item.location.name}

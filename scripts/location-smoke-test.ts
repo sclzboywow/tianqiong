@@ -32,11 +32,11 @@ async function main() {
   }
 
   {
-    const { getMapPageData } = await import("../src/game/locationEngine");
-    const { MAP_LOCATIONS } = await import("../src/data/locations");
+    const { getMapPageData, getAllLocations } = await import("../src/game/locationEngine");
     const data = await getMapPageData();
+    const locations = await getAllLocations();
 
-    const ownerCount = MAP_LOCATIONS.filter((l) => l.group === "建设主体").length;
+    const ownerCount = locations.filter((l) => l.group === "建设主体").length;
     log("2. 建设主体地点数", ownerCount >= 10, `共 ${ownerCount} 个`);
     if (ownerCount < 10) failed = true;
 

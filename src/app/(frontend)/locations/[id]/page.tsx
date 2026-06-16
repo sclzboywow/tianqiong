@@ -1,13 +1,17 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LocationDetailPanel } from "@/components/LocationDetailPanel";
 import { getLocationOverview } from "@/game/locationEngine";
+import { getCurrentUserId } from "@/lib/session";
 
 export default async function LocationDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/register");
+
   const { id } = await params;
   const overview = await getLocationOverview(id);
   if (!overview) notFound();

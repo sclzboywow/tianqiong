@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import {
   Npcs,
   Areas,
+  MapLocations,
   EventTemplates,
   TaskTemplates,
   Items,
@@ -54,6 +55,7 @@ export default buildConfig({
     },
     Npcs,
     Areas,
+    MapLocations,
     EventTemplates,
     TaskTemplates,
     Items,

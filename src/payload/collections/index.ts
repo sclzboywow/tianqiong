@@ -1,10 +1,11 @@
 import type { CollectionConfig } from "payload";
-import { BUILD_STAGE_OPTIONS, RESOLUTION_MODE_OPTIONS } from "@/game/projectStages";
+import { BUILD_STAGE_OPTIONS, MILESTONE_LABELS, PROJECT_STAGES, RESOLUTION_MODE_OPTIONS } from "@/game/projectStages";
 import {
   ACHIEVEMENT_CATEGORIES,
   AREA_CATEGORIES,
   EVENT_CATEGORIES,
   ITEM_CATEGORIES,
+  MAP_LOCATION_CATEGORIES,
   NPC_CATEGORIES,
   TASK_CATEGORIES,
 } from "@/payload/contentCategories";
@@ -32,6 +33,32 @@ const AREA_STAGE_OPTIONS = [
 ];
 
 const RARITY_OPTIONS = ["R", "SR", "SSR", "UR"];
+
+const MAP_LOCATION_TYPE_OPTIONS = [
+  { label: "建设主体", value: "owner_office" },
+  { label: "项目部", value: "project_office" },
+  { label: "政府单位", value: "government" },
+  { label: "第三方机构", value: "third_party" },
+  { label: "施工现场", value: "site_zone" },
+];
+
+const MAP_LOCATION_GROUP_OPTIONS = [
+  { label: "建设主体", value: "建设主体" },
+  { label: "项目部", value: "项目部" },
+  { label: "政府单位", value: "政府单位" },
+  { label: "第三方机构", value: "第三方机构" },
+  { label: "施工现场", value: "施工现场" },
+];
+
+const MAP_UNLOCK_STAGE_OPTIONS = PROJECT_STAGES.map((stage) => ({
+  label: stage.name,
+  value: stage.id,
+}));
+
+const MILESTONE_OPTIONS = Object.entries(MILESTONE_LABELS).map(([value, label]) => ({
+  label,
+  value,
+}));
 
 const ACHIEVEMENT_CONDITION_OPTIONS = [
   { label: "任务完成次数", value: "task_complete_count" },
@@ -116,6 +143,106 @@ export const Areas: CollectionConfig = {
       type: "array",
       label: "风险标签",
       fields: [{ name: "tag", type: "text", label: "标签" }],
+    },
+    { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
+  ],
+};
+
+export const MapLocations: CollectionConfig = {
+  slug: "map-locations",
+  labels: { singular: "地图地点", plural: "协同地图" },
+  admin: {
+    useAsTitle: "name",
+    group: "世界设定",
+    defaultColumns: ["name", "category", "group", "unlockStage", "enabled"],
+    listSearchableFields: ["name", "slug", "category", "group", "description"],
+    description: "协同地图地点：配置解锁阶段、关联任务与 NPC。保存后前端 /locations 实时读取。",
+  },
+  fields: [
+    categoryField(MAP_LOCATION_CATEGORIES, "按地图分组归类，与协同地图页面分组一致。"),
+    {
+      name: "slug",
+      type: "text",
+      label: "标识",
+      required: true,
+      unique: true,
+      admin: { description: "唯一 ID，用于 URL，如 owner_project_management_dept" },
+    },
+    { name: "name", type: "text", label: "名称", required: true },
+    {
+      name: "type",
+      type: "select",
+      label: "地点类型",
+      required: true,
+      options: MAP_LOCATION_TYPE_OPTIONS,
+    },
+    {
+      name: "group",
+      type: "select",
+      label: "地图分组",
+      required: true,
+      options: MAP_LOCATION_GROUP_OPTIONS,
+    },
+    { name: "description", type: "textarea", label: "描述", required: true },
+    {
+      name: "unlockStage",
+      type: "select",
+      label: "解锁阶段",
+      required: true,
+      options: MAP_UNLOCK_STAGE_OPTIONS,
+      admin: { description: "项目进入该阶段后地点可见。" },
+    },
+    {
+      name: "unlockMilestones",
+      type: "array",
+      label: "解锁关键节点",
+      admin: { description: "可选。需同时满足所选关键节点才解锁。" },
+      fields: [
+        {
+          name: "milestone",
+          type: "select",
+          label: "关键节点",
+          options: MILESTONE_OPTIONS,
+        },
+      ],
+    },
+    {
+      name: "relatedTaskSlugs",
+      type: "array",
+      label: "关联任务标识",
+      fields: [{ name: "slug", type: "text", label: "任务 slug" }],
+    },
+    {
+      name: "relatedAreaNames",
+      type: "array",
+      label: "关联区域名称",
+      fields: [{ name: "name", type: "text", label: "区域名称" }],
+    },
+    {
+      name: "relatedNpcNames",
+      type: "array",
+      label: "关联 NPC",
+      fields: [{ name: "name", type: "text", label: "NPC 名称" }],
+    },
+    {
+      name: "riskTags",
+      type: "array",
+      label: "风险标签",
+      fields: [{ name: "tag", type: "text", label: "标签" }],
+    },
+    {
+      name: "achievementHooks",
+      type: "array",
+      label: "成就钩子",
+      admin: { description: "预留字段，供后续成就系统引用。" },
+      fields: [{ name: "hook", type: "text", label: "钩子标识" }],
+    },
+    {
+      name: "sortOrder",
+      type: "number",
+      label: "排序",
+      defaultValue: 0,
+      admin: { description: "同分组内排序，数字越小越靠前。" },
     },
     { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
   ],

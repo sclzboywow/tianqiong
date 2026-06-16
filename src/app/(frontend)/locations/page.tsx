@@ -1,11 +1,16 @@
+import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LocationCard } from "@/components/LocationCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getMapPageData } from "@/game/locationEngine";
 import { LOCATION_GROUP_ORDER } from "@/data/locations";
+import { getCurrentUserId } from "@/lib/session";
 
 export default async function LocationsPage() {
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/register");
+
   const data = await getMapPageData();
 
   if (data.emptyMessage) {

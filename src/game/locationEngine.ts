@@ -1,10 +1,10 @@
 import type { ProjectState, Task } from "@prisma/client";
 import {
-  MAP_LOCATIONS,
   LOCATION_TYPE_LABELS,
   LOCATION_GROUP_ORDER,
   type MapLocation,
 } from "@/data/locations";
+import { getMapLocations, getMapLocationById } from "./locationLoader";
 import { parseMilestones } from "./projectEngine";
 import {
   PROJECT_STAGES,
@@ -65,12 +65,12 @@ export function isLocationUnlocked(location: MapLocation, projectState: ProjectS
   return true;
 }
 
-export function getAllLocations(): MapLocation[] {
-  return MAP_LOCATIONS;
+export async function getAllLocations(): Promise<MapLocation[]> {
+  return getMapLocations();
 }
 
-export function getLocationById(id: string): MapLocation | undefined {
-  return MAP_LOCATIONS.find((loc) => loc.id === id);
+export async function getLocationById(id: string): Promise<MapLocation | undefined> {
+  return getMapLocationById(id);
 }
 
 export function getRelatedTasks(location: MapLocation, tasks: Task[]): Task[] {
@@ -101,14 +101,22 @@ export function enrichLocationStatus(
   };
 }
 
-export function getUnlockedLocations(projectState: ProjectState, tasks: Task[]): LocationWithStatus[] {
-  return MAP_LOCATIONS.filter((loc) => isLocationUnlocked(loc, projectState)).map((loc) =>
+export function getUnlockedLocations(
+  locations: MapLocation[],
+  projectState: ProjectState,
+  tasks: Task[],
+): LocationWithStatus[] {
+  return locations.filter((loc) => isLocationUnlocked(loc, projectState)).map((loc) =>
     enrichLocationStatus(loc, projectState, tasks),
   );
 }
 
-export function getLockedLocations(projectState: ProjectState, tasks: Task[]): LocationWithStatus[] {
-  return MAP_LOCATIONS.filter((loc) => !isLocationUnlocked(loc, projectState)).map((loc) =>
+export function getLockedLocations(
+  locations: MapLocation[],
+  projectState: ProjectState,
+  tasks: Task[],
+): LocationWithStatus[] {
+  return locations.filter((loc) => !isLocationUnlocked(loc, projectState)).map((loc) =>
     enrichLocationStatus(loc, projectState, tasks),
   );
 }
@@ -126,7 +134,7 @@ export function groupLocationsByGroup(locations: LocationWithStatus[]): Record<s
 }
 
 export async function getLocationOverview(id: string): Promise<LocationOverview | null> {
-  const location = getLocationById(id);
+  const location = await getLocationById(id);
   if (!location) return null;
 
   const project = await getProjectState();
@@ -164,9 +172,9 @@ export async function getMapPageData(): Promise<MapPageData> {
     };
   }
 
-  const tasks = await listTasks();
-  const unlocked = getUnlockedLocations(project, tasks);
-  const locked = getLockedLocations(project, tasks);
+  const [locations, tasks] = await Promise.all([getMapLocations(), listTasks()]);
+  const unlocked = getUnlockedLocations(locations, project, tasks);
+  const locked = getLockedLocations(locations, project, tasks);
   const stageConfig = getStageConfig(project.currentStage);
 
   const unlockedByGroup: Record<string, LocationWithStatus[]> = {};
@@ -202,13 +210,16 @@ export const STAGE_LOCATION_RECOMMENDATIONS: Record<ProjectStageId, string[]> = 
   OPENING: ["owner_operation_prep_office"],
 };
 
-export function getStageRecommendations(projectState: ProjectState, tasks: Task[]): LocationWithStatus[] {
+export async function getStageRecommendations(
+  projectState: ProjectState,
+  tasks: Task[],
+): Promise<LocationWithStatus[]> {
   const stageId = normalizeStageId(projectState.currentStage);
   const ids = STAGE_LOCATION_RECOMMENDATIONS[stageId] || [];
   const results: LocationWithStatus[] = [];
 
   for (const id of ids) {
-    const location = getLocationById(id);
+    const location = await getLocationById(id);
     if (!location) continue;
     const item = enrichLocationStatus(location, projectState, tasks);
     if (item.unlocked) results.push(item);

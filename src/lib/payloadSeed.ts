@@ -2,12 +2,14 @@ import type { Payload } from "payload";
 import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
 import { ACHIEVEMENTS } from "@/data/achievements";
+import { MAP_LOCATIONS } from "@/data/locations";
 import type { TaskTemplateData } from "@/game/types";
 import { inferMinResolveCount, inferResolutionMode } from "@/game/taskEngine";
 import {
   inferAchievementCategory,
   inferAreaCategory,
   inferItemCategory,
+  inferMapLocationCategory,
   inferNpcCategory,
   inferTaskCategory,
 } from "@/payload/contentCategories";
@@ -75,6 +77,8 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
     achievements: 0,
     achievementsUpdated: 0,
     dailyReportTemplates: 0,
+    mapLocations: 0,
+    mapLocationsUpdated: 0,
   };
 
   for (const npc of NPCS) {
@@ -197,6 +201,38 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
     if (!existing.docs.length) {
       await payload.create({ collection: "daily-report-templates", data: { ...report, enabled: true } });
       stats.dailyReportTemplates++;
+    }
+  }
+
+  for (const [index, loc] of MAP_LOCATIONS.entries()) {
+    const category = inferMapLocationCategory(loc.group);
+    const data = {
+      slug: loc.id,
+      name: loc.name,
+      type: loc.type,
+      group: loc.group,
+      category,
+      description: loc.description,
+      unlockStage: loc.unlockStage,
+      unlockMilestones: (loc.unlockMilestones || []).map((milestone) => ({ milestone })),
+      relatedTaskSlugs: (loc.relatedTaskSlugs || []).map((slug) => ({ slug })),
+      relatedAreaNames: (loc.relatedAreaNames || []).map((name) => ({ name })),
+      relatedNpcNames: (loc.relatedNpcNames || []).map((name) => ({ name })),
+      riskTags: (loc.riskTags || []).map((tag) => ({ tag })),
+      achievementHooks: (loc.achievementHooks || []).map((hook) => ({ hook })),
+      sortOrder: index,
+      enabled: true,
+    };
+    const existing = await payload.find({
+      collection: "map-locations",
+      where: { slug: { equals: loc.id } },
+    });
+    if (!existing.docs.length) {
+      await payload.create({ collection: "map-locations", data });
+      stats.mapLocations++;
+    } else {
+      await payload.update({ collection: "map-locations", id: existing.docs[0].id, data });
+      stats.mapLocationsUpdated++;
     }
   }
 

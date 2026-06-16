@@ -43,6 +43,14 @@ export const ACHIEVEMENT_CATEGORIES: CategoryOption[] = [
   { label: "剧情彩蛋", value: "story" },
 ];
 
+export const MAP_LOCATION_CATEGORIES: CategoryOption[] = [
+  { label: "建设主体", value: "owner_entity" },
+  { label: "项目部", value: "project_team" },
+  { label: "政府单位", value: "government" },
+  { label: "第三方机构", value: "third_party" },
+  { label: "施工现场", value: "site" },
+];
+
 const NPC_TYPE_CATEGORY: Record<string, string> = {
   owner: "owner_regulator",
   supervisor: "owner_regulator",
@@ -127,6 +135,19 @@ export function inferItemCategory(effectType?: string, category?: string) {
   if (category) return category;
   if (!effectType) return "coordination";
   return ITEM_EFFECT_CATEGORY[effectType] || "coordination";
+}
+
+const MAP_LOCATION_GROUP_CATEGORY: Record<string, string> = {
+  建设主体: "owner_entity",
+  项目部: "project_team",
+  政府单位: "government",
+  第三方机构: "third_party",
+  施工现场: "site",
+};
+
+export function inferMapLocationCategory(group: string, category?: string) {
+  if (category) return category;
+  return MAP_LOCATION_GROUP_CATEGORY[group] || "site";
 }
 
 export function inferAchievementCategory(input: {
