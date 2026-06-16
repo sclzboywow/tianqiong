@@ -2,24 +2,26 @@ import { NextResponse } from "next/server";
 import { initializeProjectForSeed } from "@/game/projectEngine";
 import { spawnTasksFromTemplates, filterTemplatesForCurrentStage } from "@/game/taskEngine";
 import { getTaskTemplates } from "@/game/contentLoader";
+import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import { normalizeStageId } from "@/game/projectStages";
 import { seedPayloadCollections } from "@/lib/payloadSeed";
 
 export async function POST() {
   try {
     const project = await initializeProjectForSeed();
+
+    const { getPayload } = await import("payload");
+    const config = (await import("@payload-config")).default;
+    const payload = await getPayload({ config });
+
+    const stats = await seedPayloadCollections(payload, TASK_TEMPLATES);
+
     const templates = await getTaskTemplates();
     const stageTemplates = filterTemplatesForCurrentStage(
       templates,
       normalizeStageId(project.currentStage),
     );
     await spawnTasksFromTemplates(stageTemplates);
-
-    const { getPayload } = await import("payload");
-    const config = (await import("@payload-config")).default;
-    const payload = await getPayload({ config });
-
-    const stats = await seedPayloadCollections(payload, templates);
 
     return NextResponse.json({
       ok: true,

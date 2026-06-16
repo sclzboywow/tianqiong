@@ -4,6 +4,13 @@ import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
 import { ACHIEVEMENTS } from "@/data/achievements";
 import type { TaskTemplateData } from "@/game/types";
 import { inferMinResolveCount, inferResolutionMode } from "@/game/taskEngine";
+import {
+  inferAchievementCategory,
+  inferAreaCategory,
+  inferItemCategory,
+  inferNpcCategory,
+  inferTaskCategory,
+} from "@/payload/contentCategories";
 
 function buildTaskTemplatePayloadData(template: TaskTemplateData) {
   const resolutionMode = template.resolutionMode ?? inferResolutionMode(template.rarity);
@@ -11,6 +18,7 @@ function buildTaskTemplatePayloadData(template: TaskTemplateData) {
     slug: template.slug,
     title: template.title,
     description: template.description,
+    category: inferTaskCategory(template),
     rarity: template.rarity,
     stage: template.stage,
     resolutionMode,
@@ -36,130 +44,148 @@ function buildTaskTemplatePayloadData(template: TaskTemplateData) {
   };
 }
 
+function buildEventTemplatePayloadData(template: TaskTemplateData) {
+  return {
+    title: template.title,
+    category: inferTaskCategory(template),
+    rarity: template.rarity,
+    area: template.area,
+    npcList: template.sourceName ? [{ npc: template.sourceName }] : [],
+    eventType: template.sourceType,
+    inkFile: template.inkFile,
+    recommendedJobs: (template.requiredJobs || []).map((j) => ({ job: j })),
+    baseSuccessRate: template.baseSuccessRate || 60,
+    triggerBroadcast: template.triggerBroadcast || false,
+    enabled: true,
+  };
+}
+
 export async function seedPayloadCollections(payload: Payload, templates: TaskTemplateData[] = TASK_TEMPLATES) {
   const stats = {
     npcs: 0,
+    npcsUpdated: 0,
     areas: 0,
+    areasUpdated: 0,
     taskTemplates: 0,
     taskTemplatesUpdated: 0,
     eventTemplates: 0,
+    eventTemplatesUpdated: 0,
     items: 0,
+    itemsUpdated: 0,
     achievements: 0,
+    achievementsUpdated: 0,
     dailyReportTemplates: 0,
   };
 
   for (const npc of NPCS) {
+    const category = inferNpcCategory(npc.type, (npc as { category?: string }).category);
+    const data = {
+      name: npc.name,
+      category,
+      type: npc.type,
+      description: npc.description,
+      defaultRelation: npc.defaultRelation,
+      quotes: npc.quotes.map((q) => ({ quote: q })),
+      relatedMetrics: npc.relatedMetrics.map((m) => ({ metric: m })),
+      enabled: true,
+    };
     const existing = await payload.find({ collection: "npcs", where: { name: { equals: npc.name } } });
     if (!existing.docs.length) {
-      await payload.create({
-        collection: "npcs",
-        data: {
-          name: npc.name,
-          type: npc.type,
-          description: npc.description,
-          defaultRelation: npc.defaultRelation,
-          quotes: npc.quotes.map((q) => ({ quote: q })),
-          relatedMetrics: npc.relatedMetrics.map((m) => ({ metric: m })),
-          enabled: true,
-        },
-      });
+      await payload.create({ collection: "npcs", data });
       stats.npcs++;
+    } else {
+      await payload.update({ collection: "npcs", id: existing.docs[0].id, data });
+      stats.npcsUpdated++;
     }
   }
 
   for (const area of AREAS) {
+    const category = inferAreaCategory(area.name, area.stage, (area as { category?: string }).category);
+    const data = {
+      name: area.name,
+      category,
+      description: area.description,
+      stage: area.stage,
+      riskTags: area.riskTags.map((t) => ({ tag: t })),
+      enabled: true,
+    };
     const existing = await payload.find({ collection: "areas", where: { name: { equals: area.name } } });
     if (!existing.docs.length) {
-      await payload.create({
-        collection: "areas",
-        data: {
-          name: area.name,
-          description: area.description,
-          stage: area.stage,
-          riskTags: area.riskTags.map((t) => ({ tag: t })),
-          enabled: true,
-        },
-      });
+      await payload.create({ collection: "areas", data });
       stats.areas++;
+    } else {
+      await payload.update({ collection: "areas", id: existing.docs[0].id, data });
+      stats.areasUpdated++;
     }
   }
 
   for (const template of templates) {
+    const data = buildTaskTemplatePayloadData(template);
     const existing = await payload.find({
       collection: "task-templates",
       where: { slug: { equals: template.slug } },
     });
-    const data = buildTaskTemplatePayloadData(template);
 
     if (!existing.docs.length) {
-      await payload.create({
-        collection: "task-templates",
-        data,
-      });
+      await payload.create({ collection: "task-templates", data });
       stats.taskTemplates++;
     } else {
-      await payload.update({
-        collection: "task-templates",
-        id: existing.docs[0].id,
-        data,
-      });
+      await payload.update({ collection: "task-templates", id: existing.docs[0].id, data });
       stats.taskTemplatesUpdated++;
     }
   }
 
   for (const template of templates) {
+    const data = buildEventTemplatePayloadData(template);
     const existing = await payload.find({
       collection: "event-templates",
       where: { inkFile: { equals: template.inkFile } },
     });
     if (!existing.docs.length) {
-      await payload.create({
-        collection: "event-templates",
-        data: {
-          title: template.title,
-          rarity: template.rarity,
-          area: template.area,
-          npcList: template.sourceName ? [{ npc: template.sourceName }] : [],
-          eventType: template.sourceType,
-          inkFile: template.inkFile,
-          recommendedJobs: (template.requiredJobs || []).map((j) => ({ job: j })),
-          baseSuccessRate: template.baseSuccessRate || 60,
-          triggerBroadcast: template.triggerBroadcast || false,
-          enabled: true,
-        },
-      });
+      await payload.create({ collection: "event-templates", data });
       stats.eventTemplates++;
+    } else {
+      await payload.update({ collection: "event-templates", id: existing.docs[0].id, data });
+      stats.eventTemplatesUpdated++;
     }
   }
 
   for (const item of ITEMS) {
+    const category = inferItemCategory(item.effectType, (item as { category?: string }).category);
+    const data = { ...item, category, enabled: true };
     const existing = await payload.find({ collection: "items", where: { slug: { equals: item.slug } } });
     if (!existing.docs.length) {
-      await payload.create({ collection: "items", data: { ...item, enabled: true } });
+      await payload.create({ collection: "items", data });
       stats.items++;
+    } else {
+      await payload.update({ collection: "items", id: existing.docs[0].id, data });
+      stats.itemsUpdated++;
     }
   }
 
   for (const achievement of ACHIEVEMENTS) {
+    const category = inferAchievementCategory(achievement);
+    const data = {
+      slug: achievement.slug,
+      name: achievement.name,
+      category,
+      description: achievement.description,
+      conditionType: achievement.conditionType,
+      conditionValue: achievement.conditionValue,
+      rewardConfig: achievement.rewardConfig || {},
+      broadcastEnabled: achievement.broadcastEnabled || false,
+      enabled: true,
+    };
     const existing = await payload.find({
       collection: "achievements",
       where: { slug: { equals: achievement.slug } },
     });
     if (!existing.docs.length) {
-      await payload.create({
-        collection: "achievements",
-        data: {
-          slug: achievement.slug,
-          name: achievement.name,
-          description: achievement.description,
-          conditionType: achievement.conditionType,
-          conditionValue: achievement.conditionValue,
-          rewardConfig: achievement.rewardConfig || {},
-          broadcastEnabled: achievement.broadcastEnabled || false,
-          enabled: true,
-        },
-      });
+      await payload.create({ collection: "achievements", data });
       stats.achievements++;
+    } else {
+      await payload.update({ collection: "achievements", id: existing.docs[0].id, data });
+      stats.achievementsUpdated++;
     }
   }
 

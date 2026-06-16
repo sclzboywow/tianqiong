@@ -7,6 +7,7 @@ import {
   getProjectState,
 } from "./projectEngine";
 import { normalizeStageId } from "./projectStages";
+import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
 import { writeGameLog } from "./logEngine";
 import { calculateRewards, applySpiritCost } from "./rewardEngine";
 import { applyNpcEffectsFromMetrics } from "./npcEngine";
@@ -445,7 +446,12 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
     if (Object.keys(milestoneEffects).length > 0) {
       await applyMilestoneEffects(milestoneEffects, SEASON_ID);
     }
-    await advanceStageIfReady(SEASON_ID);
+    const advanceResult = await advanceStageIfReady(SEASON_ID);
+    if (advanceResult.advanced) {
+      const { getTaskTemplates } = await import("./contentLoader");
+      const templates = await getTaskTemplates();
+      await spawnTasksFromTemplates(templates);
+    }
   }
 
   const npcList = task.sourceName ? [task.sourceName] : [];
@@ -525,6 +531,17 @@ export function filterTemplatesForCurrentStage(
   currentStage?: string | null,
 ) {
   const normalized = normalizeStageId(currentStage);
+  const mainlineSlugs = STAGE_TASK_TEMPLATES.filter((template) => template.stage === normalized).map(
+    (template) => template.slug,
+  );
+
+  if (mainlineSlugs.length > 0) {
+    const mainline = mainlineSlugs
+      .map((slug) => templates.find((template) => template.slug === slug))
+      .filter((template): template is TaskTemplateData => !!template);
+    if (mainline.length === mainlineSlugs.length) return mainline;
+  }
+
   const matched = templates.filter((template) => template.stage === normalized);
   if (matched.length >= 4) return matched;
 

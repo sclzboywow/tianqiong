@@ -38,6 +38,7 @@ export default buildConfig({
       slug: "users",
       auth: true,
       labels: { singular: "用户", plural: "用户" },
+      admin: { group: "系统管理" },
       fields: [
         {
           name: "role",

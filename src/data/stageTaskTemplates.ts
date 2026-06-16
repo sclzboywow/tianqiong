@@ -26,6 +26,7 @@ function stageTask(
     choiceEffects: genericChoiceEffects,
     successEffects: { stageProgress: 25, dataIntegrity: 2 },
     milestoneEffects: { [milestone]: true },
+    category: "mainline",
     ...extra,
   };
 }

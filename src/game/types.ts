@@ -42,6 +42,7 @@ export interface TaskTemplateData {
   minResolveCount?: number;
   stage?: ProjectStageId;
   milestoneEffects?: Record<string, boolean>;
+  category?: string;
 }
 
 export interface AchievementTemplateData {
@@ -52,6 +53,7 @@ export interface AchievementTemplateData {
   conditionValue: Record<string, unknown>;
   rewardConfig?: Record<string, unknown>;
   broadcastEnabled?: boolean;
+  category?: string;
 }
 
 export const METRIC_LABELS: Record<string, string> = {
