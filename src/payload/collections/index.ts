@@ -82,13 +82,56 @@ function categoryField(options: { label: string; value: string }[], description:
   };
 }
 
+function unlockContentFields() {
+  return [
+    {
+      name: "unlockStage",
+      type: "select" as const,
+      label: "解锁阶段",
+      required: true,
+      defaultValue: "INITIATION",
+      options: MAP_UNLOCK_STAGE_OPTIONS,
+      admin: { description: "项目进入该阶段后内容可见。" },
+    },
+    {
+      name: "unlockMilestones",
+      type: "array" as const,
+      label: "解锁关键节点",
+      admin: { description: "可选。需同时满足所选关键节点才解锁。" },
+      fields: [
+        {
+          name: "milestone",
+          type: "select" as const,
+          label: "关键节点",
+          options: MILESTONE_OPTIONS,
+        },
+      ],
+    },
+    {
+      name: "relatedLocationSlugs",
+      type: "array" as const,
+      label: "关联地图地点",
+      fields: [{ name: "slug", type: "text" as const, label: "地点 slug" }],
+    },
+    {
+      name: "visibleWhenLocked",
+      type: "checkbox" as const,
+      label: "未解锁时预告展示",
+      defaultValue: false,
+      admin: {
+        description: "关闭时未解锁内容完全不展示；开启时以灰色「尚未出现」预告展示。",
+      },
+    },
+  ];
+}
+
 export const Npcs: CollectionConfig = {
   slug: "npcs",
   labels: { singular: "NPC", plural: "NPC" },
   admin: {
     useAsTitle: "name",
     group: "世界设定",
-    defaultColumns: ["name", "category", "type", "description", "enabled"],
+    defaultColumns: ["name", "category", "type", "unlockStage", "enabled"],
     listSearchableFields: ["name", "category", "type", "description"],
   },
   fields: [
@@ -115,6 +158,7 @@ export const Npcs: CollectionConfig = {
       label: "关联指标",
       fields: [{ name: "metric", type: "text", label: "指标" }],
     },
+    ...unlockContentFields(),
     { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
   ],
 };
@@ -125,7 +169,7 @@ export const Areas: CollectionConfig = {
   admin: {
     useAsTitle: "name",
     group: "世界设定",
-    defaultColumns: ["name", "category", "stage", "description", "enabled"],
+    defaultColumns: ["name", "category", "stage", "unlockStage", "enabled"],
     listSearchableFields: ["name", "category", "stage", "description"],
   },
   fields: [
@@ -144,6 +188,7 @@ export const Areas: CollectionConfig = {
       label: "风险标签",
       fields: [{ name: "tag", type: "text", label: "标签" }],
     },
+    ...unlockContentFields(),
     { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
   ],
 };

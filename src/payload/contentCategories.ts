@@ -150,6 +150,46 @@ export function inferMapLocationCategory(group: string, category?: string) {
   return MAP_LOCATION_GROUP_CATEGORY[group] || "site";
 }
 
+const NPC_TYPE_UNLOCK_STAGE: Record<string, string> = {
+  owner: "INITIATION",
+  design: "DESIGN",
+  supplier: "PROCUREMENT",
+  contractor: "CONSTRUCTION",
+  subcontractor: "CONSTRUCTION",
+  supervisor: "CONSTRUCTION",
+  fire: "CONSTRUCTION",
+  merchant: "CONSTRUCTION",
+  regulator: "ACCEPTANCE",
+  property: "ACCEPTANCE",
+};
+
+const AREA_NAME_UNLOCK_STAGE: Record<string, string> = {
+  项目资料室: "INITIATION",
+  物业交接区: "ACCEPTANCE",
+  L1商业街: "CONSTRUCTION",
+  商业中庭: "CONSTRUCTION",
+  B1设备走廊: "CONSTRUCTION",
+  消防泵房: "CONSTRUCTION",
+  材料堆场: "CONSTRUCTION",
+};
+
+const AREA_STAGE_UNLOCK_STAGE: Record<string, string> = {
+  资料: "INITIATION",
+  移交: "ACCEPTANCE",
+};
+
+export function inferNpcUnlockStage(type: string, unlockStage?: string) {
+  if (unlockStage) return unlockStage;
+  return NPC_TYPE_UNLOCK_STAGE[type] || "INITIATION";
+}
+
+export function inferAreaUnlockStage(name: string, stage?: string, unlockStage?: string) {
+  if (unlockStage) return unlockStage;
+  if (AREA_NAME_UNLOCK_STAGE[name]) return AREA_NAME_UNLOCK_STAGE[name];
+  if (stage && AREA_STAGE_UNLOCK_STAGE[stage]) return AREA_STAGE_UNLOCK_STAGE[stage];
+  return "CONSTRUCTION";
+}
+
 export function inferAchievementCategory(input: {
   category?: string;
   conditionType: string;

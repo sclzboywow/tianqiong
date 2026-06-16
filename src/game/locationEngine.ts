@@ -5,6 +5,8 @@ import {
   type MapLocation,
 } from "@/data/locations";
 import { getMapLocations, getMapLocationById } from "./locationLoader";
+import { resolveRelatedContentForDisplay, type RelatedContentDisplayItem } from "./contentUnlockEngine";
+import { getAreas, getNpcs } from "./worldContentLoader";
 import { parseMilestones } from "./projectEngine";
 import {
   PROJECT_STAGES,
@@ -25,6 +27,8 @@ export type LocationOverview = {
   relatedTasks: Task[];
   relatedTaskCount: number;
   typeLabel: string;
+  relatedNpcs: RelatedContentDisplayItem[];
+  relatedAreas: RelatedContentDisplayItem[];
 };
 
 export type LocationWithStatus = {
@@ -137,10 +141,20 @@ export async function getLocationOverview(id: string): Promise<LocationOverview 
   const location = await getLocationById(id);
   if (!location) return null;
 
-  const project = await getProjectState();
-  const tasks = await listTasks();
+  const [project, tasks, npcs, areas] = await Promise.all([
+    getProjectState(),
+    listTasks(),
+    getNpcs(),
+    getAreas(),
+  ]);
   const unlocked = project ? isLocationUnlocked(location, project) : false;
   const relatedTasks = getRelatedTasks(location, tasks);
+  const relatedNpcs = project
+    ? resolveRelatedContentForDisplay(location.relatedNpcNames, npcs, project)
+    : [];
+  const relatedAreas = project
+    ? resolveRelatedContentForDisplay(location.relatedAreaNames, areas, project)
+    : [];
 
   return {
     location,
@@ -149,6 +163,8 @@ export async function getLocationOverview(id: string): Promise<LocationOverview 
     relatedTasks,
     relatedTaskCount: relatedTasks.length,
     typeLabel: LOCATION_TYPE_LABELS[location.type],
+    relatedNpcs,
+    relatedAreas,
   };
 }
 

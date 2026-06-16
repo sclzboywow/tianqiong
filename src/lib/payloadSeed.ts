@@ -8,9 +8,11 @@ import { inferMinResolveCount, inferResolutionMode } from "@/game/taskEngine";
 import {
   inferAchievementCategory,
   inferAreaCategory,
+  inferAreaUnlockStage,
   inferItemCategory,
   inferMapLocationCategory,
   inferNpcCategory,
+  inferNpcUnlockStage,
   inferTaskCategory,
 } from "@/payload/contentCategories";
 
@@ -62,6 +64,20 @@ function buildEventTemplatePayloadData(template: TaskTemplateData) {
   };
 }
 
+function buildUnlockPayloadData(content: {
+  unlockStage?: string;
+  unlockMilestones?: string[];
+  relatedLocationSlugs?: string[];
+  visibleWhenLocked?: boolean;
+}) {
+  return {
+    unlockStage: content.unlockStage || "INITIATION",
+    unlockMilestones: (content.unlockMilestones || []).map((milestone) => ({ milestone })),
+    relatedLocationSlugs: (content.relatedLocationSlugs || []).map((slug) => ({ slug })),
+    visibleWhenLocked: content.visibleWhenLocked ?? false,
+  };
+}
+
 export async function seedPayloadCollections(payload: Payload, templates: TaskTemplateData[] = TASK_TEMPLATES) {
   const stats = {
     npcs: 0,
@@ -91,6 +107,12 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       defaultRelation: npc.defaultRelation,
       quotes: npc.quotes.map((q) => ({ quote: q })),
       relatedMetrics: npc.relatedMetrics.map((m) => ({ metric: m })),
+      ...buildUnlockPayloadData({
+        unlockStage: npc.unlockStage || inferNpcUnlockStage(npc.type),
+        unlockMilestones: npc.unlockMilestones,
+        relatedLocationSlugs: npc.relatedLocationSlugs,
+        visibleWhenLocked: npc.visibleWhenLocked,
+      }),
       enabled: true,
     };
     const existing = await payload.find({ collection: "npcs", where: { name: { equals: npc.name } } });
@@ -111,6 +133,12 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       description: area.description,
       stage: area.stage,
       riskTags: area.riskTags.map((t) => ({ tag: t })),
+      ...buildUnlockPayloadData({
+        unlockStage: area.unlockStage || inferAreaUnlockStage(area.name, area.stage),
+        unlockMilestones: area.unlockMilestones,
+        relatedLocationSlugs: area.relatedLocationSlugs,
+        visibleWhenLocked: area.visibleWhenLocked,
+      }),
       enabled: true,
     };
     const existing = await payload.find({ collection: "areas", where: { name: { equals: area.name } } });

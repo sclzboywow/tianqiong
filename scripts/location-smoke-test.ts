@@ -3,8 +3,23 @@
  */
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 
-async function request(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${BASE}${path}`, options);
+async function request(
+  path: string,
+  options: RequestInit & { cookie?: string } = {},
+): Promise<{ status: number; data: unknown; cookies: string }> {
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+  if (options.cookie) headers["Cookie"] = options.cookie;
+
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const setCookie = typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [];
+  const legacy = res.headers.get("set-cookie");
+  const cookieParts = [
+    ...setCookie.map((c) => c.split(";")[0]),
+    ...(legacy ? [legacy.split(";")[0]] : []),
+  ];
+  const cookie = cookieParts.filter(Boolean).join("; ") || options.cookie || "";
   const text = await res.text();
   let data: unknown;
   try {
@@ -12,7 +27,7 @@ async function request(path: string, options: RequestInit = {}) {
   } catch {
     data = text;
   }
-  return { status: res.status, data };
+  return { status: res.status, data, cookies: cookie };
 }
 
 function log(step: string, ok: boolean, detail?: string) {
@@ -25,8 +40,21 @@ async function main() {
 
   await request("/api/admin/seed", { method: "POST" });
 
+  const qqId = String(Date.now()).slice(-11);
+  const { status: registerStatus, cookies } = await request("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nickname: "地图验收员",
+      qqId,
+      job: "DOCUMENT_ASSISTANT",
+    }),
+  });
+  log("0. 注册用户", registerStatus === 200, `qqId=${qqId}`);
+  if (registerStatus !== 200) failed = true;
+
   {
-    const { status } = await request("/locations");
+    const { status } = await request("/locations", { cookie: cookies });
     log("1. /locations 可访问", status === 200, `HTTP ${status}`);
     if (status !== 200) failed = true;
   }
@@ -57,13 +85,13 @@ async function main() {
   }
 
   {
-    const { status } = await request("/locations/owner_project_management_dept");
+    const { status } = await request("/locations/owner_project_management_dept", { cookie: cookies });
     log("6. 地点详情页可访问", status === 200, `HTTP ${status}`);
     if (status !== 200) failed = true;
   }
 
   {
-    const { status } = await request("/locations/nonexistent");
+    const { status } = await request("/locations/nonexistent", { cookie: cookies });
     log("7. 未知地点 404", status === 404, `HTTP ${status}`);
     if (status !== 404) failed = true;
   }

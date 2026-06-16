@@ -10,7 +10,15 @@ type LocationDetailPanelProps = {
 };
 
 export function LocationDetailPanel({ overview }: LocationDetailPanelProps) {
-  const { location, unlocked, unlockRequirements, relatedTasks, typeLabel } = overview;
+  const {
+    location,
+    unlocked,
+    unlockRequirements,
+    relatedTasks,
+    relatedNpcs,
+    relatedAreas,
+    typeLabel,
+  } = overview;
 
   return (
     <div className="space-y-4">
@@ -51,17 +59,44 @@ export function LocationDetailPanel({ overview }: LocationDetailPanelProps) {
         </Card>
       ) : (
         <>
-          {location.relatedNpcNames && location.relatedNpcNames.length > 0 && (
+          {(relatedNpcs.length > 0 || relatedAreas.length > 0) && (
             <Card className="border-zinc-700 bg-zinc-900/80">
               <CardHeader>
-                <CardTitle className="text-base">相关 NPC</CardTitle>
+                <CardTitle className="text-base">相关角色与区域</CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {location.relatedNpcNames.map((npc) => (
-                  <Badge key={npc} variant="secondary">
-                    {npc}
-                  </Badge>
-                ))}
+              <CardContent className="space-y-3">
+                {relatedNpcs.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs text-zinc-400">相关 NPC</p>
+                    <div className="flex flex-wrap gap-2">
+                      {relatedNpcs.map((npc) => (
+                        <Badge
+                          key={npc.name}
+                          variant={npc.preview ? "outline" : "secondary"}
+                          className={npc.preview ? "text-zinc-500" : undefined}
+                        >
+                          {npc.preview ? `${npc.name}（尚未出现）` : npc.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {relatedAreas.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs text-zinc-400">相关区域</p>
+                    <div className="flex flex-wrap gap-2">
+                      {relatedAreas.map((area) => (
+                        <Badge
+                          key={area.name}
+                          variant={area.preview ? "outline" : "secondary"}
+                          className={area.preview ? "text-zinc-500" : undefined}
+                        >
+                          {area.preview ? `${area.name}（尚未出现）` : area.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
