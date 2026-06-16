@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("GAME_DATABASE_URL")
+}
+
+model User {
+  id           String             @id @default(cuid())
+  qqId         String             @unique
+  nickname     String
+  job          String
+  level        Int                @default(1)
+  exp          Int                @default(0)
+  gold         Int                @default(100)
+  stamina      Int                @default(100)
+  spirit       Int                @default(100)
+  reputation   Int                @default(0)
+  title        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  participants TaskParticipant[]
+  achievements UserAchievement[]
+  inventory    Inventory[]
+  gameLogs     GameLog[]
+}
+
+model ProjectState {
+  id                String   @id @default(cuid())
+  seasonId          String
+  dayCount          Int      @default(1)
+  progress          Float    @default(30)
+  quality           Float    @default(60)
+  safety            Float    @default(65)
+  cost              Float    @default(50)
+  dataIntegrity     Float    @default(35)
+  fireRisk          Float    @default(55)
+  ownerTrust        Float    @default(50)
+  propertyHandover  Float    @default(40)
+  currentStage      String   @default("开业倒计时")
+  status            String   @default("ACTIVE")
+  updatedAt         DateTime @updatedAt
+
+  @@unique([seasonId])
+}
+
+model NpcRelation {
+  id              String   @id @default(cuid())
+  seasonId        String
+  npcName         String
+  relationValue   Int      @default(50)
+  attentionValue  Int      @default(0)
+  updatedAt       DateTime @updatedAt
+
+  @@unique([seasonId, npcName])
+}
+
+model Task {
+  id               String            @id @default(cuid())
+  seasonId         String
+  templateId       String
+  title            String
+  description      String?
+  sourceType       String
+  sourceName       String?
+  taskType         String            @default("system")
+  rarity           String
+  area             String
+  status           String            @default("PENDING")
+  requiredJobs     String
+  requiredCount    Int               @default(1)
+  currentCount     Int               @default(0)
+  deadline         DateTime?
+  inkFile          String
+  successEffects   String
+  failEffects      String
+  choiceEffects    String
+  baseSuccessRate  Float             @default(60)
+  triggerBroadcast Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  participants     TaskParticipant[]
+}
+
+model TaskParticipant {
+  id           String   @id @default(cuid())
+  taskId       String
+  userId       String
+  roleInTask   String?
+  status       String   @default("JOINED")
+  contribution Int      @default(0)
+  choiceId     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  broadcasted   Boolean  @default(false)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model Inventory {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+}
+
+model GameLog {
+  id             String   @id @default(cuid())
+  seasonId       String
+  userId         String?
+  logType        String
+  content        String
+  effectSummary  String?
+  broadcastLevel String?
+  createdAt      DateTime @default(now())
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model BroadcastLog {
+  id            String   @id @default(cuid())
+  type          String
+  targetGroupId String?
+  content       String
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+}
