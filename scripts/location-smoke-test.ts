@@ -96,6 +96,28 @@ async function main() {
     if (status !== 404) failed = true;
   }
 
+  {
+    const actionPath = "/api/locations/owner_project_management_dept/actions/action_risk_register";
+    const first = await request(actionPath, { method: "POST", cookie: cookies });
+    const firstData = first.data as { ok?: boolean; createdTasks?: unknown[]; message?: string };
+    const firstOk = first.status === 200 && firstData.ok === true;
+    const firstMsg = firstData.message || "";
+    const msgOk =
+      firstMsg.includes("已生成") ||
+      firstMsg.includes("未重复生成") ||
+      firstMsg.includes("跳过") ||
+      firstMsg.includes("进行中");
+    log("8. 执行地点行动", firstOk && msgOk, `HTTP ${first.status} · ${firstMsg || "无 message"}`);
+    if (!firstOk || !msgOk) failed = true;
+
+    const second = await request(actionPath, { method: "POST", cookie: cookies });
+    const secondData = second.data as { ok?: boolean; createdTasks?: unknown[] };
+    const secondOk = second.status === 200 && secondData.ok === true;
+    const noDuplicate = (secondData.createdTasks?.length ?? 0) === 0;
+    log("9. 重复执行不生成新任务", secondOk && noDuplicate, noDuplicate ? "未重复生成" : "不应再次生成");
+    if (!secondOk || !noDuplicate) failed = true;
+  }
+
   console.log(`\n=== Smoke ${failed ? "未通过" : "通过"} ===\n`);
   process.exit(failed ? 1 : 0);
 }

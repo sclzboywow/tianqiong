@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LocationOverview } from "@/game/locationEngine";
 import { LocationActionPanel } from "@/components/LocationActionPanel";
+import { LocationRecentLogs } from "@/components/LocationRecentLogs";
 
 type LocationDetailPanelProps = {
   overview: LocationOverview;
@@ -119,6 +120,8 @@ export function LocationDetailPanel({ overview }: LocationDetailPanelProps) {
           )}
 
           <LocationActionPanel locationId={location.id} actions={availableActions} />
+
+          <LocationRecentLogs locationId={location.id} locationName={location.name} />
 
           <Card className="border-amber-900/40 bg-zinc-900/80">
             <CardHeader>

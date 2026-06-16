@@ -1,9 +1,10 @@
 import type { ProjectState, Task } from "@prisma/client";
+import { prisma } from "@/prisma/client";
 import { LOCATION_ACTIONS, type LocationAction } from "@/data/locationActions";
 import { hasReachedStage } from "./contentUnlockEngine";
-import { parseMilestones } from "./projectEngine";
-import { getProjectState } from "./projectEngine";
+import { parseMilestones, getProjectState } from "./projectEngine";
 import { createTaskFromTemplateSlug } from "./taskEngine";
+import { buildMapActionLogContent, writeGameLog } from "./logEngine";
 
 export type LocationActionExecuteResult = {
   createdTasks: Task[];
@@ -30,14 +31,40 @@ export function getActionsForLocation(
   );
 }
 
+function assertUserCanExecuteAction(
+  user: { level: number; reputation: number; stamina: number; spirit: number },
+  action: LocationAction,
+) {
+  if (action.minLevel && user.level < action.minLevel) {
+    throw new Error(`等级不足，需要 Lv.${action.minLevel}`);
+  }
+  if (action.minReputation && user.reputation < action.minReputation) {
+    throw new Error(`声望不足，需要 ${action.minReputation}`);
+  }
+
+  const staminaCost = action.staminaCost ?? 0;
+  const spiritCost = action.spiritCost ?? 0;
+
+  if (user.stamina < staminaCost) {
+    throw new Error(`体力不足，需要 ${staminaCost}（当前 ${user.stamina}）`);
+  }
+  if (user.spirit < spiritCost) {
+    throw new Error(`精神不足，需要 ${spiritCost}（当前 ${user.spirit}）`);
+  }
+}
+
 export async function executeLocationAction(
   locationId: string,
   actionId: string,
+  userId: string,
 ): Promise<LocationActionExecuteResult> {
   const action = LOCATION_ACTIONS.find(
     (item) => item.id === actionId && item.locationId === locationId,
   );
   if (!action) throw new Error("行动不存在");
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("用户不存在");
 
   const project = await getProjectState();
   if (!project) throw new Error("项目状态未初始化");
@@ -47,6 +74,19 @@ export async function executeLocationAction(
   if (!location) throw new Error("地点不存在");
   if (!isLocationUnlocked(location, project)) throw new Error("地点尚未解锁");
   if (!isLocationActionUnlocked(action, project)) throw new Error("行动尚未解锁");
+
+  assertUserCanExecuteAction(user, action);
+
+  const staminaCost = action.staminaCost ?? 0;
+  const spiritCost = action.spiritCost ?? 0;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      stamina: user.stamina - staminaCost,
+      spirit: user.spirit - spiritCost,
+    },
+  });
 
   const createdTasks: Task[] = [];
   const skippedTasks: LocationActionExecuteResult["skippedTasks"] = [];
@@ -63,7 +103,10 @@ export async function executeLocationAction(
       skippedTasks.push({
         slug,
         title: result.task.title,
-        reason: "已有进行中的同类任务",
+        reason:
+          result.skipReason === "completed"
+            ? "该任务已完成，未重复生成"
+            : "已有进行中的同类任务",
       });
     }
   }
@@ -78,6 +121,30 @@ export async function executeLocationAction(
   } else {
     message = "未配置可触发的任务";
   }
+
+  const logContent = buildMapActionLogContent({
+    locationId: location.id,
+    locationName: location.name,
+    actionLabel: action.label,
+    createdCount: createdTasks.length,
+    skippedCount: skippedTasks.length,
+    message,
+  });
+
+  await writeGameLog({
+    userId,
+    logType: "SYSTEM",
+    content: logContent,
+    effectSummary: JSON.stringify({
+      locationId: location.id,
+      actionId: action.id,
+      createdCount: createdTasks.length,
+      skippedCount: skippedTasks.length,
+      staminaCost,
+      spiritCost,
+      message,
+    }),
+  });
 
   return { createdTasks, skippedTasks, message };
 }

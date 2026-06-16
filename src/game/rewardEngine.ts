@@ -11,27 +11,33 @@ const JOB_BONUSES: Record<Job, Partial<Record<string, number>>> = {
   QUALITY_ASSISTANT: { quality: 0.1 },
 };
 
+const SUCCESS_REWARDS: Record<string, { exp: number; gold: number; reputation: number }> = {
+  R: { exp: 10, gold: 10, reputation: 1 },
+  SR: { exp: 25, gold: 25, reputation: 2 },
+  SSR: { exp: 60, gold: 50, reputation: 5 },
+  UR: { exp: 120, gold: 100, reputation: 10 },
+};
+
+const FAILURE_REWARDS: Record<string, { exp: number; gold: number; reputation: number }> = {
+  R: { exp: 3, gold: 0, reputation: 0 },
+  SR: { exp: 8, gold: 5, reputation: 0 },
+  SSR: { exp: 15, gold: 10, reputation: 1 },
+  UR: { exp: 30, gold: 20, reputation: 2 },
+};
+
 export function calculateRewards(params: {
   rarity: string;
   success: boolean;
-  contribution: number;
+  contribution?: number;
 }) {
-  const rarityMultiplier: Record<string, number> = {
-    R: 1,
-    SR: 1.5,
-    SSR: 2,
-    UR: 3,
-  };
-  const mult = rarityMultiplier[params.rarity] || 1;
-  const baseExp = params.success ? 20 : 8;
-  const baseGold = params.success ? 15 : 5;
-  const baseRep = params.success ? 3 : 1;
+  const table = params.success ? SUCCESS_REWARDS : FAILURE_REWARDS;
+  const base = table[params.rarity] || table.R;
 
   return {
-    exp: Math.round(baseExp * mult),
-    gold: Math.round(baseGold * mult),
-    reputation: Math.round(baseRep * mult),
-    contribution: Math.round(params.contribution * mult),
+    exp: base.exp,
+    gold: base.gold,
+    reputation: base.reputation,
+    contribution: params.contribution ?? 0,
   };
 }
 

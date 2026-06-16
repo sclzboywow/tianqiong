@@ -10,6 +10,10 @@ export type LocationAction = {
   triggerTaskSlugs?: string[];
   relatedNpcNames?: string[];
   riskTags?: string[];
+  staminaCost?: number;
+  spiritCost?: number;
+  minLevel?: number;
+  minReputation?: number;
 };
 
 export const LOCATION_ACTIONS: LocationAction[] = [
@@ -22,6 +26,8 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["setup_project_team", "prepare_master_plan"],
     relatedNpcNames: ["甲方代表"],
     riskTags: ["progress", "coordination"],
+    spiritCost: 8,
+    minLevel: 1,
   },
   {
     id: "action_risk_register",
@@ -32,6 +38,8 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["create_risk_register"],
     relatedNpcNames: ["甲方代表"],
     riskTags: ["coordination"],
+    spiritCost: 6,
+    minLevel: 1,
   },
   {
     id: "action_pre_approval_push",
@@ -43,6 +51,9 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["confirm_approval_path", "prepare_approval_docs"],
     relatedNpcNames: ["甲方代表"],
     riskTags: ["approval", "document"],
+    spiritCost: 12,
+    minLevel: 2,
+    minReputation: 20,
   },
   {
     id: "action_document_ledger",
@@ -53,6 +64,8 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["create_document_ledger"],
     relatedNpcNames: ["监理单位"],
     riskTags: ["document"],
+    spiritCost: 6,
+    minLevel: 1,
   },
   {
     id: "action_gov_service_approval",
@@ -63,6 +76,9 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     unlockMilestones: ["approvalPathConfirmed"],
     triggerTaskSlugs: ["confirm_approval_path", "prepare_approval_docs"],
     riskTags: ["approval"],
+    spiritCost: 12,
+    minLevel: 2,
+    minReputation: 20,
   },
   {
     id: "action_planning_condition",
@@ -73,6 +89,9 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     unlockMilestones: ["approvalPathConfirmed"],
     triggerTaskSlugs: ["confirm_planning_condition"],
     riskTags: ["planning", "approval"],
+    spiritCost: 14,
+    minLevel: 2,
+    minReputation: 25,
   },
   {
     id: "action_design_review",
@@ -83,6 +102,9 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["organize_drawing_review", "close_design_issues"],
     relatedNpcNames: ["设计院"],
     riskTags: ["design", "quality"],
+    spiritCost: 15,
+    minLevel: 3,
+    minReputation: 30,
   },
   {
     id: "action_fire_pump_check",
@@ -93,6 +115,9 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["fire_pump_sign_missing"],
     relatedNpcNames: ["消防专家"],
     riskTags: ["fire", "acceptance"],
+    staminaCost: 10,
+    spiritCost: 5,
+    minLevel: 2,
   },
   {
     id: "action_l1_site_coordination",
@@ -103,6 +128,10 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["fire_corridor_blocked", "merchant_early_entry"],
     relatedNpcNames: ["商户/运营团队", "消防专家"],
     riskTags: ["fire", "merchant"],
+    staminaCost: 8,
+    spiritCost: 8,
+    minLevel: 2,
+    minReputation: 20,
   },
   {
     id: "action_material_retest",
@@ -113,6 +142,9 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["material_retest_failed"],
     relatedNpcNames: ["供应商"],
     riskTags: ["material", "quality"],
+    staminaCost: 8,
+    spiritCost: 4,
+    minLevel: 2,
   },
   {
     id: "action_property_handover",
@@ -123,6 +155,9 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     triggerTaskSlugs: ["property_key_handover", "complete_property_handover"],
     relatedNpcNames: ["物业公司"],
     riskTags: ["handover", "document"],
+    spiritCost: 15,
+    minLevel: 3,
+    minReputation: 35,
   },
 ];
 

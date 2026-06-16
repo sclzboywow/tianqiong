@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { LocationAction } from "@/data/locationActions";
 
@@ -11,6 +10,20 @@ type LocationActionPanelProps = {
   locationId: string;
   actions: LocationAction[];
 };
+
+function formatActionCosts(action: LocationAction) {
+  const parts: string[] = [];
+  if (action.staminaCost) parts.push(`体力 ${action.staminaCost}`);
+  if (action.spiritCost) parts.push(`精神 ${action.spiritCost}`);
+  return parts.length > 0 ? parts.join(" / ") : null;
+}
+
+function formatActionRequirements(action: LocationAction) {
+  const parts: string[] = [];
+  if (action.minLevel) parts.push(`Lv.${action.minLevel}`);
+  if (action.minReputation) parts.push(`声望 ${action.minReputation}`);
+  return parts.length > 0 ? parts.join(" / ") : null;
+}
 
 export function LocationActionPanel({ locationId, actions }: LocationActionPanelProps) {
   const router = useRouter();
@@ -56,6 +69,12 @@ export function LocationActionPanel({ locationId, actions }: LocationActionPanel
               <div>
                 <p className="font-medium text-zinc-100">{action.label}</p>
                 <p className="mt-1 text-sm text-zinc-400">{action.description}</p>
+                <div className="mt-2 space-y-1 text-xs text-zinc-500">
+                  {formatActionCosts(action) && <p>消耗：{formatActionCosts(action)}</p>}
+                  {formatActionRequirements(action) && (
+                    <p>要求：{formatActionRequirements(action)}</p>
+                  )}
+                </div>
               </div>
               <Button
                 size="sm"
@@ -65,15 +84,6 @@ export function LocationActionPanel({ locationId, actions }: LocationActionPanel
                 {pendingId === action.id ? "执行中…" : "执行"}
               </Button>
             </div>
-            {action.relatedNpcNames && action.relatedNpcNames.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {action.relatedNpcNames.map((npc) => (
-                  <Badge key={npc} variant="outline" className="text-xs">
-                    {npc}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
         ))}
         {feedback && <p className="text-sm text-amber-300">{feedback}</p>}

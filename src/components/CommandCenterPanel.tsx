@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { ProjectState } from "@prisma/client";
 import { getStageConfig } from "@/game/projectStages";
 import { getStageRecommendations } from "@/game/locationEngine";
+import { getRecentMapActionLogs } from "@/game/logEngine";
 import { listTasks } from "@/game/taskEngine";
 
 type CommandCenterPanelProps = {
@@ -16,6 +17,16 @@ export async function CommandCenterPanel({ project }: CommandCenterPanelProps) {
   const stageConfig = getStageConfig(project.currentStage);
   const tasks = await listTasks();
   const recommendations = await getStageRecommendations(project, tasks);
+  const recentActions = await getRecentMapActionLogs(5);
+
+  function formatLogTime(date: Date) {
+    return new Intl.DateTimeFormat("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  }
 
   return (
     <Card className="border-amber-900/40 bg-zinc-900/80">
@@ -51,6 +62,22 @@ export async function CommandCenterPanel({ project }: CommandCenterPanelProps) {
                 </Link>
               </li>
             </ol>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-medium text-zinc-200">最近行动</p>
+          {recentActions.length === 0 ? (
+            <p className="text-sm text-zinc-400">暂无协同地图行动记录。</p>
+          ) : (
+            <ul className="space-y-2 text-sm text-zinc-300">
+              {recentActions.map((entry) => (
+                <li key={entry.id} className="rounded border border-zinc-800 bg-zinc-950/40 px-3 py-2">
+                  <p>{entry.content}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{formatLogTime(entry.createdAt)}</p>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 

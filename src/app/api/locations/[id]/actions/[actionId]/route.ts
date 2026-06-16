@@ -12,7 +12,7 @@ export async function POST(
   const { id, actionId } = await params;
 
   try {
-    const result = await executeLocationAction(id, actionId);
+    const result = await executeLocationAction(id, actionId, userId);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "行动执行失败";

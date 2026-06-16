@@ -10,6 +10,7 @@ import { normalizeStageId } from "./projectStages";
 import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
 import { writeGameLog } from "./logEngine";
 import { calculateRewards, applySpiritCost } from "./rewardEngine";
+import { applyExpWithLevelUp, CHARACTER_GROWTH_LOG_PREFIX } from "./playerProgressEngine";
 import { applyNpcEffectsFromMetrics } from "./npcEngine";
 import { broadcastMajorEvent } from "./broadcastEngine";
 import { checkAchievements } from "./achievementEngine";
@@ -230,16 +231,36 @@ async function grantParticipantRewards(
 
     const rewards = calculateRewards({ rarity: task.rarity, success, contribution });
 
+    const { newLevel, newExp, levelsGained } = applyExpWithLevelUp(
+      user.level,
+      user.exp,
+      rewards.exp,
+    );
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        exp: user.exp + rewards.exp,
+        exp: newExp,
         gold: user.gold + rewards.gold,
         reputation: user.reputation + rewards.reputation,
         spirit: applySpiritCost(user.spirit),
-        level: user.exp + rewards.exp >= user.level * 100 ? user.level + 1 : user.level,
+        level: newLevel,
       },
     });
+
+    await writeGameLog({
+      userId: user.id,
+      logType: "SYSTEM",
+      content: `${CHARACTER_GROWTH_LOG_PREFIX}${user.nickname}完成「${task.title}」，获得经验 +${rewards.exp}、金币 +${rewards.gold}、声望 +${rewards.reputation}。`,
+    });
+
+    if (levelsGained > 0) {
+      await writeGameLog({
+        userId: user.id,
+        logType: "SYSTEM",
+        content: `${CHARACTER_GROWTH_LOG_PREFIX}${user.nickname}提升至 Lv.${newLevel}。`,
+      });
+    }
 
     await prisma.taskParticipant.update({
       where: { id: participant.id },
@@ -600,20 +621,32 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
 
 export async function createTaskFromTemplateSlug(
   templateSlug: string,
-): Promise<{ task: Task; created: boolean } | null> {
+  options?: { allowCompletedRepeat?: boolean },
+): Promise<{ task: Task; created: boolean; skipReason?: "active" | "completed" } | null> {
   const { getTaskTemplates } = await import("./contentLoader");
   const templates = await getTaskTemplates();
   const template = templates.find((item) => item.slug === templateSlug);
   if (!template) return null;
 
+  const allowCompletedRepeat = options?.allowCompletedRepeat ?? false;
+  const blockedStatuses = allowCompletedRepeat
+    ? (["PENDING", "IN_PROGRESS"] as const)
+    : (["PENDING", "IN_PROGRESS", "COMPLETED"] as const);
+
   const existing = await prisma.task.findFirst({
     where: {
       seasonId: SEASON_ID,
       templateId: templateSlug,
-      status: { in: ["PENDING", "IN_PROGRESS"] },
+      status: { in: [...blockedStatuses] },
     },
   });
-  if (existing) return { task: existing, created: false };
+  if (existing) {
+    return {
+      task: existing,
+      created: false,
+      skipReason: existing.status === "COMPLETED" ? "completed" : "active",
+    };
+  }
 
   const task = await createTaskFromTemplate(template);
   return { task, created: true };
