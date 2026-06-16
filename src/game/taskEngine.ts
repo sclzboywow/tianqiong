@@ -598,6 +598,27 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
   });
 }
 
+export async function createTaskFromTemplateSlug(
+  templateSlug: string,
+): Promise<{ task: Task; created: boolean } | null> {
+  const { getTaskTemplates } = await import("./contentLoader");
+  const templates = await getTaskTemplates();
+  const template = templates.find((item) => item.slug === templateSlug);
+  if (!template) return null;
+
+  const existing = await prisma.task.findFirst({
+    where: {
+      seasonId: SEASON_ID,
+      templateId: templateSlug,
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
+  });
+  if (existing) return { task: existing, created: false };
+
+  const task = await createTaskFromTemplate(template);
+  return { task, created: true };
+}
+
 export async function spawnTasksFromTemplates(templates: TaskTemplateData[]) {
   await backfillTaskResolutionModes();
   const project = await getProjectState();

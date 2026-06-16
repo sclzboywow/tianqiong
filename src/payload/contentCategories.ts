@@ -1,3 +1,5 @@
+import type { ProjectStageId } from "@/game/projectStages";
+
 export type CategoryOption = { label: string; value: string };
 
 export const NPC_CATEGORIES: CategoryOption[] = [
@@ -150,7 +152,7 @@ export function inferMapLocationCategory(group: string, category?: string) {
   return MAP_LOCATION_GROUP_CATEGORY[group] || "site";
 }
 
-const NPC_TYPE_UNLOCK_STAGE: Record<string, string> = {
+const NPC_TYPE_UNLOCK_STAGE: Record<string, ProjectStageId> = {
   owner: "INITIATION",
   design: "DESIGN",
   supplier: "PROCUREMENT",
@@ -163,7 +165,7 @@ const NPC_TYPE_UNLOCK_STAGE: Record<string, string> = {
   property: "ACCEPTANCE",
 };
 
-const AREA_NAME_UNLOCK_STAGE: Record<string, string> = {
+const AREA_NAME_UNLOCK_STAGE: Record<string, ProjectStageId> = {
   项目资料室: "INITIATION",
   物业交接区: "ACCEPTANCE",
   L1商业街: "CONSTRUCTION",
@@ -173,17 +175,21 @@ const AREA_NAME_UNLOCK_STAGE: Record<string, string> = {
   材料堆场: "CONSTRUCTION",
 };
 
-const AREA_STAGE_UNLOCK_STAGE: Record<string, string> = {
+const AREA_STAGE_UNLOCK_STAGE: Record<string, ProjectStageId> = {
   资料: "INITIATION",
   移交: "ACCEPTANCE",
 };
 
-export function inferNpcUnlockStage(type: string, unlockStage?: string) {
+export function inferNpcUnlockStage(type: string, unlockStage?: ProjectStageId): ProjectStageId {
   if (unlockStage) return unlockStage;
   return NPC_TYPE_UNLOCK_STAGE[type] || "INITIATION";
 }
 
-export function inferAreaUnlockStage(name: string, stage?: string, unlockStage?: string) {
+export function inferAreaUnlockStage(
+  name: string,
+  stage?: string,
+  unlockStage?: ProjectStageId,
+): ProjectStageId {
   if (unlockStage) return unlockStage;
   if (AREA_NAME_UNLOCK_STAGE[name]) return AREA_NAME_UNLOCK_STAGE[name];
   if (stage && AREA_STAGE_UNLOCK_STAGE[stage]) return AREA_STAGE_UNLOCK_STAGE[stage];

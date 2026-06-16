@@ -13,7 +13,7 @@ function mapPayloadNpc(doc: Record<string, unknown>): NpcData {
     relatedMetrics: ((doc.relatedMetrics as { metric: string }[] | null) || [])
       .map((item) => item.metric)
       .filter(Boolean),
-    unlockStage: (doc.unlockStage as ProjectStageId) || inferNpcUnlockStage(type),
+    unlockStage: inferNpcUnlockStage(type, doc.unlockStage as ProjectStageId | undefined),
     unlockMilestones: ((doc.unlockMilestones as { milestone: string }[] | null) || [])
       .map((item) => item.milestone)
       .filter(Boolean),
@@ -32,7 +32,7 @@ function mapPayloadArea(doc: Record<string, unknown>): AreaData {
     description: (doc.description as string) || "",
     stage,
     riskTags: ((doc.riskTags as { tag: string }[] | null) || []).map((item) => item.tag).filter(Boolean),
-    unlockStage: (doc.unlockStage as ProjectStageId) || inferAreaUnlockStage(name, stage),
+    unlockStage: inferAreaUnlockStage(name, stage, doc.unlockStage as ProjectStageId | undefined),
     unlockMilestones: ((doc.unlockMilestones as { milestone: string }[] | null) || [])
       .map((item) => item.milestone)
       .filter(Boolean),

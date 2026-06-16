@@ -7,6 +7,8 @@ import {
 import { getMapLocations, getMapLocationById } from "./locationLoader";
 import { resolveRelatedContentForDisplay, type RelatedContentDisplayItem } from "./contentUnlockEngine";
 import { getAreas, getNpcs } from "./worldContentLoader";
+import { getActionsForLocation } from "./locationActionEngine";
+import type { LocationAction } from "@/data/locationActions";
 import { parseMilestones } from "./projectEngine";
 import {
   PROJECT_STAGES,
@@ -29,6 +31,7 @@ export type LocationOverview = {
   typeLabel: string;
   relatedNpcs: RelatedContentDisplayItem[];
   relatedAreas: RelatedContentDisplayItem[];
+  availableActions: LocationAction[];
 };
 
 export type LocationWithStatus = {
@@ -155,6 +158,7 @@ export async function getLocationOverview(id: string): Promise<LocationOverview 
   const relatedAreas = project
     ? resolveRelatedContentForDisplay(location.relatedAreaNames, areas, project)
     : [];
+  const availableActions = project ? getActionsForLocation(location.id, project) : [];
 
   return {
     location,
@@ -165,6 +169,7 @@ export async function getLocationOverview(id: string): Promise<LocationOverview 
     typeLabel: LOCATION_TYPE_LABELS[location.type],
     relatedNpcs,
     relatedAreas,
+    availableActions,
   };
 }
 
