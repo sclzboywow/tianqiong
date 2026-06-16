@@ -1,7 +1,8 @@
 import { prisma } from "../src/prisma/client";
-import { ensureProjectState } from "../src/game/projectEngine";
-import { spawnTasksFromTemplates } from "../src/game/taskEngine";
+import { initializeProjectForSeed } from "../src/game/projectEngine";
+import { spawnTasksFromTemplates, filterTemplatesForCurrentStage } from "../src/game/taskEngine";
 import { TASK_TEMPLATES } from "../src/data/taskTemplates";
+import { normalizeStageId } from "../src/game/projectStages";
 import { seedPayloadCollections } from "../src/lib/payloadSeed";
 
 async function seedPayload() {
@@ -17,8 +18,12 @@ async function seedPayload() {
 }
 
 async function main() {
-  await ensureProjectState();
-  await spawnTasksFromTemplates(TASK_TEMPLATES);
+  const project = await initializeProjectForSeed();
+  const stageTemplates = filterTemplatesForCurrentStage(
+    TASK_TEMPLATES,
+    normalizeStageId(project.currentStage),
+  );
+  await spawnTasksFromTemplates(stageTemplates);
   await seedPayload();
   console.log("Game seed completed");
 }

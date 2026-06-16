@@ -1,10 +1,10 @@
 import cron from "node-cron";
 import { advanceDay } from "./projectEngine";
-import { expireTasks } from "./taskEngine";
+import { expireTasks, spawnTasksFromTemplates, filterTemplatesForCurrentStage } from "./taskEngine";
 import { generateDailyReport } from "./dailyReportEngine";
 import { broadcastDailyReport } from "./broadcastEngine";
-import { spawnTasksFromTemplates } from "./taskEngine";
 import { getTaskTemplates } from "./contentLoader";
+import { getProjectState } from "./projectEngine";
 
 let started = false;
 
@@ -18,8 +18,10 @@ export function startCronJobs() {
 
   cron.schedule("0 0 * * *", async () => {
     await advanceDay();
+    const project = await getProjectState();
     const templates = await getTaskTemplates();
-    await spawnTasksFromTemplates(templates.slice(0, 5));
+    const pool = filterTemplatesForCurrentStage(templates, project?.currentStage);
+    await spawnTasksFromTemplates(pool.slice(0, 5));
   });
 
   cron.schedule("0 20 * * *", async () => {

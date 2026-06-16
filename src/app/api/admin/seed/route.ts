@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
-import { ensureProjectState } from "@/game/projectEngine";
-import { spawnTasksFromTemplates } from "@/game/taskEngine";
+import { initializeProjectForSeed } from "@/game/projectEngine";
+import { spawnTasksFromTemplates, filterTemplatesForCurrentStage } from "@/game/taskEngine";
 import { getTaskTemplates } from "@/game/contentLoader";
+import { normalizeStageId } from "@/game/projectStages";
 import { seedPayloadCollections } from "@/lib/payloadSeed";
 
 export async function POST() {
   try {
-    await ensureProjectState();
+    const project = await initializeProjectForSeed();
     const templates = await getTaskTemplates();
-    await spawnTasksFromTemplates(templates);
+    const stageTemplates = filterTemplatesForCurrentStage(
+      templates,
+      normalizeStageId(project.currentStage),
+    );
+    await spawnTasksFromTemplates(stageTemplates);
 
     const { getPayload } = await import("payload");
     const config = (await import("@payload-config")).default;
@@ -18,8 +23,9 @@ export async function POST() {
 
     return NextResponse.json({
       ok: true,
-      tasks: templates.length,
+      tasks: stageTemplates.length,
       stats,
+      currentStage: project.currentStage,
       message: "初始化完成。请刷新 /admin 并在左侧 Collections 查看数据。",
     });
   } catch (error) {

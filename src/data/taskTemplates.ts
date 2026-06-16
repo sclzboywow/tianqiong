@@ -1,4 +1,5 @@
 import type { TaskTemplateData } from "@/game/types";
+import { STAGE_TASK_TEMPLATES, LEGACY_TASK_STAGES } from "@/data/stageTaskTemplates";
 
 const baseTemplates: TaskTemplateData[] = [
   {
@@ -310,14 +311,18 @@ const baseTemplates: TaskTemplateData[] = [
 ];
 
 // Fix the Chinese key in finish_protection_damaged
-export const TASK_TEMPLATES: TaskTemplateData[] = baseTemplates.map((t) => {
+const mappedBaseTemplates: TaskTemplateData[] = baseTemplates.map((t) => {
+  let template = t;
   if (t.slug === "finish_protection_damaged" && t.choiceEffects) {
     const effects = { ...t.choiceEffects };
     if ("局部修补" in effects) {
       effects.patch_local = effects["局部修补" as keyof typeof effects];
       delete (effects as Record<string, unknown>)["局部修补"];
-      return { ...t, choiceEffects: effects };
+      template = { ...t, choiceEffects: effects };
     }
   }
-  return t;
+  const stage = template.stage || LEGACY_TASK_STAGES[template.slug];
+  return stage ? { ...template, stage } : template;
 });
+
+export const TASK_TEMPLATES: TaskTemplateData[] = [...STAGE_TASK_TEMPLATES, ...mappedBaseTemplates];

@@ -1,3 +1,5 @@
+import type { ProjectStageId } from "@/game/projectStages";
+
 export type ResolutionMode = "SOLO" | "VOTE" | "ROLE_CHECKLIST";
 
 export type MetricKey =
@@ -11,6 +13,7 @@ export type MetricKey =
   | "propertyHandover"
   | "spirit"
   | "latentRisk"
+  | "stageProgress"
   | "merchantSatisfaction";
 
 export type MetricEffects = Partial<Record<MetricKey, number>>;
@@ -37,6 +40,8 @@ export interface TaskTemplateData {
   triggerBroadcast?: boolean;
   resolutionMode?: ResolutionMode;
   minResolveCount?: number;
+  stage?: ProjectStageId;
+  milestoneEffects?: Record<string, boolean>;
 }
 
 export interface AchievementTemplateData {
@@ -53,10 +58,11 @@ export const METRIC_LABELS: Record<string, string> = {
   progress: "总进度",
   quality: "质量",
   safety: "安全",
-  cost: "成本",
+  cost: "成本压力",
   dataIntegrity: "资料完整度",
   fireRisk: "消防风险",
   ownerTrust: "甲方信任",
   propertyHandover: "物业接管度",
   latentRisk: "潜在风险",
+  stageProgress: "阶段进度",
 };

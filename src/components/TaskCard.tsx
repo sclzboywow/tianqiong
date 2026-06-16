@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { JOB_LABELS, formatDate, RESOLUTION_MODE_LABELS } from "@/utils/formatter";
+import { getStageConfig } from "@/game/projectStages";
 import type { Job } from "@/game/prisma-types";
 import type { Task, TaskParticipant, User } from "@prisma/client";
 
@@ -15,6 +16,7 @@ export function TaskCard({ task }: { task: TaskWithParticipants }) {
   const submittedCount = task.participants.filter((p) => p.choiceId).length;
   const minResolveCount = task.minResolveCount || task.requiredCount || 1;
   const isResolved = task.status === "COMPLETED" || task.status === "FAILED";
+  const stageName = task.stage ? getStageConfig(task.stage)?.name : null;
 
   return (
     <Link href={`/tasks/${task.id}`}>
@@ -33,6 +35,7 @@ export function TaskCard({ task }: { task: TaskWithParticipants }) {
         <CardContent className="space-y-2 text-sm text-zinc-300">
           <p>来源：{task.sourceName || task.sourceType}</p>
           <p>区域：{task.area}</p>
+          {stageName && <p>所属阶段：{stageName}</p>}
           <p>
             参与：{task.currentCount}/{task.requiredCount}
           </p>

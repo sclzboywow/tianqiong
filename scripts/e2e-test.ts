@@ -93,44 +93,68 @@ async function main() {
     log("4. Cookie 会话有效", status === 200 && d.user?.nickname === "E2E测试员", d.user?.nickname);
   }
 
+  // 4.5 重置项目到启动阶段
+  {
+    const { status, data } = await request("/api/admin/seed", { method: "POST" });
+    const d = data as { ok?: boolean; currentStage?: string };
+    log("4.5 项目初始化 seed", status === 200 && d.ok === true, `阶段=${d.currentStage || "?"}`);
+  }
+
   // 5. 项目状态
-  let projectBefore: Record<string, number> = {};
+  let projectBefore: Record<string, string | number> = {};
   {
     const { status, data } = await request("/api/project/state");
-    const d = data as { project?: Record<string, number> };
+    const d = data as { project?: Record<string, string | number> };
     projectBefore = d.project || {};
     log(
       "5. 项目状态可读",
-      status === 200 && projectBefore.progress !== undefined,
-      `进度 ${projectBefore.progress}, 安全 ${projectBefore.safety}, 消防风险 ${projectBefore.fireRisk}`,
+      status === 200 &&
+        projectBefore.currentStage === "INITIATION" &&
+        projectBefore.overallProgress === 0,
+      `阶段=${projectBefore.currentStage}, 总体进度=${projectBefore.overallProgress}`,
     );
   }
 
-  // 6. 任务大厅 - 优先找 R 级单人任务
+  // 6. 任务大厅 - 优先找启动阶段单人任务
   let taskId = "";
   let taskTitle = "";
   let soloTaskId = "";
   {
     const { status, data } = await request("/api/tasks");
     const d = data as {
-      tasks?: { id: string; title: string; inkFile: string; status: string; rarity: string; resolutionMode?: string }[];
+      tasks?: {
+        id: string;
+        title: string;
+        inkFile: string;
+        status: string;
+        rarity: string;
+        stage?: string;
+        templateId?: string;
+      }[];
     };
     const soloTask = d.tasks?.find(
-      (t) => t.rarity === "R" && (t.status === "PENDING" || t.status === "IN_PROGRESS"),
+      (t) =>
+        t.templateId === "setup_project_team" &&
+        (t.status === "PENDING" || t.status === "IN_PROGRESS"),
+    ) || d.tasks?.find(
+      (t) =>
+        t.stage === "INITIATION" &&
+        t.rarity === "R" &&
+        (t.status === "PENDING" || t.status === "IN_PROGRESS"),
     );
     soloTaskId = soloTask?.id || "";
     const task = soloTask || d.tasks?.find((t) => t.status === "PENDING" || t.status === "IN_PROGRESS");
     taskId = task?.id || "";
     taskTitle = task?.title || "";
-    log("6. 任务大厅有可用任务", status === 200 && !!taskId, `${taskTitle} (${task?.rarity || "?"})`);
+    log("6. 任务大厅有可用任务", status === 200 && !!taskId, `${taskTitle} (${task?.stage || "?"})`);
   }
 
   if (!taskId) {
-    console.log("\n⚠ 无可用任务，尝试 seed...");
+    console.log("\n⚠ 无可用任务，再次 seed...");
     await request("/api/admin/seed", { method: "POST" });
     const { data } = await request("/api/tasks");
-    const d = data as { tasks?: { id: string; title: string; rarity: string }[] };
-    const soloTask = d.tasks?.find((t) => t.rarity === "R");
+    const d = data as { tasks?: { id: string; title: string; rarity: string; stage?: string }[] };
+    const soloTask = d.tasks?.find((t) => t.templateId === "setup_project_team" || t.stage === "INITIATION");
     soloTaskId = soloTask?.id || "";
     taskId = soloTask?.id || d.tasks?.[0]?.id || "";
     taskTitle = soloTask?.title || d.tasks?.[0]?.title || "";
@@ -199,6 +223,8 @@ async function main() {
     const after = d.project || {};
     const metricKeys = [
       "progress",
+      "overallProgress",
+      "stageProgress",
       "quality",
       "safety",
       "cost",
@@ -212,15 +238,17 @@ async function main() {
     log(
       "10. 项目指标已更新",
       status === 200 && anyChanged && after.latentRisk !== undefined,
-      `潜在风险 ${projectBefore.latentRisk ?? 20}→${after.latentRisk}, 物业接管 ${projectBefore.propertyHandover}→${after.propertyHandover}`,
+      `潜在风险 ${projectBefore.latentRisk ?? 20}→${after.latentRisk}, 阶段进度 ${projectBefore.stageProgress}→${after.stageProgress}`,
     );
   }
 
-  // 15. 多人协作任务（先 seed 确保有新任务）
+  // 15. 多人协作任务（验收阶段 UR，仅当前阶段为 ACCEPTANCE 时测试）
   let multiTaskId = "";
   {
-    await request("/api/admin/seed", { method: "POST" });
-    const { data } = await request("/api/tasks");
+    const { data: stateData } = await request("/api/project/state");
+    const currentStage = (stateData as { project?: { currentStage?: string } }).project?.currentStage;
+    if (currentStage === "ACCEPTANCE") {
+      const { data } = await request("/api/tasks");
     const d = data as {
       tasks?: { id: string; inkFile: string; status: string; resolutionMode?: string; requiredCount?: number }[];
     };
@@ -232,6 +260,9 @@ async function main() {
     );
     multiTaskId = multiTask?.id || "";
     log("15. 找到多人协作任务", !!multiTaskId, multiTaskId ? "开业前联合检查预警" : "未找到");
+    } else {
+      log("15. 找到多人协作任务", true, `跳过（当前阶段 ${currentStage}）`);
+    }
   }
 
   if (multiTaskId) {

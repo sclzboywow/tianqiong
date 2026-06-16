@@ -31,7 +31,7 @@ model ProjectState {
   id                String   @id @default(cuid())
   seasonId          String
   dayCount          Int      @default(1)
-  progress          Float    @default(30)
+  progress          Float    @default(0)
   quality           Float    @default(60)
   safety            Float    @default(65)
   cost              Float    @default(50)
@@ -40,7 +40,11 @@ model ProjectState {
   ownerTrust        Float    @default(50)
   propertyHandover  Float    @default(40)
   latentRisk        Float    @default(20)
-  currentStage      String   @default("开业倒计时")
+  currentStage      String   @default("INITIATION")
+  stageProgress     Int      @default(0)
+  overallProgress   Int      @default(0)
+  milestones        String   @default("{}")
+  stageGateStatus   String   @default("OPEN")
   status            String   @default("ACTIVE")
   updatedAt         DateTime @updatedAt
 
@@ -84,6 +88,8 @@ model Task {
   finalChoiceId    String?
   resolvedAt       DateTime?
   minResolveCount  Int               @default(1)
+  stage            String?
+  milestoneEffects String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   participants     TaskParticipant[]

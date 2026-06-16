@@ -1,6 +1,12 @@
 import { prisma } from "@/prisma/client";
 import type { ProjectState, Task, TaskParticipant, User } from "@prisma/client";
-import { applyMetricEffects } from "./projectEngine";
+import {
+  applyTaskOutcomeEffects,
+  applyMilestoneEffects,
+  advanceStageIfReady,
+  getProjectState,
+} from "./projectEngine";
+import { normalizeStageId } from "./projectStages";
 import { writeGameLog } from "./logEngine";
 import { calculateRewards, applySpiritCost } from "./rewardEngine";
 import { applyNpcEffectsFromMetrics } from "./npcEngine";
@@ -36,8 +42,22 @@ function getResolutionMode(task: Task): ResolutionMode {
   return (task.resolutionMode as ResolutionMode) || "SOLO";
 }
 
+export function inferMinResolveCount(
+  resolutionMode: ResolutionMode,
+  requiredCount?: number,
+  explicit?: number,
+): number {
+  if (explicit !== undefined) return explicit;
+  if (resolutionMode === "SOLO") return 1;
+  return Math.max(2, requiredCount || 1);
+}
+
 function getMinResolveCount(task: Task): number {
-  return task.minResolveCount || task.requiredCount || 1;
+  return inferMinResolveCount(
+    getResolutionMode(task),
+    task.requiredCount,
+    task.minResolveCount || undefined,
+  );
 }
 
 function getSubmittedParticipants(task: TaskWithParticipants): ParticipantWithUser[] {
@@ -186,6 +206,17 @@ async function grantParticipantRewards(
   }> = [];
 
   for (const participant of submittedParticipants) {
+    if (participant.rewardStatus === "GRANTED") {
+      rewardsList.push({
+        userId: participant.userId,
+        contribution: participant.contribution,
+        exp: 0,
+        gold: 0,
+        reputation: 0,
+      });
+      continue;
+    }
+
     const user = await prisma.user.findUnique({ where: { id: participant.userId } });
     if (!user) continue;
 
@@ -308,7 +339,7 @@ export async function submitChoice(taskId: string, userId: string, choiceId: str
 
   if (participant.choiceId) throw new Error("你已经提交过选择");
 
-  if (["COMPLETED", "FAILED", "EXPIRED"].includes(task.status)) {
+  if (["COMPLETED", "FAILED", "EXPIRED", "RESOLVING"].includes(task.status)) {
     throw new Error("任务已结束");
   }
 
@@ -341,20 +372,55 @@ export async function submitChoice(taskId: string, userId: string, choiceId: str
 }
 
 export async function finalizeTask(taskId: string, currentUserId?: string) {
+  const claim = await prisma.task.updateMany({
+    where: {
+      id: taskId,
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
+    data: { status: "RESOLVING" },
+  });
+
+  if (claim.count === 0) {
+    const existing = await getTaskById(taskId);
+    if (!existing) throw new Error("任务不存在");
+
+    if (existing.status === "RESOLVING") {
+      return {
+        finalized: false,
+        message: "任务正在结算中，请稍候刷新查看结果",
+        task: existing,
+      };
+    }
+
+    if (["COMPLETED", "FAILED", "EXPIRED"].includes(existing.status)) {
+      return {
+        finalized: true,
+        alreadyResolved: true,
+        success: existing.status === "COMPLETED",
+        finalChoiceId: existing.finalChoiceId,
+        successRate: existing.baseSuccessRate,
+        effects: {},
+        participants: getSubmittedParticipants(existing).length,
+      };
+    }
+
+    throw new Error("任务当前无法结算");
+  }
+
+  try {
+    return await executeFinalizeTask(taskId, currentUserId);
+  } catch (error) {
+    await prisma.task.updateMany({
+      where: { id: taskId, status: "RESOLVING" },
+      data: { status: "IN_PROGRESS" },
+    });
+    throw error;
+  }
+}
+
+async function executeFinalizeTask(taskId: string, currentUserId?: string) {
   const task = await getTaskById(taskId);
   if (!task) throw new Error("任务不存在");
-
-  if (["COMPLETED", "FAILED", "EXPIRED"].includes(task.status)) {
-    return {
-      finalized: true,
-      alreadyResolved: true,
-      success: task.status === "COMPLETED",
-      finalChoiceId: task.finalChoiceId,
-      successRate: task.baseSuccessRate,
-      effects: {},
-      participants: getSubmittedParticipants(task).length,
-    };
-  }
 
   const submittedParticipants = getSubmittedParticipants(task);
   if (submittedParticipants.length === 0) {
@@ -372,7 +438,16 @@ export async function finalizeTask(taskId: string, currentUserId?: string) {
   const success = rollSuccess(successRate);
   const appliedEffects = resolveFinalEffects(task, finalChoiceId, success);
 
-  await applyMetricEffects(appliedEffects);
+  await applyTaskOutcomeEffects(appliedEffects, success, SEASON_ID);
+
+  if (success) {
+    const milestoneEffects = parseJson<Record<string, boolean>>(task.milestoneEffects || "{}", {});
+    if (Object.keys(milestoneEffects).length > 0) {
+      await applyMilestoneEffects(milestoneEffects, SEASON_ID);
+    }
+    await advanceStageIfReady(SEASON_ID);
+  }
+
   const npcList = task.sourceName ? [task.sourceName] : [];
   await applyNpcEffectsFromMetrics(appliedEffects, npcList);
 
@@ -411,6 +486,8 @@ export async function finalizeTask(taskId: string, currentUserId?: string) {
   const userReward =
     allRewards.find((reward) => reward.userId === currentUserId) || allRewards[0] || null;
 
+  const updatedProject = await getProjectState();
+
   return {
     finalized: true,
     success,
@@ -419,6 +496,7 @@ export async function finalizeTask(taskId: string, currentUserId?: string) {
     effects: appliedEffects,
     rewards: userReward,
     participants: submittedParticipants.length,
+    stageAdvanced: updatedProject?.currentStage,
   };
 }
 
@@ -442,15 +520,35 @@ export async function resolveChoice(taskId: string, userId: string, choiceId: st
   };
 }
 
+export function filterTemplatesForCurrentStage(
+  templates: TaskTemplateData[],
+  currentStage?: string | null,
+) {
+  const normalized = normalizeStageId(currentStage);
+  const matched = templates.filter((template) => template.stage === normalized);
+  if (matched.length >= 4) return matched;
+
+  const legacy = templates.filter((template) => !template.stage);
+  const combined = [
+    ...matched,
+    ...legacy.filter((template) => !template.stage || template.stage === normalized),
+  ];
+  return combined.length > 0 ? combined : matched;
+}
+
 export async function createTaskFromTemplate(template: TaskTemplateData) {
   const existing = await prisma.task.findFirst({
     where: { seasonId: SEASON_ID, templateId: template.slug, status: { in: ["PENDING", "IN_PROGRESS"] } },
   });
   if (existing) return existing;
 
+  const project = await getProjectState();
   const resolutionMode = template.resolutionMode ?? inferResolutionMode(template.rarity);
-  const minResolveCount =
-    template.minResolveCount ?? template.requiredCount ?? (resolutionMode === "SOLO" ? 1 : 1);
+  const minResolveCount = inferMinResolveCount(
+    resolutionMode,
+    template.requiredCount,
+    template.minResolveCount,
+  );
 
   const deadline = template.deadlineHours
     ? new Date(Date.now() + template.deadlineHours * 60 * 60 * 1000)
@@ -466,6 +564,7 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
       sourceName: template.sourceName,
       rarity: template.rarity,
       area: template.area,
+      stage: template.stage ?? normalizeStageId(project?.currentStage),
       requiredJobs: JSON.stringify(template.requiredJobs || []),
       requiredCount: template.requiredCount || 1,
       resolutionMode,
@@ -474,6 +573,7 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
       successEffects: JSON.stringify(template.successEffects || {}),
       failEffects: JSON.stringify(template.failEffects || {}),
       choiceEffects: JSON.stringify(template.choiceEffects || {}),
+      milestoneEffects: JSON.stringify(template.milestoneEffects || {}),
       baseSuccessRate: template.baseSuccessRate || 60,
       triggerBroadcast: template.triggerBroadcast || false,
       deadline,
@@ -483,8 +583,10 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
 
 export async function spawnTasksFromTemplates(templates: TaskTemplateData[]) {
   await backfillTaskResolutionModes();
+  const project = await getProjectState();
+  const pool = filterTemplatesForCurrentStage(templates, project?.currentStage);
   const created = [];
-  for (const template of templates) {
+  for (const template of pool) {
     if (template) {
       created.push(await createTaskFromTemplate(template));
     }
@@ -502,7 +604,7 @@ export async function backfillTaskResolutionModes() {
 
   for (const task of tasks) {
     const expectedMode = inferResolutionMode(task.rarity);
-    const expectedMinResolve = task.requiredCount || 1;
+    const expectedMinResolve = inferMinResolveCount(expectedMode, task.requiredCount);
 
     if (task.resolutionMode !== expectedMode || task.minResolveCount !== expectedMinResolve) {
       await prisma.task.update({

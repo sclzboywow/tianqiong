@@ -35,6 +35,26 @@ export function getLatentRiskLabel(value: number): string {
   return "危险";
 }
 
+export function getCostPressureLabel(value: number): string {
+  if (value <= 30) return "可控";
+  if (value <= 60) return "需关注";
+  if (value <= 80) return "偏高";
+  return "危险";
+}
+
+export function getFireRiskLabel(value: number): string {
+  return getLatentRiskLabel(value);
+}
+
+export const RISK_METRICS = new Set(["fireRisk", "latentRisk", "cost"]);
+
+export function getRiskMetricLabel(key: string, value: number): string | null {
+  if (key === "latentRisk") return getLatentRiskLabel(value);
+  if (key === "cost") return getCostPressureLabel(value);
+  if (key === "fireRisk") return getFireRiskLabel(value);
+  return null;
+}
+
 export function formatDate(date: Date): string {
   return date.toLocaleString("zh-CN", {
     month: "2-digit",
