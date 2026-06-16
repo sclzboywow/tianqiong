@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/project", label: "项目" },
+  { href: "/locations", label: "协同地图" },
   { href: "/ops/project-overview", label: "总控" },
   { href: "/tasks", label: "任务" },
   { href: "/profile", label: "角色" },
