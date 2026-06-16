@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { TASK_TEMPLATES } from "../src/data/taskTemplates";
+import { STAGE_INK_STORIES } from "../src/data/stageInkStories";
 
 const STORY_CONTENT: Record<string, { intro: string; choices: { text: string; id: string; result: string }[] }> = {
   fire_corridor_blocked: {
@@ -164,6 +165,8 @@ const STORY_CONTENT: Record<string, { intro: string; choices: { text: string; id
     ],
   },
 };
+
+Object.assign(STORY_CONTENT, STAGE_INK_STORIES);
 
 const outDir = path.join(process.cwd(), "src/ink/stories");
 fs.mkdirSync(outDir, { recursive: true });

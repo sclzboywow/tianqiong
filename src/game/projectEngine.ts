@@ -308,12 +308,19 @@ export async function advanceStageIfReady(seasonId = SEASON_ID) {
     broadcastLevel: "SR",
   });
 
+  let finalState = updated;
+  if (nextStageId === "OPENING") {
+    const outcome = await evaluateProjectOutcome(updated);
+    if (outcome) finalState = outcome;
+  }
+
   return {
     advanced: true,
     from: gate.currentStage.id,
     to: nextStageId,
     gate,
-    state: updated,
+    state: finalState,
+    enteredOpening: nextStageId === "OPENING",
   };
 }
 
@@ -387,7 +394,6 @@ export async function evaluateProjectOutcome(state: Awaited<ReturnType<typeof ge
     state.safety <= 10 ||
     state.fireRisk >= 90 ||
     state.dataIntegrity <= 15 ||
-    state.overallProgress <= 5 ||
     state.latentRisk >= 90;
 
   if (won) {

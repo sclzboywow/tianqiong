@@ -188,3 +188,16 @@ export function normalizeStageId(stageId?: string | null): ProjectStageId {
 export function getStageConfig(stageId?: string | null) {
   return PROJECT_STAGES.find((stage) => stage.id === normalizeStageId(stageId));
 }
+
+export const BUILD_STAGE_OPTIONS = PROJECT_STAGES.filter((stage) => stage.id !== "OPENING").map(
+  (stage) => ({
+    label: stage.name,
+    value: stage.id,
+  }),
+);
+
+export const RESOLUTION_MODE_OPTIONS = [
+  { label: "单人任务 (SOLO)", value: "SOLO" },
+  { label: "多人投票 (VOTE)", value: "VOTE" },
+  { label: "岗位协作 (ROLE_CHECKLIST)", value: "ROLE_CHECKLIST" },
+];

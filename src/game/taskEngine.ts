@@ -45,9 +45,9 @@ function getResolutionMode(task: Task): ResolutionMode {
 export function inferMinResolveCount(
   resolutionMode: ResolutionMode,
   requiredCount?: number,
-  explicit?: number,
+  explicit?: number | null,
 ): number {
-  if (explicit !== undefined) return explicit;
+  if (explicit !== undefined && explicit !== null) return explicit;
   if (resolutionMode === "SOLO") return 1;
   return Math.max(2, requiredCount || 1);
 }

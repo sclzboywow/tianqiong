@@ -1,6 +1,8 @@
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
+import { en } from "payload/i18n/en";
+import { zh } from "payload/i18n/zh";
 import sharp from "sharp";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -18,8 +20,15 @@ const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
 export default buildConfig({
+  i18n: {
+    fallbackLanguage: "zh",
+    supportedLanguages: { zh, en },
+  },
   admin: {
     user: "users",
+    meta: {
+      titleSuffix: "- 天穹综合体",
+    },
     importMap: {
       baseDir: path.resolve(dirname, "src"),
     },
@@ -28,7 +37,19 @@ export default buildConfig({
     {
       slug: "users",
       auth: true,
-      fields: [{ name: "role", type: "select", options: ["admin", "editor"], defaultValue: "admin" }],
+      labels: { singular: "用户", plural: "用户" },
+      fields: [
+        {
+          name: "role",
+          type: "select",
+          label: "角色",
+          options: [
+            { label: "管理员", value: "admin" },
+            { label: "编辑", value: "editor" },
+          ],
+          defaultValue: "admin",
+        },
+      ],
     },
     Npcs,
     Areas,

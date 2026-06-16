@@ -3,12 +3,45 @@ import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
 import { ACHIEVEMENTS } from "@/data/achievements";
 import type { TaskTemplateData } from "@/game/types";
+import { inferMinResolveCount, inferResolutionMode } from "@/game/taskEngine";
+
+function buildTaskTemplatePayloadData(template: TaskTemplateData) {
+  const resolutionMode = template.resolutionMode ?? inferResolutionMode(template.rarity);
+  return {
+    slug: template.slug,
+    title: template.title,
+    description: template.description,
+    rarity: template.rarity,
+    stage: template.stage,
+    resolutionMode,
+    minResolveCount: inferMinResolveCount(
+      resolutionMode,
+      template.requiredCount,
+      template.minResolveCount,
+    ),
+    milestoneEffects: template.milestoneEffects || {},
+    sourceType: template.sourceType,
+    sourceName: template.sourceName,
+    area: template.area,
+    requiredJobs: (template.requiredJobs || []).map((j) => ({ job: j })),
+    requiredCount: template.requiredCount || 1,
+    deadlineHours: template.deadlineHours,
+    successEffects: template.successEffects || {},
+    failEffects: template.failEffects || {},
+    choiceEffects: template.choiceEffects || {},
+    inkFile: template.inkFile,
+    baseSuccessRate: template.baseSuccessRate || 60,
+    triggerBroadcast: template.triggerBroadcast || false,
+    enabled: true,
+  };
+}
 
 export async function seedPayloadCollections(payload: Payload, templates: TaskTemplateData[] = TASK_TEMPLATES) {
   const stats = {
     npcs: 0,
     areas: 0,
     taskTemplates: 0,
+    taskTemplatesUpdated: 0,
     eventTemplates: 0,
     items: 0,
     achievements: 0,
@@ -56,30 +89,21 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       collection: "task-templates",
       where: { slug: { equals: template.slug } },
     });
+    const data = buildTaskTemplatePayloadData(template);
+
     if (!existing.docs.length) {
       await payload.create({
         collection: "task-templates",
-        data: {
-          slug: template.slug,
-          title: template.title,
-          description: template.description,
-          rarity: template.rarity,
-          sourceType: template.sourceType,
-          sourceName: template.sourceName,
-          area: template.area,
-          requiredJobs: (template.requiredJobs || []).map((j) => ({ job: j })),
-          requiredCount: template.requiredCount || 1,
-          deadlineHours: template.deadlineHours,
-          successEffects: template.successEffects || {},
-          failEffects: template.failEffects || {},
-          choiceEffects: template.choiceEffects || {},
-          inkFile: template.inkFile,
-          baseSuccessRate: template.baseSuccessRate || 60,
-          triggerBroadcast: template.triggerBroadcast || false,
-          enabled: true,
-        },
+        data,
       });
       stats.taskTemplates++;
+    } else {
+      await payload.update({
+        collection: "task-templates",
+        id: existing.docs[0].id,
+        data,
+      });
+      stats.taskTemplatesUpdated++;
     }
   }
 

@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { displayProgress } from "@/utils/clamp";
 import { METRIC_LABELS } from "@/game/types";
 import { getRiskList, getStageDisplayInfo, STAGE_GATE_STATUS_LABELS } from "@/game/projectEngine";
-import { getRiskMetricLabel } from "@/utils/formatter";
+import { getRiskMetricLabel, getTimePressureLabel } from "@/utils/formatter";
 import type { ProjectState } from "@prisma/client";
 
 interface ProjectDashboardProps {
@@ -81,8 +81,9 @@ export function ProjectDashboard({ project }: ProjectDashboardProps) {
         <CardContent className="space-y-4">
           <p className="text-sm text-zinc-300">{stageInfo.stageConfig.description}</p>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">第 {project.dayCount} 天</Badge>
-            <Badge variant="outline">剩余 {remainingDays} 天</Badge>
+            <Badge variant="outline">
+              时间压力：{getTimePressureLabel(remainingDays, totalDays)}（第 {project.dayCount}/{totalDays} 天）
+            </Badge>
             <Badge variant="outline">状态 {project.status}</Badge>
             <Badge variant="outline">
               阶段门：{STAGE_GATE_STATUS_LABELS[project.stageGateStatus] || project.stageGateStatus}

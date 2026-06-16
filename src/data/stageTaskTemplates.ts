@@ -22,7 +22,7 @@ function stageTask(
     sourceType: "system",
     area: "项目总控",
     requiredJobs: ["DOCUMENT_ASSISTANT", "CONSTRUCTION_ASSISTANT"],
-    inkFile: "fire_pump_sign_missing",
+    inkFile: slug,
     choiceEffects: genericChoiceEffects,
     successEffects: { stageProgress: 25, dataIntegrity: 2 },
     milestoneEffects: { [milestone]: true },

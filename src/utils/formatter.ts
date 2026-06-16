@@ -46,6 +46,14 @@ export function getFireRiskLabel(value: number): string {
   return getLatentRiskLabel(value);
 }
 
+export function getTimePressureLabel(remainingDays: number, totalDays: number): string {
+  const ratio = remainingDays / Math.max(totalDays, 1);
+  if (ratio > 0.5) return "较低";
+  if (ratio > 0.25) return "中等";
+  if (remainingDays > 0) return "偏高";
+  return "极高";
+}
+
 export const RISK_METRICS = new Set(["fireRisk", "latentRisk", "cost"]);
 
 export function getRiskMetricLabel(key: string, value: number): string | null {
