@@ -1,6 +1,7 @@
 import type { ProjectState, Task } from "@prisma/client";
 import { prisma } from "@/prisma/client";
-import { LOCATION_ACTIONS, type LocationAction } from "@/data/locationActions";
+import type { LocationAction } from "@/data/locationActions";
+import { getLocationActions } from "./locationActionLoader";
 import { hasReachedStage } from "./contentUnlockEngine";
 import { parseMilestones, getProjectState } from "./projectEngine";
 import { createTaskFromTemplateSlug } from "./taskEngine";
@@ -22,11 +23,12 @@ export function isLocationActionUnlocked(action: LocationAction, projectState: P
   return true;
 }
 
-export function getActionsForLocation(
+export async function getActionsForLocation(
   locationId: string,
   projectState: ProjectState,
-): LocationAction[] {
-  return LOCATION_ACTIONS.filter(
+): Promise<LocationAction[]> {
+  const actions = await getLocationActions();
+  return actions.filter(
     (action) => action.locationId === locationId && isLocationActionUnlocked(action, projectState),
   );
 }
@@ -60,14 +62,38 @@ function formatResourceCost(staminaCost: number, spiritCost: number): string {
   return parts.join("、");
 }
 
+function buildSuccessMessage(
+  action: LocationAction,
+  createdCount: number,
+  skippedCount: number,
+  staminaCost: number,
+  spiritCost: number,
+): string {
+  const costText = formatResourceCost(staminaCost, spiritCost);
+
+  if (action.resultText?.trim()) {
+    let message = action.resultText.trim();
+    if (costText) message += `，消耗${costText}`;
+    return message;
+  }
+
+  let message: string;
+  if (createdCount > 0 && skippedCount > 0) {
+    message = `已生成 ${createdCount} 项任务，${skippedCount} 项已存在并跳过`;
+  } else {
+    message = `已生成 ${createdCount} 项任务`;
+  }
+  if (costText) message += `，消耗${costText}`;
+  return message;
+}
+
 export async function executeLocationAction(
   locationId: string,
   actionId: string,
   userId: string,
 ): Promise<LocationActionExecuteResult> {
-  const action = LOCATION_ACTIONS.find(
-    (item) => item.id === actionId && item.locationId === locationId,
-  );
+  const actions = await getLocationActions();
+  const action = actions.find((item) => item.id === actionId && item.locationId === locationId);
   if (!action) throw new Error("行动不存在");
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -124,18 +150,16 @@ export async function executeLocationAction(
     });
     staminaDeducted = staminaCost;
     spiritDeducted = spiritCost;
-
-    const costText = formatResourceCost(staminaCost, spiritCost);
-    if (createdTasks.length > 0 && skippedTasks.length > 0) {
-      message = `已生成 ${createdTasks.length} 项任务，${skippedTasks.length} 项已存在并跳过`;
-    } else {
-      message = `已生成 ${createdTasks.length} 项任务`;
-    }
-    if (costText) {
-      message += `，消耗${costText}`;
-    }
+    message = buildSuccessMessage(
+      action,
+      createdTasks.length,
+      skippedTasks.length,
+      staminaCost,
+      spiritCost,
+    );
   } else if (skippedTasks.length > 0) {
-    message = "相关任务已存在，未重复生成，也未消耗体力/精神";
+    message =
+      action.noTaskText?.trim() || "相关任务已存在，未重复生成，也未消耗体力/精神";
   } else {
     message = "未配置可触发的任务，未消耗体力/精神";
   }

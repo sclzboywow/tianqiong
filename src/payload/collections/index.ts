@@ -423,6 +423,103 @@ export const TaskTemplates: CollectionConfig = {
   ],
 };
 
+export const LocationActions: CollectionConfig = {
+  slug: "location-actions",
+  labels: { singular: "地点行动", plural: "地点行动" },
+  admin: {
+    useAsTitle: "label",
+    group: "玩法内容",
+    defaultColumns: ["label", "locationSlug", "unlockStage", "enabled", "sortOrder"],
+    listSearchableFields: ["label", "slug", "locationSlug", "description"],
+    description: "协同地图地点行动：配置消耗、门槛与触发任务。保存后前端 /locations 实时读取。",
+  },
+  fields: [
+    {
+      name: "slug",
+      type: "text",
+      label: "标识",
+      required: true,
+      unique: true,
+      admin: { description: "唯一 ID，用于 API，如 action_risk_register" },
+    },
+    { name: "label", type: "text", label: "行动名称", required: true },
+    { name: "description", type: "textarea", label: "行动说明" },
+    {
+      name: "locationSlug",
+      type: "text",
+      label: "所属地点",
+      required: true,
+      admin: { description: "对应 map-locations 的 slug，如 owner_project_management_dept" },
+    },
+    {
+      name: "unlockStage",
+      type: "select",
+      label: "解锁阶段",
+      required: true,
+      options: MAP_UNLOCK_STAGE_OPTIONS,
+      defaultValue: "INITIATION",
+      admin: { description: "项目进入该阶段后行动可见。" },
+    },
+    {
+      name: "unlockMilestones",
+      type: "array",
+      label: "解锁关键节点",
+      admin: { description: "可选。需同时满足所选关键节点才解锁。" },
+      fields: [
+        {
+          name: "milestone",
+          type: "select",
+          label: "关键节点",
+          options: MILESTONE_OPTIONS,
+        },
+      ],
+    },
+    {
+      name: "triggerTaskSlugs",
+      type: "array",
+      label: "触发任务",
+      admin: { description: "执行行动后尝试生成的任务模板 slug。" },
+      fields: [{ name: "slug", type: "text", label: "任务 slug" }],
+    },
+    {
+      name: "relatedNpcNames",
+      type: "array",
+      label: "关联 NPC",
+      fields: [{ name: "name", type: "text", label: "NPC 名称" }],
+    },
+    {
+      name: "riskTags",
+      type: "array",
+      label: "风险标签",
+      fields: [{ name: "tag", type: "text", label: "标签" }],
+    },
+    { name: "staminaCost", type: "number", label: "体力消耗", min: 0 },
+    { name: "spiritCost", type: "number", label: "精神消耗", min: 0 },
+    { name: "minLevel", type: "number", label: "最低等级", min: 1 },
+    { name: "minReputation", type: "number", label: "最低声望", min: 0 },
+    {
+      name: "resultText",
+      type: "textarea",
+      label: "成功触发文案",
+      admin: { description: "成功生成任务时的提示文案。留空则使用默认文案。" },
+    },
+    {
+      name: "noTaskText",
+      type: "textarea",
+      label: "无新任务文案",
+      admin: { description: "相关任务已存在时的提示文案。留空则使用默认文案。" },
+    },
+    {
+      name: "sortOrder",
+      type: "number",
+      label: "排序",
+      defaultValue: 0,
+      admin: { description: "同地点内排序，数字越小越靠前。" },
+    },
+    { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
+  ],
+};
+
 export const Items: CollectionConfig = {
   slug: "items",
   labels: { singular: "道具", plural: "道具" },

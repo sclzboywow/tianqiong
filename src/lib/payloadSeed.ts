@@ -3,6 +3,7 @@ import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
 import { ACHIEVEMENTS } from "@/data/achievements";
 import { MAP_LOCATIONS } from "@/data/locations";
+import { LOCATION_ACTIONS } from "@/data/locationActions";
 import type { TaskTemplateData } from "@/game/types";
 import { inferMinResolveCount, inferResolutionMode } from "@/game/taskEngine";
 import {
@@ -95,6 +96,8 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
     dailyReportTemplates: 0,
     mapLocations: 0,
     mapLocationsUpdated: 0,
+    locationActions: 0,
+    locationActionsUpdated: 0,
   };
 
   for (const npc of NPCS) {
@@ -261,6 +264,39 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
     } else {
       await payload.update({ collection: "map-locations", id: existing.docs[0].id, data });
       stats.mapLocationsUpdated++;
+    }
+  }
+
+  for (const [index, action] of LOCATION_ACTIONS.entries()) {
+    const data = {
+      slug: action.id,
+      label: action.label,
+      description: action.description,
+      locationSlug: action.locationId,
+      unlockStage: action.unlockStage || "INITIATION",
+      unlockMilestones: (action.unlockMilestones || []).map((milestone) => ({ milestone })),
+      triggerTaskSlugs: (action.triggerTaskSlugs || []).map((slug) => ({ slug })),
+      relatedNpcNames: (action.relatedNpcNames || []).map((name) => ({ name })),
+      riskTags: (action.riskTags || []).map((tag) => ({ tag })),
+      staminaCost: action.staminaCost,
+      spiritCost: action.spiritCost,
+      minLevel: action.minLevel,
+      minReputation: action.minReputation,
+      resultText: action.resultText,
+      noTaskText: action.noTaskText,
+      sortOrder: index,
+      enabled: true,
+    };
+    const existing = await payload.find({
+      collection: "location-actions",
+      where: { slug: { equals: action.id } },
+    });
+    if (!existing.docs.length) {
+      await payload.create({ collection: "location-actions", data });
+      stats.locationActions++;
+    } else {
+      await payload.update({ collection: "location-actions", id: existing.docs[0].id, data });
+      stats.locationActionsUpdated++;
     }
   }
 

@@ -158,7 +158,7 @@ export async function getLocationOverview(id: string): Promise<LocationOverview 
   const relatedAreas = project
     ? resolveRelatedContentForDisplay(location.relatedAreaNames, areas, project)
     : [];
-  const availableActions = project ? getActionsForLocation(location.id, project) : [];
+  const availableActions = project ? await getActionsForLocation(location.id, project) : [];
 
   return {
     location,

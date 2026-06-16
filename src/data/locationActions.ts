@@ -14,6 +14,9 @@ export type LocationAction = {
   spiritCost?: number;
   minLevel?: number;
   minReputation?: number;
+  resultText?: string;
+  noTaskText?: string;
+  sortOrder?: number;
 };
 
 export const LOCATION_ACTIONS: LocationAction[] = [
@@ -161,6 +164,3 @@ export const LOCATION_ACTIONS: LocationAction[] = [
   },
 ];
 
-export function getLocationActionsByLocationId(locationId: string): LocationAction[] {
-  return LOCATION_ACTIONS.filter((action) => action.locationId === locationId);
-}

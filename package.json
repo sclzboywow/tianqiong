@@ -17,6 +17,7 @@
     "payload:importmap": "tsx scripts/generate-importmap.ts",
     "payload:seed": "curl.exe -s -X POST http://localhost:3000/api/admin/seed",
     "test:locations": "tsx scripts/location-smoke-test.ts",
+    "content:check": "tsx scripts/content-check.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
