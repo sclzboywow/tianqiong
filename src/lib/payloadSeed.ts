@@ -17,6 +17,66 @@ import {
   inferTaskCategory,
 } from "@/payload/contentCategories";
 
+export type CollectionSeedStats = {
+  created: number;
+  updated: number;
+  skipped: number;
+};
+
+export type PayloadSeedStats = {
+  npcs: CollectionSeedStats;
+  areas: CollectionSeedStats;
+  taskTemplates: CollectionSeedStats;
+  eventTemplates: CollectionSeedStats;
+  items: CollectionSeedStats;
+  achievements: CollectionSeedStats;
+  dailyReportTemplates: CollectionSeedStats;
+  mapLocations: CollectionSeedStats;
+  locationActions: CollectionSeedStats;
+};
+
+export type SeedPayloadOptions = {
+  overwrite?: boolean;
+};
+
+function emptyCollectionStats(): CollectionSeedStats {
+  return { created: 0, updated: 0, skipped: 0 };
+}
+
+function emptySeedStats(): PayloadSeedStats {
+  return {
+    npcs: emptyCollectionStats(),
+    areas: emptyCollectionStats(),
+    taskTemplates: emptyCollectionStats(),
+    eventTemplates: emptyCollectionStats(),
+    items: emptyCollectionStats(),
+    achievements: emptyCollectionStats(),
+    dailyReportTemplates: emptyCollectionStats(),
+    mapLocations: emptyCollectionStats(),
+    locationActions: emptyCollectionStats(),
+  };
+}
+
+async function applySeedRecord(
+  stats: CollectionSeedStats,
+  overwrite: boolean,
+  exists: boolean,
+  onCreate: () => Promise<unknown>,
+  onUpdate: () => Promise<unknown>,
+) {
+  if (!exists) {
+    await onCreate();
+    stats.created++;
+    return;
+  }
+  if (overwrite) {
+    await onUpdate();
+    stats.updated++;
+    return;
+  }
+  stats.skipped++;
+}
+
 function buildTaskTemplatePayloadData(template: TaskTemplateData) {
   const resolutionMode = template.resolutionMode ?? inferResolutionMode(template.rarity);
   return {
@@ -79,26 +139,13 @@ function buildUnlockPayloadData(content: {
   };
 }
 
-export async function seedPayloadCollections(payload: Payload, templates: TaskTemplateData[] = TASK_TEMPLATES) {
-  const stats = {
-    npcs: 0,
-    npcsUpdated: 0,
-    areas: 0,
-    areasUpdated: 0,
-    taskTemplates: 0,
-    taskTemplatesUpdated: 0,
-    eventTemplates: 0,
-    eventTemplatesUpdated: 0,
-    items: 0,
-    itemsUpdated: 0,
-    achievements: 0,
-    achievementsUpdated: 0,
-    dailyReportTemplates: 0,
-    mapLocations: 0,
-    mapLocationsUpdated: 0,
-    locationActions: 0,
-    locationActionsUpdated: 0,
-  };
+export async function seedPayloadCollections(
+  payload: Payload,
+  templates: TaskTemplateData[] = TASK_TEMPLATES,
+  options: SeedPayloadOptions = {},
+) {
+  const overwrite = options.overwrite ?? false;
+  const stats = emptySeedStats();
 
   for (const npc of NPCS) {
     const category = inferNpcCategory(npc.type, (npc as { category?: string }).category);
@@ -119,13 +166,14 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       enabled: true,
     };
     const existing = await payload.find({ collection: "npcs", where: { name: { equals: npc.name } } });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "npcs", data });
-      stats.npcs++;
-    } else {
-      await payload.update({ collection: "npcs", id: existing.docs[0].id, data });
-      stats.npcsUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.npcs,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "npcs", data }),
+      () => payload.update({ collection: "npcs", id: doc.id, data }),
+    );
   }
 
   for (const area of AREAS) {
@@ -145,13 +193,14 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       enabled: true,
     };
     const existing = await payload.find({ collection: "areas", where: { name: { equals: area.name } } });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "areas", data });
-      stats.areas++;
-    } else {
-      await payload.update({ collection: "areas", id: existing.docs[0].id, data });
-      stats.areasUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.areas,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "areas", data }),
+      () => payload.update({ collection: "areas", id: doc.id, data }),
+    );
   }
 
   for (const template of templates) {
@@ -160,14 +209,14 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       collection: "task-templates",
       where: { slug: { equals: template.slug } },
     });
-
-    if (!existing.docs.length) {
-      await payload.create({ collection: "task-templates", data });
-      stats.taskTemplates++;
-    } else {
-      await payload.update({ collection: "task-templates", id: existing.docs[0].id, data });
-      stats.taskTemplatesUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.taskTemplates,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "task-templates", data }),
+      () => payload.update({ collection: "task-templates", id: doc.id, data }),
+    );
   }
 
   for (const template of templates) {
@@ -176,26 +225,28 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       collection: "event-templates",
       where: { inkFile: { equals: template.inkFile } },
     });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "event-templates", data });
-      stats.eventTemplates++;
-    } else {
-      await payload.update({ collection: "event-templates", id: existing.docs[0].id, data });
-      stats.eventTemplatesUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.eventTemplates,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "event-templates", data }),
+      () => payload.update({ collection: "event-templates", id: doc.id, data }),
+    );
   }
 
   for (const item of ITEMS) {
     const category = inferItemCategory(item.effectType, (item as { category?: string }).category);
     const data = { ...item, category, enabled: true };
     const existing = await payload.find({ collection: "items", where: { slug: { equals: item.slug } } });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "items", data });
-      stats.items++;
-    } else {
-      await payload.update({ collection: "items", id: existing.docs[0].id, data });
-      stats.itemsUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.items,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "items", data }),
+      () => payload.update({ collection: "items", id: doc.id, data }),
+    );
   }
 
   for (const achievement of ACHIEVEMENTS) {
@@ -215,13 +266,14 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       collection: "achievements",
       where: { slug: { equals: achievement.slug } },
     });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "achievements", data });
-      stats.achievements++;
-    } else {
-      await payload.update({ collection: "achievements", id: existing.docs[0].id, data });
-      stats.achievementsUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.achievements,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "achievements", data }),
+      () => payload.update({ collection: "achievements", id: doc.id, data }),
+    );
   }
 
   for (const report of DAILY_REPORT_TEMPLATES) {
@@ -229,10 +281,23 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       collection: "daily-report-templates",
       where: { title: { equals: report.title } },
     });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "daily-report-templates", data: { ...report, enabled: true } });
-      stats.dailyReportTemplates++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.dailyReportTemplates,
+      overwrite,
+      Boolean(doc),
+      () =>
+        payload.create({
+          collection: "daily-report-templates",
+          data: { ...report, enabled: true },
+        }),
+      () =>
+        payload.update({
+          collection: "daily-report-templates",
+          id: doc.id,
+          data: { ...report, enabled: true },
+        }),
+    );
   }
 
   for (const [index, loc] of MAP_LOCATIONS.entries()) {
@@ -258,13 +323,14 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       collection: "map-locations",
       where: { slug: { equals: loc.id } },
     });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "map-locations", data });
-      stats.mapLocations++;
-    } else {
-      await payload.update({ collection: "map-locations", id: existing.docs[0].id, data });
-      stats.mapLocationsUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.mapLocations,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "map-locations", data }),
+      () => payload.update({ collection: "map-locations", id: doc.id, data }),
+    );
   }
 
   for (const [index, action] of LOCATION_ACTIONS.entries()) {
@@ -291,13 +357,14 @@ export async function seedPayloadCollections(payload: Payload, templates: TaskTe
       collection: "location-actions",
       where: { slug: { equals: action.id } },
     });
-    if (!existing.docs.length) {
-      await payload.create({ collection: "location-actions", data });
-      stats.locationActions++;
-    } else {
-      await payload.update({ collection: "location-actions", id: existing.docs[0].id, data });
-      stats.locationActionsUpdated++;
-    }
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.locationActions,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "location-actions", data }),
+      () => payload.update({ collection: "location-actions", id: doc.id, data }),
+    );
   }
 
   return stats;

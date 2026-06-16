@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { href: "/project", label: "项目" },
   { href: "/locations", label: "协同地图" },
   { href: "/ops/project-overview", label: "总控" },
+  { href: "/ops/content-studio", label: "编排台" },
   { href: "/tasks", label: "任务" },
   { href: "/profile", label: "角色" },
   { href: "/ranking", label: "排行" },

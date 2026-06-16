@@ -6,15 +6,22 @@ import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import { normalizeStageId } from "@/game/projectStages";
 import { seedPayloadCollections } from "@/lib/payloadSeed";
 
-export async function POST() {
+function resolveSeedOverwrite(request: Request): boolean {
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get("overwrite") === "true") return true;
+  return process.env.SEED_OVERWRITE === "true";
+}
+
+export async function POST(request: Request) {
   try {
+    const overwrite = resolveSeedOverwrite(request);
     const project = await initializeProjectForSeed();
 
     const { getPayload } = await import("payload");
     const config = (await import("@payload-config")).default;
     const payload = await getPayload({ config });
 
-    const stats = await seedPayloadCollections(payload, TASK_TEMPLATES);
+    const stats = await seedPayloadCollections(payload, TASK_TEMPLATES, { overwrite });
 
     const templates = await getTaskTemplates();
     const stageTemplates = filterTemplatesForCurrentStage(
@@ -26,9 +33,12 @@ export async function POST() {
     return NextResponse.json({
       ok: true,
       tasks: stageTemplates.length,
+      overwrite,
       stats,
       currentStage: project.currentStage,
-      message: "初始化完成。请刷新 /admin 并在左侧 Collections 查看数据。",
+      message: overwrite
+        ? "初始化完成（已覆盖已有内容）。请刷新 /admin 查看数据。"
+        : "初始化完成（仅补全缺失内容，未覆盖已有配置）。请刷新 /admin 查看数据。",
     });
   } catch (error) {
     console.error(error);

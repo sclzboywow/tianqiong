@@ -10,8 +10,9 @@ async function seedPayload() {
     const { getPayload } = await import("payload");
     const config = (await import("../payload.config")).default;
     const payload = await getPayload({ config });
-    await seedPayloadCollections(payload, TASK_TEMPLATES);
-    console.log("Payload seed completed");
+    const overwrite = process.env.SEED_OVERWRITE === "true";
+    const stats = await seedPayloadCollections(payload, TASK_TEMPLATES, { overwrite });
+    console.log("Payload seed completed", { overwrite, stats });
   } catch (error) {
     console.warn("Payload seed skipped or partial:", error);
   }

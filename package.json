@@ -17,11 +17,12 @@
     "payload:importmap": "tsx scripts/generate-importmap.ts",
     "payload:seed": "curl.exe -s -X POST http://localhost:3000/api/admin/seed",
     "test:locations": "tsx scripts/location-smoke-test.ts",
-    "content:check": "tsx scripts/content-check.ts",
+    "content:check": "tsx --env-file=.env scripts/content-check.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@libsql/client": "^0.14.0",
     "@payloadcms/db-sqlite": "^3.85.1",
     "@payloadcms/next": "^3.85.1",
     "@payloadcms/richtext-lexical": "^3.85.1",
