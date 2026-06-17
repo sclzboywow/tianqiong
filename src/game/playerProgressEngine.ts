@@ -1,5 +1,10 @@
 export const CHARACTER_GROWTH_LOG_PREFIX = "【角色成长】";
 
+/** 当前等级升至下一级所需经验（与 getRequiredExpForLevel 一致） */
+export function getNextLevelExp(level: number): number {
+  return getRequiredExpForLevel(level);
+}
+
 export function getRequiredExpForLevel(level: number): number {
   switch (level) {
     case 1:

@@ -133,6 +133,34 @@ export function buildMapActionLogContent(params: {
   return `${MAP_ACTION_LOG_PREFIX}在「${locationName}」执行「${actionLabel}」，${detail}。`;
 }
 
+export async function getRecentUserGrowthLogs(
+  userId: string,
+  limit = 5,
+  seasonId = SEASON_ID,
+): Promise<GameLogSummary[]> {
+  const rows = await prisma.gameLog.findMany({
+    where: {
+      seasonId,
+      userId,
+      OR: [
+        { content: { startsWith: CHARACTER_GROWTH_LOG_PREFIX } },
+        { logType: "TASK" },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: { id: true, content: true, createdAt: true, logType: true },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    content: row.content,
+    createdAt: row.createdAt,
+    logType: row.logType as LogType,
+    category: categorizeLog({ content: row.content, logType: row.logType as LogType }),
+  }));
+}
+
 export async function getRecentTaskBoardLogs(
   limit = 3,
   seasonId = SEASON_ID,

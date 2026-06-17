@@ -20,6 +20,7 @@
     "test:content-workflow": "tsx --env-file=.env scripts/content-workflow-smoke-test.ts",
     "test:chapter1": "tsx scripts/chapter1-smoke-test.ts",
     "test:chapter1-flow": "tsx --env-file=.env scripts/testChapter1Flow.ts",
+    "test:career": "tsx scripts/career-rank-smoke-test.ts",
     "content:check": "tsx --env-file=.env scripts/content-check.ts",
     "postinstall": "prisma generate"
   },
