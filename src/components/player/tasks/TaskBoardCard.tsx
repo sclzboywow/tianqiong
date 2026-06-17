@@ -101,9 +101,11 @@ export function TaskBoardCard({ item }: TaskBoardCardProps) {
       )}
 
       <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#8EA3B8]">
-        <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
-          来源：{item.sourceName}
-        </span>
+        {item.sourceLocationName ? (
+          <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
+            来源地点：{item.sourceLocationName}
+          </span>
+        ) : null}
         <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
           成功率 {Math.round(item.baseSuccessRate)}%
         </span>

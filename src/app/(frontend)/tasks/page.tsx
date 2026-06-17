@@ -7,6 +7,8 @@ import { getProjectState, ensureProjectState } from "@/game/projectEngine";
 import { listTasks } from "@/game/taskEngine";
 import { getRecentTaskBoardLogs } from "@/game/logEngine";
 import { buildTaskBoardData } from "@/game/taskPresentationEngine";
+import { getAllLocations } from "@/game/locationEngine";
+import { getLocationActions } from "@/game/locationActionLoader";
 import {
   getChapterGoalItems,
   getChapterInfo,
@@ -24,7 +26,12 @@ export default async function TasksPage() {
   const project = await getProjectState();
   if (!project) redirect("/register");
 
-  const [tasks, recentTaskLogs] = await Promise.all([listTasks(), getRecentTaskBoardLogs(3)]);
+  const [tasks, recentTaskLogs, locations, locationActions] = await Promise.all([
+    listTasks(),
+    getRecentTaskBoardLogs(3),
+    getAllLocations(),
+    getLocationActions(),
+  ]);
 
   const chapterInfo = getChapterInfo(project);
   const chapterGoals = getChapterGoalItems(project, tasks);
@@ -37,6 +44,8 @@ export default async function TasksPage() {
     tasks,
     chapterGoals,
     recentTaskLogs,
+    locations,
+    locationActions,
   });
 
   return (

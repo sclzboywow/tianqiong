@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, LoaderCircle, Sparkles, Zap } from "lucide-react";
+import { AlertTriangle, ArrowRight, LoaderCircle, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   isFirstActionHintSeen,
@@ -48,6 +48,51 @@ function canExecuteAction(action: LocationActionDisplayItem, user: UserResources
   return null;
 }
 
+function allTriggerTasksExist(action: LocationActionDisplayItem): boolean {
+  if (action.triggerTaskSlugs.length === 0) return false;
+  return action.triggerTaskSlugs.every((slug) =>
+    action.existingTasks.some((task) => task.templateId === slug),
+  );
+}
+
+function ActionTaskLinks({ action }: { action: LocationActionDisplayItem }) {
+  const single = action.existingTasks.length === 1;
+
+  if (single) {
+    return (
+      <div className="shrink-0 space-y-2 text-right">
+        <p className="text-xs text-[#8EA3B8]">任务已生成</p>
+        <Link
+          href={`/tasks/${action.existingTasks[0].id}`}
+          className="inline-flex items-center gap-1 rounded-lg border border-[rgba(60,160,255,0.35)] bg-[rgba(30,136,255,0.12)] px-4 py-2 text-sm font-medium text-[#2EA8FF] hover:border-[#2EA8FF]"
+        >
+          前往处理
+          <ArrowRight className="size-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="shrink-0 space-y-2 lg:min-w-[200px]">
+      <p className="text-xs text-[#8EA3B8]">已生成 {action.existingTasks.length} 项任务</p>
+      <ul className="space-y-1.5">
+        {action.existingTasks.map((task) => (
+          <li key={task.id}>
+            <Link
+              href={`/tasks/${task.id}`}
+              className="flex items-center justify-between gap-2 rounded-lg border border-[rgba(60,160,255,0.2)] bg-[rgba(5,11,20,0.45)] px-3 py-2 text-xs text-[#EAF3FF] hover:border-[rgba(60,160,255,0.4)]"
+            >
+              <span className="truncate">{task.title}</span>
+              <span className="shrink-0 text-[#2EA8FF]">前往处理</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function LocationActionExecutePanel({
   locationId,
   actions,
@@ -58,17 +103,6 @@ export function LocationActionExecutePanel({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ExecuteFeedback | null>(null);
   const [showFirstActionHint, setShowFirstActionHint] = useState(false);
-
-  useEffect(() => {
-    if (
-      feedback?.createdTasks &&
-      feedback.createdTasks.length > 0 &&
-      !isFirstActionHintSeen()
-    ) {
-      setShowFirstActionHint(true);
-      markFirstActionHintSeen();
-    }
-  }, [feedback]);
 
   if (!unlocked) return null;
 
@@ -100,6 +134,10 @@ export function LocationActionExecutePanel({
         message: data.message || "行动已执行",
         createdTasks,
       });
+      if (createdTasks.length > 0 && !isFirstActionHintSeen()) {
+        setShowFirstActionHint(true);
+        markFirstActionHintSeen();
+      }
       router.refresh();
     } catch {
       setFeedback({ type: "error", message: "网络错误，请稍后重试" });
@@ -111,8 +149,10 @@ export function LocationActionExecutePanel({
   return (
     <section className={playerCardClass}>
       <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">可执行行动</h3>
-        <p className="mt-1 text-xs text-[#8EA3B8]">在此地点触发行动，生成任务或推进事件。</p>
+        <h3 className="text-base font-semibold text-[#EAF3FF]">地点行动</h3>
+        <p className="mt-1 text-xs text-[#8EA3B8]">
+          在此地点发起行动，可能生成任务、推进事件或记录动态。
+        </p>
       </div>
 
       <div className={`${playerCardBodyClass} space-y-3`}>
@@ -123,6 +163,8 @@ export function LocationActionExecutePanel({
             const blockReason = canExecuteAction(action, user);
             const isPending = pendingId === action.id;
             const isRecommended = action.isRecommended;
+            const hasExistingTasks = action.existingTasks.length > 0;
+            const hideExecute = hasExistingTasks && allTriggerTasksExist(action);
 
             return (
               <article
@@ -166,11 +208,6 @@ export function LocationActionExecutePanel({
                           声望 {action.minReputation}
                         </span>
                       )}
-                      {action.triggerTaskCount > 0 && (
-                        <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5 text-[#8EA3B8]">
-                          触发 {action.triggerTaskCount} 项任务
-                        </span>
-                      )}
                     </div>
 
                     {action.relatedNpcNames.length > 0 && (
@@ -198,26 +235,33 @@ export function LocationActionExecutePanel({
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    disabled={isPending || !!blockReason}
-                    onClick={() => handleExecute(action.id)}
-                    className={cn(
-                      "shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                      blockReason
-                        ? "cursor-not-allowed border border-[rgba(60,160,255,0.12)] text-[#8EA3B8]"
-                        : "bg-[#1E88FF] text-white hover:bg-[#2EA8FF] disabled:opacity-60",
-                    )}
-                  >
-                    {isPending ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <LoaderCircle className="size-4 animate-spin" />
-                        执行中
-                      </span>
-                    ) : (
-                      "执行行动"
-                    )}
-                  </button>
+                  <div className="flex flex-col items-stretch gap-2 lg:items-end">
+                    {hasExistingTasks ? <ActionTaskLinks action={action} /> : null}
+                    {!hideExecute ? (
+                      <button
+                        type="button"
+                        disabled={isPending || !!blockReason}
+                        onClick={() => handleExecute(action.id)}
+                        className={cn(
+                          "shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                          blockReason
+                            ? "cursor-not-allowed border border-[rgba(60,160,255,0.12)] text-[#8EA3B8]"
+                            : hasExistingTasks
+                              ? "border border-[rgba(60,160,255,0.25)] text-[#EAF3FF] hover:border-[#2EA8FF]"
+                              : "bg-[#1E88FF] text-white hover:bg-[#2EA8FF] disabled:opacity-60",
+                        )}
+                      >
+                        {isPending ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <LoaderCircle className="size-4 animate-spin" />
+                            执行中
+                          </span>
+                        ) : (
+                          "执行行动"
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             );
@@ -239,10 +283,10 @@ export function LocationActionExecutePanel({
             <p>{feedback.message}</p>
             {feedback.createdTasks && feedback.createdTasks.length > 0 && (
               <div className="mt-2">
-                <p className="text-xs font-medium">已生成任务：</p>
+                <p className="text-xs font-medium">任务已生成，请前往任务台处理：</p>
                 {showFirstActionHint && (
                   <p className="mt-2 text-xs leading-relaxed text-[#93C5FD]">
-                    下一步请前往任务台处理任务，完成后会影响项目指标和章节目标。
+                    任务处理、方案选择与结算请在任务台完成。
                   </p>
                 )}
                 <ul className="mt-1 space-y-1.5 text-xs">

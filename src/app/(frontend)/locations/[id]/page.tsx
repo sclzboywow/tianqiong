@@ -55,6 +55,7 @@ export default async function LocationDetailPage({
 
   const actionItems = buildActionDisplayItems(
     overview.availableActions,
+    tasks,
     recommendedActionId,
   );
 

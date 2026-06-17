@@ -19,7 +19,8 @@ import {
   CHAPTER1_STAGE,
   CHAPTER1_TASK_SLUGS,
 } from "../src/data/chapter1Content";
-import { buildChapter1AcceptanceFromStatic } from "../src/game/chapter1Acceptance";
+import { MAP_LOCATIONS } from "../src/data/locations";
+import { LOCATION_ACTIONS } from "../src/data/locationActions";
 import { executeLocationAction } from "../src/game/locationActionEngine";
 import { getLocationActions } from "../src/game/locationActionLoader";
 import { getAllLocations, getLocationOverview } from "../src/game/locationEngine";
@@ -306,6 +307,8 @@ async function main() {
     tasks: tasksAfterResolve,
     chapterGoals: getChapterGoalItems(projectAfter!, tasksAfterResolve),
     recentTaskLogs: [],
+    locations: MAP_LOCATIONS,
+    locationActions: LOCATION_ACTIONS,
   });
   const boardSlugHit = scanVisibleStrings(
     taskBoard.taskItems.flatMap((item) => [

@@ -1,4 +1,6 @@
 import type { ProjectState, Task, TaskParticipant, User } from "@prisma/client";
+import type { MapLocation } from "@/data/locations";
+import type { LocationAction } from "@/data/locationActions";
 import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
 import { JOB_LABELS } from "@/utils/formatter";
 import type { Job } from "@/game/prisma-types";
@@ -42,6 +44,7 @@ export type TaskItem = {
   href: string;
   area: string;
   sourceName: string;
+  sourceLocationName: string | null;
   rarity: string;
   resolutionMode: string;
   baseSuccessRate: number;
@@ -101,6 +104,28 @@ const STATUS_LABELS: Record<string, string> = {
   EXPIRED: "已过期",
   RESOLVING: "结算中",
 };
+
+export { STATUS_LABELS as TASK_STATUS_LABELS };
+
+export function buildTemplateToLocationNameMap(
+  locations: MapLocation[],
+  actions: LocationAction[],
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const location of locations) {
+    for (const slug of location.relatedTaskSlugs || []) {
+      if (!map.has(slug)) map.set(slug, location.name);
+    }
+  }
+  for (const action of actions) {
+    const location = locations.find((item) => item.id === action.locationId);
+    if (!location) continue;
+    for (const slug of action.triggerTaskSlugs || []) {
+      if (!map.has(slug)) map.set(slug, location.name);
+    }
+  }
+  return map;
+}
 
 const RESOLUTION_MODE_LABELS: Record<string, string> = {
   SOLO: "单人任务",
@@ -177,7 +202,7 @@ const TYPE_LABELS: Record<TaskItemType, string> = {
 export function buildTaskItem(
   task: TaskWithParticipants,
   project: ProjectState,
-  options?: { isRecommended?: boolean },
+  options?: { isRecommended?: boolean; sourceLocationName?: string | null },
 ): TaskItem {
   const jobList = parseJsonArray(task.requiredJobs);
   const successEffects = parseJsonObject<MetricEffects>(task.successEffects);
@@ -197,6 +222,7 @@ export function buildTaskItem(
     href: `/tasks/${task.id}`,
     area: task.area,
     sourceName: task.sourceName || task.area,
+    sourceLocationName: options?.sourceLocationName ?? null,
     rarity: task.rarity,
     resolutionMode: RESOLUTION_MODE_LABELS[task.resolutionMode] || "单人任务",
     baseSuccessRate: task.baseSuccessRate,
@@ -334,10 +360,17 @@ export function buildTaskBoardData(params: {
   tasks: TaskWithParticipants[];
   chapterGoals: ChapterGoalItem[];
   recentTaskLogs: GameLogSummary[];
+  locations: MapLocation[];
+  locationActions: LocationAction[];
 }): TaskBoardData {
-  const { project, tasks, chapterGoals, recentTaskLogs } = params;
+  const { project, tasks, chapterGoals, recentTaskLogs, locations, locationActions } = params;
 
-  const baseItems = tasks.map((task) => buildTaskItem(task, project));
+  const templateLocationMap = buildTemplateToLocationNameMap(locations, locationActions);
+  const baseItems = tasks.map((task) =>
+    buildTaskItem(task, project, {
+      sourceLocationName: templateLocationMap.get(task.templateId) ?? null,
+    }),
+  );
   const recommended = getRecommendedTaskForBoard(baseItems, project, chapterGoals);
   const recommendedId = recommended?.task.id;
 

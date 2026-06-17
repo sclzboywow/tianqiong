@@ -302,6 +302,14 @@ export async function buildExplorePageData(params: {
   };
 }
 
+export type LocationActionExistingTask = {
+  id: string;
+  title: string;
+  templateId: string;
+  status: string;
+  statusLabel: string;
+};
+
 export type LocationActionDisplayItem = {
   id: string;
   label: string;
@@ -311,13 +319,43 @@ export type LocationActionDisplayItem = {
   minLevel: number;
   minReputation: number;
   triggerTaskCount: number;
+  triggerTaskSlugs: string[];
+  existingTasks: LocationActionExistingTask[];
   relatedNpcNames: string[];
   riskTagLabels: string[];
   isRecommended?: boolean;
 };
 
+const ACTIVE_TASK_STATUSES = new Set(["PENDING", "IN_PROGRESS"]);
+
+const TASK_STATUS_LABELS: Record<string, string> = {
+  PENDING: "待处理",
+  IN_PROGRESS: "进行中",
+  COMPLETED: "已完成",
+  FAILED: "失败",
+  EXPIRED: "已过期",
+  RESOLVING: "结算中",
+};
+
+function getExistingTasksForAction(
+  action: LocationAction,
+  tasks: Task[],
+): LocationActionExistingTask[] {
+  const slugSet = new Set(action.triggerTaskSlugs || []);
+  return tasks
+    .filter((task) => slugSet.has(task.templateId) && ACTIVE_TASK_STATUSES.has(task.status))
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      templateId: task.templateId,
+      status: task.status,
+      statusLabel: TASK_STATUS_LABELS[task.status] || task.status,
+    }));
+}
+
 export function buildActionDisplayItems(
   actions: LocationAction[],
+  tasks: Task[],
   recommendedActionId?: string,
 ): LocationActionDisplayItem[] {
   const fallbackRecommendedId = recommendedActionId ?? actions[0]?.id;
@@ -330,6 +368,8 @@ export function buildActionDisplayItems(
     minLevel: action.minLevel ?? 0,
     minReputation: action.minReputation ?? 0,
     triggerTaskCount: action.triggerTaskSlugs?.length ?? 0,
+    triggerTaskSlugs: action.triggerTaskSlugs || [],
+    existingTasks: getExistingTasksForAction(action, tasks),
     relatedNpcNames: action.relatedNpcNames || [],
     riskTagLabels: (action.riskTags || []).map(getRiskTagLabel),
     isRecommended: action.id === fallbackRecommendedId,

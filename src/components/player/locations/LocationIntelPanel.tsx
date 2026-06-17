@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { AlertTriangle, Lock, MapPin } from "lucide-react";
+import type { Task } from "@prisma/client";
 import type { LocationOverview } from "@/game/locationEngine";
 import type { RelatedContentDisplayItem } from "@/game/contentUnlockEngine";
 import { getRiskTagLabel } from "@/data/riskTagLabels";
+import { TASK_STATUS_LABELS } from "@/game/taskPresentationEngine";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
 
 type LocationDetailHeaderProps = {
@@ -146,29 +148,40 @@ export function LocationIntelExtras({ overview }: LocationIntelExtrasProps) {
 
       <section className={playerCardClass}>
         <div className={playerCardHeaderClass}>
-          <h3 className="text-base font-semibold text-[#EAF3FF]">相关任务</h3>
+          <h3 className="text-base font-semibold text-[#EAF3FF]">本地点待办</h3>
         </div>
         <div className={playerCardBodyClass}>
           {relatedTasks.length === 0 ? (
-            <p className="text-sm text-[#8EA3B8]">当前暂无待处理事项。</p>
+            <p className="text-sm text-[#8EA3B8]">当前暂无待处理任务。</p>
           ) : (
             <ul className="space-y-2">
               {relatedTasks.map((task) => (
-                <li key={task.id}>
-                  <Link
-                    href={`/tasks/${task.id}`}
-                    className="flex items-center justify-between rounded-lg border border-[rgba(60,160,255,0.15)] bg-[rgba(5,11,20,0.4)] px-3 py-2.5 text-sm text-[#EAF3FF] hover:border-[rgba(60,160,255,0.35)]"
-                  >
-                    <span className="truncate">{task.title}</span>
-                    <span className="ml-2 shrink-0 text-xs text-[#2EA8FF]">前往</span>
-                  </Link>
-                </li>
+                <LocationPendingTaskRow key={task.id} task={task} />
               ))}
             </ul>
           )}
         </div>
       </section>
     </div>
+  );
+}
+
+function LocationPendingTaskRow({ task }: { task: Task }) {
+  const statusLabel = TASK_STATUS_LABELS[task.status] || task.status;
+
+  return (
+    <li className="flex items-center justify-between gap-3 rounded-lg border border-[rgba(60,160,255,0.15)] bg-[rgba(5,11,20,0.4)] px-3 py-2.5">
+      <div className="min-w-0">
+        <p className="truncate text-sm text-[#EAF3FF]">{task.title}</p>
+        <p className="mt-0.5 text-xs text-[#8EA3B8]">{statusLabel}</p>
+      </div>
+      <Link
+        href={`/tasks/${task.id}`}
+        className="shrink-0 rounded-md border border-[rgba(60,160,255,0.25)] px-2.5 py-1 text-xs text-[#2EA8FF] hover:border-[#2EA8FF]"
+      >
+        前往处理
+      </Link>
+    </li>
   );
 }
 
