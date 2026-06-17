@@ -1,4 +1,5 @@
 import type { CollectionConfig } from "payload";
+import { METRIC_SELECT_OPTIONS } from "@/game/metricConfig";
 import { BUILD_STAGE_OPTIONS, MILESTONE_LABELS, PROJECT_STAGES, RESOLUTION_MODE_OPTIONS } from "@/game/projectStages";
 import {
   ACHIEVEMENT_CATEGORIES,
@@ -30,6 +31,7 @@ const AREA_STAGE_OPTIONS = [
   { label: "资料", value: "资料" },
   { label: "移交", value: "移交" },
   { label: "材料", value: "材料" },
+  { label: "管理", value: "管理" },
 ];
 
 const RARITY_OPTIONS = ["R", "SR", "SSR", "UR"];
@@ -60,12 +62,40 @@ const MILESTONE_OPTIONS = Object.entries(MILESTONE_LABELS).map(([value, label]) 
   value,
 }));
 
+const STORY_TYPE_OPTIONS = [
+  { label: "主线阶段", value: "mainline_stage" },
+  { label: "任务剧情", value: "task_story" },
+  { label: "事件剧情", value: "event_story" },
+  { label: "地点剧情", value: "location_story" },
+  { label: "NPC 对话", value: "npc_dialogue" },
+  { label: "结局", value: "ending" },
+];
+
+const STORY_STATUS_OPTIONS = [
+  { label: "草稿", value: "draft" },
+  { label: "已发布", value: "published" },
+];
+
 const ACHIEVEMENT_CONDITION_OPTIONS = [
   { label: "任务完成次数", value: "task_complete_count" },
   { label: "指定选项", value: "choice_made" },
   { label: "稀有度任务完成", value: "task_rarity_complete" },
   { label: "指标阈值", value: "metric_threshold" },
 ];
+
+function metricEffectRowFields() {
+  return [
+    {
+      name: "metric",
+      type: "select" as const,
+      label: "指标",
+      required: true,
+      options: METRIC_SELECT_OPTIONS,
+    },
+    { name: "value", type: "number" as const, label: "变化值", required: true },
+    { name: "note", type: "text" as const, label: "备注" },
+  ];
+}
 
 function categoryField(options: { label: string; value: string }[], description: string) {
   return {
@@ -293,18 +323,116 @@ export const MapLocations: CollectionConfig = {
   ],
 };
 
+export const StoryEntries: CollectionConfig = {
+  slug: "story-entries",
+  labels: { singular: "剧情入口", plural: "剧情入口" },
+  admin: {
+    useAsTitle: "title",
+    group: "玩法内容",
+    defaultColumns: ["title", "slug", "storyType", "status", "inkFile", "enabled"],
+    listSearchableFields: ["title", "slug", "inkFile", "description"],
+    description: "统一管理 Ink 剧情入口，供任务、事件、地点行动引用 storySlug。",
+  },
+  fields: [
+    {
+      name: "slug",
+      type: "text",
+      label: "标识",
+      required: true,
+      unique: true,
+      admin: { description: "唯一 ID，通常与 inkFile 同名，如 setup_project_team" },
+    },
+    { name: "title", type: "text", label: "标题", required: true },
+    { name: "description", type: "textarea", label: "说明" },
+    {
+      name: "storyType",
+      type: "select",
+      label: "剧情类型",
+      options: STORY_TYPE_OPTIONS,
+      required: true,
+      defaultValue: "task_story",
+    },
+    {
+      name: "status",
+      type: "select",
+      label: "状态",
+      options: STORY_STATUS_OPTIONS,
+      defaultValue: "draft",
+      required: true,
+    },
+    { name: "inkFile", type: "text", label: "Ink 文件", required: true },
+    {
+      name: "compiledFile",
+      type: "text",
+      label: "编译产物",
+      admin: { description: "可选。默认 src/ink/stories/{inkFile}.json" },
+    },
+    { name: "startKnot", type: "text", label: "起始 Knot" },
+    {
+      name: "stage",
+      type: "select",
+      label: "建设阶段",
+      options: BUILD_STAGE_OPTIONS,
+    },
+    {
+      name: "relatedLocationSlugs",
+      type: "array",
+      label: "关联地点",
+      fields: [{ name: "slug", type: "text", label: "地点 slug" }],
+    },
+    {
+      name: "relatedTaskSlugs",
+      type: "array",
+      label: "关联任务",
+      fields: [{ name: "slug", type: "text", label: "任务 slug" }],
+    },
+    {
+      name: "relatedEventSlugs",
+      type: "array",
+      label: "关联事件",
+      fields: [{ name: "slug", type: "text", label: "事件 slug" }],
+    },
+    {
+      name: "relatedNpcNames",
+      type: "array",
+      label: "关联 NPC",
+      fields: [{ name: "name", type: "text", label: "NPC 名称" }],
+    },
+    {
+      name: "tags",
+      type: "array",
+      label: "标签",
+      fields: [{ name: "tag", type: "text", label: "标签" }],
+    },
+    { name: "previewText", type: "textarea", label: "预览摘要" },
+    { name: "estimatedMinutes", type: "number", label: "预计时长（分钟）", min: 1 },
+    { name: "sortOrder", type: "number", label: "排序", defaultValue: 0 },
+    { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
+  ],
+};
+
 export const EventTemplates: CollectionConfig = {
   slug: "event-templates",
   labels: { singular: "事件模板", plural: "事件模板" },
   admin: {
     useAsTitle: "title",
     group: "玩法内容",
-    defaultColumns: ["title", "category", "rarity", "area", "enabled"],
-    listSearchableFields: ["title", "category", "area", "eventType", "inkFile"],
+    defaultColumns: ["title", "slug", "triggerStage", "weight", "enabled"],
+    listSearchableFields: ["title", "category", "area", "eventType", "inkFile", "slug"],
+    description: "事件池模板：配置触发条件与关联任务。地点行动执行后可按权重随机触发。",
   },
   fields: [
     categoryField(EVENT_CATEGORIES, "按玩法主题归类，方便后续扩展和批量修改。"),
+    {
+      name: "slug",
+      type: "text",
+      label: "标识",
+      required: true,
+      unique: true,
+      admin: { description: "唯一 ID，如 evt_risk_register" },
+    },
     { name: "title", type: "text", label: "标题", required: true },
+    { name: "description", type: "textarea", label: "说明" },
     {
       name: "rarity",
       type: "select",
@@ -320,6 +448,12 @@ export const EventTemplates: CollectionConfig = {
       fields: [{ name: "npc", type: "text", label: "NPC" }],
     },
     { name: "eventType", type: "text", label: "事件类型" },
+    {
+      name: "storySlug",
+      type: "text",
+      label: "剧情入口",
+      admin: { description: "优先使用 storySlug 关联 StoryEntry；为空时回退 inkFile。" },
+    },
     { name: "inkFile", type: "text", label: "Ink 文件", required: true },
     {
       name: "recommendedJobs",
@@ -329,6 +463,63 @@ export const EventTemplates: CollectionConfig = {
     },
     { name: "baseSuccessRate", type: "number", label: "基础成功率", defaultValue: 60 },
     { name: "triggerBroadcast", type: "checkbox", label: "触发广播", defaultValue: false },
+    {
+      name: "triggerStage",
+      type: "select",
+      label: "触发阶段",
+      options: BUILD_STAGE_OPTIONS,
+      admin: { description: "留空表示任意阶段可触发。" },
+    },
+    {
+      name: "triggerLocationSlugs",
+      type: "array",
+      label: "触发地点",
+      fields: [{ name: "slug", type: "text", label: "地点 slug" }],
+    },
+    {
+      name: "triggerAreaNames",
+      type: "array",
+      label: "触发区域",
+      fields: [{ name: "name", type: "text", label: "区域名称" }],
+    },
+    {
+      name: "triggerNpcNames",
+      type: "array",
+      label: "触发 NPC",
+      fields: [{ name: "name", type: "text", label: "NPC 名称" }],
+    },
+    {
+      name: "riskTags",
+      type: "array",
+      label: "风险标签",
+      fields: [{ name: "tag", type: "text", label: "标签" }],
+    },
+    {
+      name: "unlockMilestones",
+      type: "array",
+      label: "解锁关键节点",
+      fields: [
+        {
+          name: "milestone",
+          type: "select",
+          label: "关键节点",
+          options: MILESTONE_OPTIONS,
+        },
+      ],
+    },
+    { name: "minDay", type: "number", label: "最早触发天数", min: 1 },
+    { name: "maxDay", type: "number", label: "最晚触发天数", min: 1 },
+    { name: "weight", type: "number", label: "触发权重", defaultValue: 10, min: 1 },
+    { name: "onceOnly", type: "checkbox", label: "仅触发一次", defaultValue: false },
+    { name: "cooldownDays", type: "number", label: "冷却天数", defaultValue: 0, min: 0 },
+    {
+      name: "triggerTaskSlugs",
+      type: "array",
+      label: "触发任务",
+      fields: [{ name: "slug", type: "text", label: "任务 slug" }],
+    },
+    { name: "resultText", type: "textarea", label: "成功触发文案" },
+    { name: "noTaskText", type: "textarea", label: "无新任务文案" },
     { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
   ],
 };
@@ -383,12 +574,68 @@ export const TaskTemplates: CollectionConfig = {
       },
     },
     {
+      name: "successMetricEffects",
+      type: "array",
+      label: "成功效果（可视化）",
+      admin: {
+        description: "优先于下方 successEffects JSON。每项配置一个指标变化。",
+      },
+      fields: metricEffectRowFields(),
+    },
+    {
+      name: "failMetricEffects",
+      type: "array",
+      label: "失败效果（可视化）",
+      admin: {
+        description: "优先于下方 failEffects JSON。",
+      },
+      fields: metricEffectRowFields(),
+    },
+    {
+      name: "milestoneEffectList",
+      type: "array",
+      label: "关键节点效果（可视化）",
+      admin: {
+        description: "优先于下方 milestoneEffects JSON。完成后解锁的关键节点。",
+      },
+      fields: [
+        {
+          name: "milestone",
+          type: "select",
+          label: "关键节点",
+          required: true,
+          options: MILESTONE_OPTIONS,
+        },
+        { name: "value", type: "checkbox", label: "解锁", defaultValue: true },
+      ],
+    },
+    {
+      name: "choiceEffectList",
+      type: "array",
+      label: "选项效果（可视化）",
+      admin: {
+        description: "优先于下方 choiceEffects JSON。Ink 选项 ID 对应 metric 变化。",
+      },
+      fields: [
+        { name: "choiceId", type: "text", label: "选项 ID", required: true },
+        { name: "label", type: "text", label: "选项名称" },
+        {
+          name: "metricEffects",
+          type: "array",
+          label: "指标变化",
+          fields: metricEffectRowFields(),
+        },
+        { name: "successRateDelta", type: "number", label: "成功率变化" },
+        { name: "note", type: "textarea", label: "备注" },
+      ],
+    },
+    {
       name: "milestoneEffects",
       type: "json",
-      label: "关键节点效果",
+      label: "关键节点效果（JSON）",
       admin: {
         description:
-          '完成后解锁的关键节点，JSON 对象。例：{"projectOrgDone": true, "masterPlanDone": true}',
+          '高级编辑。可视化字段为空时使用。例：{"projectOrgDone": true, "masterPlanDone": true}',
       },
     },
     { name: "sourceType", type: "text", label: "来源类型", required: true },
@@ -411,11 +658,17 @@ export const TaskTemplates: CollectionConfig = {
     {
       name: "successEffects",
       type: "json",
-      label: "成功效果",
-      admin: { description: "成功效果。支持 stageProgress、latentRisk 及各项项目指标。" },
+      label: "成功效果（JSON）",
+      admin: { description: "高级编辑。可视化字段为空时使用。" },
     },
-    { name: "failEffects", type: "json", label: "失败效果" },
-    { name: "choiceEffects", type: "json", label: "选项效果" },
+    { name: "failEffects", type: "json", label: "失败效果（JSON）" },
+    { name: "choiceEffects", type: "json", label: "选项效果（JSON）" },
+    {
+      name: "storySlug",
+      type: "text",
+      label: "剧情入口",
+      admin: { description: "优先使用 storySlug 关联 StoryEntry；为空时回退 inkFile。" },
+    },
     { name: "inkFile", type: "text", label: "Ink 文件", required: true },
     { name: "baseSuccessRate", type: "number", label: "基础成功率", defaultValue: 60 },
     { name: "triggerBroadcast", type: "checkbox", label: "触发广播", defaultValue: false },
@@ -480,6 +733,12 @@ export const LocationActions: CollectionConfig = {
       label: "触发任务",
       admin: { description: "执行行动后尝试生成的任务模板 slug。" },
       fields: [{ name: "slug", type: "text", label: "任务 slug" }],
+    },
+    {
+      name: "storySlug",
+      type: "text",
+      label: "剧情入口",
+      admin: { description: "可选。关联 StoryEntry，暂不强制运行时使用。" },
     },
     {
       name: "relatedNpcNames",

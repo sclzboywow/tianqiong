@@ -16,6 +16,7 @@ export type LocationAction = {
   minReputation?: number;
   resultText?: string;
   noTaskText?: string;
+  storySlug?: string;
   sortOrder?: number;
 };
 

@@ -1,5 +1,28 @@
+import fs from "fs";
+import path from "path";
 import { createClient, type Client } from "@libsql/client";
+import { VALID_PROJECT_METRIC_KEYS } from "./metricConfig";
 import { MILESTONE_LABELS } from "./projectStages";
+import type { ContentStudioData } from "./contentStudioLoader";
+import {
+  detectEffectFieldMismatches,
+  type ChoiceEffectRow,
+  type MetricEffectRow,
+  type MilestoneEffectRow,
+  type TaskTemplateEffectDoc,
+} from "./taskTemplateEffectMapper";
+
+const STORIES_DIR = path.join(process.cwd(), "src/ink/stories");
+
+function inkSourceExists(inkFile: string): boolean {
+  if (!inkFile.trim()) return false;
+  return fs.existsSync(path.join(STORIES_DIR, `${inkFile}.ink`));
+}
+
+function inkCompiledExists(inkFile: string): boolean {
+  if (!inkFile.trim()) return false;
+  return fs.existsSync(path.join(STORIES_DIR, `${inkFile}.json`));
+}
 
 const CORE_TABLES = [
   { label: "map-locations", table: "map_locations" },
@@ -19,13 +42,22 @@ export type ContentHealthCheckReport = {
   databaseUrl?: string;
   missingCoreTables: string[];
   results: ContentHealthCheckItem[];
+  warnings: ContentHealthCheckItem[];
   passCount: number;
   failCount: number;
+  warnCount: number;
 };
 
 export type ContentHealthCheckData = {
   hasLocationActionsTable: boolean;
-  locationActions: { slug: string; locationSlug: string; triggerTaskSlugs: string[] }[];
+  hasEventTemplatesTable: boolean;
+  hasStoryEntriesTable: boolean;
+  locationActions: {
+    slug: string;
+    locationSlug: string;
+    triggerTaskSlugs: string[];
+    storySlug?: string;
+  }[];
   mapLocations: {
     slug: string;
     relatedTaskSlugs: string[];
@@ -34,9 +66,36 @@ export type ContentHealthCheckData = {
   }[];
   taskTemplates: {
     slug: string;
+    category?: string;
     area: string;
     inkFile: string;
+    storySlug?: string;
     milestoneEffects: Record<string, unknown>;
+    successEffects: Record<string, unknown>;
+    failEffects: Record<string, unknown>;
+    choiceEffects: Record<string, unknown>;
+    successMetricEffects: MetricEffectRow[];
+    failMetricEffects: MetricEffectRow[];
+    milestoneEffectList: MilestoneEffectRow[];
+    choiceEffectList: ChoiceEffectRow[];
+  }[];
+  eventTemplates: {
+    slug: string;
+    inkFile: string;
+    storySlug?: string;
+    triggerLocationSlugs: string[];
+    triggerTaskSlugs: string[];
+    triggerNpcNames: string[];
+    triggerAreaNames: string[];
+    unlockMilestones: string[];
+  }[];
+  storyEntries: {
+    slug: string;
+    inkFile: string;
+    relatedTaskSlugs: string[];
+    relatedEventSlugs: string[];
+    relatedLocationSlugs: string[];
+    relatedNpcNames: string[];
   }[];
   npcNames: string[];
   areaNames: string[];
@@ -63,27 +122,271 @@ function checkMembership(
 
 function summarizeReport(
   results: ContentHealthCheckItem[],
-  options: { databaseUrl?: string; missingCoreTables?: string[] } = {},
+  options: {
+    databaseUrl?: string;
+    missingCoreTables?: string[];
+    warnings?: ContentHealthCheckItem[];
+  } = {},
 ): ContentHealthCheckReport {
+  const warnings = options.warnings || [];
   const passCount = results.filter((item) => item.pass).length;
   const failCount = results.length - passCount;
+  const warnCount = warnings.reduce((sum, item) => sum + item.failures.length, 0);
   return {
     databaseUrl: options.databaseUrl,
     missingCoreTables: options.missingCoreTables || [],
     results,
+    warnings,
     passCount,
     failCount,
+    warnCount,
   };
+}
+
+function parseJsonRecord(raw: unknown): Record<string, unknown> {
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return {};
+}
+
+function hasMetricEffectContent(rows: MetricEffectRow[]): boolean {
+  return rows.some((row) => row.metric?.trim() && row.value !== undefined && row.value !== null);
+}
+
+function hasMilestoneEffectContent(
+  rows: MilestoneEffectRow[],
+  json: Record<string, unknown>,
+): boolean {
+  if (rows.some((row) => row.milestone?.trim())) return true;
+  return Object.values(json).some(Boolean);
+}
+
+function hasSuccessEffectContent(
+  successRows: MetricEffectRow[],
+  successJson: Record<string, unknown>,
+): boolean {
+  if (hasMetricEffectContent(successRows)) return true;
+  return Object.keys(successJson).length > 0;
+}
+
+function buildTaskTemplateHealthChecks(
+  data: ContentHealthCheckData,
+  milestoneKeys: Set<string>,
+): { results: ContentHealthCheckItem[]; warnings: ContentHealthCheckItem[] } {
+  const extraResults: ContentHealthCheckItem[] = [];
+  const extraWarnings: ContentHealthCheckItem[] = [];
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      for (const effect of row.successMetricEffects) {
+        total++;
+        const metric = effect.metric?.trim() || "";
+        if (!metric || !VALID_PROJECT_METRIC_KEYS.has(metric)) {
+          failures.push(`${row.slug}: successMetricEffects.metric "${metric || "(empty)"}" 不合法`);
+        }
+      }
+    }
+    extraResults.push({
+      name: "task-templates.successMetricEffects.metric",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      for (const effect of row.failMetricEffects) {
+        total++;
+        const metric = effect.metric?.trim() || "";
+        if (!metric || !VALID_PROJECT_METRIC_KEYS.has(metric)) {
+          failures.push(`${row.slug}: failMetricEffects.metric "${metric || "(empty)"}" 不合法`);
+        }
+      }
+    }
+    extraResults.push({
+      name: "task-templates.failMetricEffects.metric",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      for (const choice of row.choiceEffectList) {
+        for (const effect of choice.metricEffects || []) {
+          total++;
+          const metric = effect.metric?.trim() || "";
+          if (!metric || !VALID_PROJECT_METRIC_KEYS.has(metric)) {
+            failures.push(
+              `${row.slug}: choiceEffectList[${choice.choiceId || "?"}].metric "${metric || "(empty)"}" 不合法`,
+            );
+          }
+        }
+      }
+    }
+    extraResults.push({
+      name: "task-templates.choiceEffectList.metric",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      for (const item of row.milestoneEffectList) {
+        total++;
+        const milestone = item.milestone?.trim() || "";
+        if (!milestone || !milestoneKeys.has(milestone)) {
+          failures.push(
+            `${row.slug}: milestoneEffectList.milestone "${milestone || "(empty)"}" 不在 MILESTONE_LABELS 中`,
+          );
+        }
+      }
+    }
+    extraResults.push({
+      name: "task-templates.milestoneEffectList.milestone",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      const seen = new Set<string>();
+      for (const effect of row.successMetricEffects) {
+        const metric = effect.metric?.trim();
+        if (!metric) continue;
+        total++;
+        if (seen.has(metric)) {
+          failures.push(`${row.slug}: successMetricEffects 重复配置 metric "${metric}"`);
+        }
+        seen.add(metric);
+      }
+    }
+    extraResults.push({
+      name: "task-templates.successMetricEffects.duplicate",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      const seen = new Set<string>();
+      for (const effect of row.failMetricEffects) {
+        const metric = effect.metric?.trim();
+        if (!metric) continue;
+        total++;
+        if (seen.has(metric)) {
+          failures.push(`${row.slug}: failMetricEffects 重复配置 metric "${metric}"`);
+        }
+        seen.add(metric);
+      }
+    }
+    extraResults.push({
+      name: "task-templates.failMetricEffects.duplicate",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
+
+  {
+    const orphanFailures: string[] = [];
+    for (const row of data.taskTemplates) {
+      if (row.category !== "mainline") continue;
+      if (!hasMilestoneEffectContent(row.milestoneEffectList, row.milestoneEffects)) {
+        orphanFailures.push(`${row.slug}: 主线任务未配置关键节点效果`);
+      }
+    }
+    extraWarnings.push({
+      name: "task-templates.mainline.milestone (warning)",
+      pass: orphanFailures.length === 0,
+      total: data.taskTemplates.filter((row) => row.category === "mainline").length,
+      failures: orphanFailures,
+    });
+  }
+
+  {
+    const orphanFailures: string[] = [];
+    for (const row of data.taskTemplates) {
+      if (!hasSuccessEffectContent(row.successMetricEffects, row.successEffects)) {
+        orphanFailures.push(`${row.slug}: 未配置成功效果`);
+      }
+    }
+    extraWarnings.push({
+      name: "task-templates.successEffects.missing (warning)",
+      pass: orphanFailures.length === 0,
+      total: data.taskTemplates.length,
+      failures: orphanFailures,
+    });
+  }
+
+  {
+    const orphanFailures: string[] = [];
+    for (const row of data.taskTemplates) {
+      const doc: TaskTemplateEffectDoc = {
+        successEffects: row.successEffects as TaskTemplateEffectDoc["successEffects"],
+        failEffects: row.failEffects as TaskTemplateEffectDoc["failEffects"],
+        choiceEffects: row.choiceEffects as TaskTemplateEffectDoc["choiceEffects"],
+        milestoneEffects: row.milestoneEffects as TaskTemplateEffectDoc["milestoneEffects"],
+        successMetricEffects: row.successMetricEffects,
+        failMetricEffects: row.failMetricEffects,
+        milestoneEffectList: row.milestoneEffectList,
+        choiceEffectList: row.choiceEffectList,
+      };
+      const mismatches = detectEffectFieldMismatches(doc);
+      for (const message of mismatches) {
+        orphanFailures.push(`${row.slug}: ${message}`);
+      }
+    }
+    extraWarnings.push({
+      name: "task-templates.effects.mismatch (warning)",
+      pass: orphanFailures.length === 0,
+      total: data.taskTemplates.length,
+      failures: orphanFailures,
+    });
+  }
+
+  return { results: extraResults, warnings: extraWarnings };
 }
 
 export function buildContentHealthCheckReport(data: ContentHealthCheckData): ContentHealthCheckReport {
   const mapLocationSlugs = new Set(data.mapLocations.map((row) => row.slug).filter(Boolean));
   const taskTemplateSlugs = new Set(data.taskTemplates.map((row) => row.slug).filter(Boolean));
+  const eventTemplateSlugs = new Set(data.eventTemplates.map((row) => row.slug).filter(Boolean));
+  const storyEntrySlugs = new Set(data.storyEntries.map((row) => row.slug).filter(Boolean));
   const npcNames = new Set(data.npcNames.filter(Boolean));
   const areaNames = new Set(data.areaNames.filter(Boolean));
   const milestoneKeys = new Set(Object.keys(MILESTONE_LABELS));
 
   const results: ContentHealthCheckItem[] = [];
+  const warnings: ContentHealthCheckItem[] = [];
 
   if (!data.hasLocationActionsTable) {
     results.push({
@@ -198,7 +501,289 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
     });
   }
 
-  return summarizeReport(results);
+  if (!data.hasEventTemplatesTable) {
+    results.push({
+      name: "event-templates (表)",
+      pass: false,
+      total: 1,
+      failures: ["event_templates 表不存在，请先运行 seed 或 POST /api/admin/seed"],
+    });
+  }
+
+  if (data.hasEventTemplatesTable) {
+    {
+      const failures: string[] = [];
+      const slugCounts = new Map<string, number>();
+      for (const row of data.eventTemplates) {
+        if (!row.slug.trim()) {
+          failures.push("(unknown): slug 为空");
+          continue;
+        }
+        slugCounts.set(row.slug, (slugCounts.get(row.slug) || 0) + 1);
+      }
+      for (const [slug, count] of slugCounts) {
+        if (count > 1) failures.push(`${slug}: slug 重复 (${count} 次)`);
+      }
+      results.push({
+        name: "event-templates.slug",
+        pass: failures.length === 0,
+        total: data.eventTemplates.length,
+        failures,
+      });
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.eventTemplates) {
+        for (const slug of row.triggerLocationSlugs) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(
+        checkMembership("event-templates.triggerLocationSlugs", items, mapLocationSlugs),
+      );
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.eventTemplates) {
+        for (const slug of row.triggerTaskSlugs) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(checkMembership("event-templates.triggerTaskSlugs", items, taskTemplateSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.eventTemplates) {
+        for (const name of row.triggerNpcNames) {
+          items.push({ label: row.slug, value: name });
+        }
+      }
+      results.push(checkMembership("event-templates.triggerNpcNames", items, npcNames));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.eventTemplates) {
+        for (const name of row.triggerAreaNames) {
+          items.push({ label: row.slug, value: name });
+        }
+      }
+      results.push(checkMembership("event-templates.triggerAreaNames", items, areaNames));
+    }
+
+    {
+      const failures: string[] = [];
+      for (const row of data.eventTemplates) {
+        if (!row.inkFile.trim()) {
+          failures.push(`${row.slug}: inkFile 为空`);
+        }
+      }
+      results.push({
+        name: "event-templates.inkFile",
+        pass: failures.length === 0,
+        total: data.eventTemplates.length,
+        failures,
+      });
+    }
+
+    {
+      const failures: string[] = [];
+      let keyCount = 0;
+      for (const row of data.eventTemplates) {
+        for (const key of row.unlockMilestones) {
+          keyCount++;
+          if (!milestoneKeys.has(key)) {
+            failures.push(`${row.slug}: unlockMilestones.${key} 不在 MILESTONE_LABELS 中`);
+          }
+        }
+      }
+      results.push({
+        name: "event-templates.unlockMilestones",
+        pass: failures.length === 0,
+        total: keyCount,
+        failures,
+      });
+    }
+  }
+
+  if (!data.hasStoryEntriesTable) {
+    results.push({
+      name: "story-entries (表)",
+      pass: false,
+      total: 1,
+      failures: ["story_entries 表不存在，请先运行 seed 或 POST /api/admin/seed"],
+    });
+  }
+
+  if (data.hasStoryEntriesTable) {
+    {
+      const failures: string[] = [];
+      const slugCounts = new Map<string, number>();
+      for (const row of data.storyEntries) {
+        if (!row.slug.trim()) {
+          failures.push("(unknown): slug 为空");
+          continue;
+        }
+        slugCounts.set(row.slug, (slugCounts.get(row.slug) || 0) + 1);
+      }
+      for (const [slug, count] of slugCounts) {
+        if (count > 1) failures.push(`${slug}: slug 重复 (${count} 次)`);
+      }
+      results.push({
+        name: "story-entries.slug",
+        pass: failures.length === 0,
+        total: data.storyEntries.length,
+        failures,
+      });
+    }
+
+    {
+      const failures: string[] = [];
+      for (const row of data.storyEntries) {
+        if (!row.inkFile.trim()) failures.push(`${row.slug}: inkFile 为空`);
+      }
+      results.push({
+        name: "story-entries.inkFile",
+        pass: failures.length === 0,
+        total: data.storyEntries.length,
+        failures,
+      });
+    }
+
+    {
+      const failures: string[] = [];
+      for (const row of data.storyEntries) {
+        if (!inkSourceExists(row.inkFile)) {
+          failures.push(`${row.slug}: 源文件 src/ink/stories/${row.inkFile}.ink 不存在`);
+        }
+      }
+      results.push({
+        name: "story-entries.inkSourceFile",
+        pass: failures.length === 0,
+        total: data.storyEntries.length,
+        failures,
+      });
+    }
+
+    {
+      const failures: string[] = [];
+      for (const row of data.storyEntries) {
+        if (!inkCompiledExists(row.inkFile)) {
+          failures.push(`${row.slug}: 编译产物 src/ink/stories/${row.inkFile}.json 不存在`);
+        }
+      }
+      results.push({
+        name: "story-entries.compiledFile",
+        pass: failures.length === 0,
+        total: data.storyEntries.length,
+        failures,
+      });
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.taskTemplates) {
+        if (row.storySlug?.trim()) {
+          items.push({ label: row.slug, value: row.storySlug });
+        }
+      }
+      results.push(checkMembership("task-templates.storySlug", items, storyEntrySlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.eventTemplates) {
+        if (row.storySlug?.trim()) {
+          items.push({ label: row.slug, value: row.storySlug });
+        }
+      }
+      results.push(checkMembership("event-templates.storySlug", items, storyEntrySlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.locationActions) {
+        if (row.storySlug?.trim()) {
+          items.push({ label: row.slug, value: row.storySlug });
+        }
+      }
+      results.push(checkMembership("location-actions.storySlug", items, storyEntrySlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.storyEntries) {
+        for (const slug of row.relatedTaskSlugs) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(checkMembership("story-entries.relatedTaskSlugs", items, taskTemplateSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.storyEntries) {
+        for (const slug of row.relatedEventSlugs) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(checkMembership("story-entries.relatedEventSlugs", items, eventTemplateSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.storyEntries) {
+        for (const slug of row.relatedLocationSlugs) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(checkMembership("story-entries.relatedLocationSlugs", items, mapLocationSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.storyEntries) {
+        for (const name of row.relatedNpcNames) {
+          items.push({ label: row.slug, value: name });
+        }
+      }
+      results.push(checkMembership("story-entries.relatedNpcNames", items, npcNames));
+    }
+
+    {
+      const referenced = new Set<string>();
+      for (const row of data.taskTemplates) {
+        if (row.storySlug?.trim()) referenced.add(row.storySlug.trim());
+      }
+      for (const row of data.eventTemplates) {
+        if (row.storySlug?.trim()) referenced.add(row.storySlug.trim());
+      }
+      for (const row of data.locationActions) {
+        if (row.storySlug?.trim()) referenced.add(row.storySlug.trim());
+      }
+      const orphanFailures: string[] = [];
+      for (const row of data.storyEntries) {
+        if (!referenced.has(row.slug)) {
+          orphanFailures.push(`${row.slug}: 未被任何任务/事件/地点行动引用`);
+        }
+      }
+      warnings.push({
+        name: "story-entries.unreferenced (warning)",
+        pass: orphanFailures.length === 0,
+        total: data.storyEntries.length,
+        failures: orphanFailures,
+      });
+    }
+  }
+
+  const taskEffectChecks = buildTaskTemplateHealthChecks(data, milestoneKeys);
+  results.push(...taskEffectChecks.results);
+  warnings.push(...taskEffectChecks.warnings);
+
+  return summarizeReport(results, { warnings });
 }
 
 async function tableExists(client: Client, table: string): Promise<boolean> {
@@ -249,6 +834,115 @@ function parseMilestoneEffects(raw: unknown): Record<string, unknown> {
   return {};
 }
 
+async function queryGroupedChildRows(
+  client: Client,
+  table: string,
+): Promise<Map<number, Record<string, unknown>[]>> {
+  const grouped = new Map<number, Record<string, unknown>[]>();
+  if (!(await tableExists(client, table))) return grouped;
+
+  const result = await client.execute(`SELECT * FROM ${table} ORDER BY _order`);
+  for (const row of result.rows) {
+    const parentId = row._parent_id as number;
+    const list = grouped.get(parentId) || [];
+    list.push(row as Record<string, unknown>);
+    grouped.set(parentId, list);
+  }
+  return grouped;
+}
+
+function mapMetricEffectRows(rows: Record<string, unknown>[]): MetricEffectRow[] {
+  return rows.map((row) => ({
+    metric: String(row.metric || ""),
+    value: row.value === undefined || row.value === null ? undefined : Number(row.value),
+    note: row.note ? String(row.note) : undefined,
+  }));
+}
+
+function mapMilestoneEffectRows(rows: Record<string, unknown>[]): MilestoneEffectRow[] {
+  return rows.map((row) => ({
+    milestone: String(row.milestone || ""),
+    value: row.value === undefined ? true : Boolean(row.value),
+  }));
+}
+
+async function loadTaskTemplateVisualEffects(client: Client, taskTemplateIds: number[]) {
+  const [
+    successMetricEffects,
+    failMetricEffects,
+    milestoneEffectList,
+    choiceEffectList,
+    choiceMetricEffects,
+  ] = await Promise.all([
+    queryGroupedChildRows(client, "task_templates_success_metric_effects"),
+    queryGroupedChildRows(client, "task_templates_fail_metric_effects"),
+    queryGroupedChildRows(client, "task_templates_milestone_effect_list"),
+    queryGroupedChildRows(client, "task_templates_choice_effect_list"),
+    queryGroupedChildRows(client, "task_templates_choice_effect_list_metric_effects"),
+  ]);
+
+  const byTaskId: Record<
+    number,
+    {
+      successMetricEffects: MetricEffectRow[];
+      failMetricEffects: MetricEffectRow[];
+      milestoneEffectList: MilestoneEffectRow[];
+      choiceEffectList: ChoiceEffectRow[];
+    }
+  > = {};
+
+  for (const taskId of taskTemplateIds) {
+    const choices = (choiceEffectList.get(taskId) || []).map((row) => {
+      const choiceRowId = row.id as number;
+      return {
+        choiceId: String(row.choice_id || row.choiceId || ""),
+        label: row.label ? String(row.label) : undefined,
+        metricEffects: mapMetricEffectRows(choiceMetricEffects.get(choiceRowId) || []),
+        successRateDelta:
+          row.success_rate_delta !== undefined || row.successRateDelta !== undefined
+            ? Number(row.success_rate_delta ?? row.successRateDelta)
+            : undefined,
+        note: row.note ? String(row.note) : undefined,
+      };
+    });
+
+    byTaskId[taskId] = {
+      successMetricEffects: mapMetricEffectRows(successMetricEffects.get(taskId) || []),
+      failMetricEffects: mapMetricEffectRows(failMetricEffects.get(taskId) || []),
+      milestoneEffectList: mapMilestoneEffectRows(milestoneEffectList.get(taskId) || []),
+      choiceEffectList: choices,
+    };
+  }
+
+  return byTaskId;
+}
+
+function mapPayloadTaskTemplateRow(
+  row: Record<string, unknown>,
+  visual?: {
+    successMetricEffects: MetricEffectRow[];
+    failMetricEffects: MetricEffectRow[];
+    milestoneEffectList: MilestoneEffectRow[];
+    choiceEffectList: ChoiceEffectRow[];
+  },
+) {
+  return {
+    slug: String(row.slug || "(unknown)"),
+    category: String(row.category || "") || undefined,
+    area: String(row.area || ""),
+    inkFile: String(row.ink_file || row.inkFile || ""),
+    storySlug: String(row.story_slug || row.storySlug || "") || undefined,
+    milestoneEffects: parseMilestoneEffects(row.milestone_effects ?? row.milestoneEffects),
+    successEffects: parseJsonRecord(row.success_effects ?? row.successEffects),
+    failEffects: parseJsonRecord(row.fail_effects ?? row.failEffects),
+    choiceEffects: parseJsonRecord(row.choice_effects ?? row.choiceEffects),
+    successMetricEffects: visual?.successMetricEffects || [],
+    failMetricEffects: visual?.failMetricEffects || [],
+    milestoneEffectList: visual?.milestoneEffectList || [],
+    choiceEffectList: visual?.choiceEffectList || [],
+  };
+}
+
 export async function loadContentHealthCheckDataFromSqlite(
   databaseUrl = process.env.DATABASE_URL || "file:./payload.db",
 ): Promise<{ data: ContentHealthCheckData | null; missingCoreTables: string[]; databaseUrl: string }> {
@@ -266,34 +960,64 @@ export async function loadContentHealthCheckDataFromSqlite(
   }
 
   const hasLocationActionsTable = await tableExists(client, "location_actions");
+  const hasEventTemplatesTable = await tableExists(client, "event_templates");
+  const hasStoryEntriesTable = await tableExists(client, "story_entries");
   const [
     locationActionRows,
     mapLocationRows,
     taskTemplateRows,
+    eventTemplateRows,
+    storyEntryRows,
     npcRows,
     areaRows,
     locationActionTaskSlugs,
     mapLocationTaskSlugs,
     mapLocationNpcNames,
     mapLocationAreaNames,
+    eventTriggerLocationSlugs,
+    eventTriggerTaskSlugs,
+    eventTriggerNpcNames,
+    eventTriggerAreaNames,
+    eventUnlockMilestones,
+    storyRelatedTaskSlugs,
+    storyRelatedEventSlugs,
+    storyRelatedLocationSlugs,
+    storyRelatedNpcNames,
   ] = await Promise.all([
     hasLocationActionsTable ? queryRows(client, "location_actions") : Promise.resolve([]),
     queryRows(client, "map_locations"),
     queryRows(client, "task_templates"),
+    hasEventTemplatesTable ? queryRows(client, "event_templates") : Promise.resolve([]),
+    hasStoryEntriesTable ? queryRows(client, "story_entries") : Promise.resolve([]),
     queryRows(client, "npcs"),
     queryRows(client, "areas"),
     queryArrayByParent(client, "location_actions_trigger_task_slugs", "slug"),
     queryArrayByParent(client, "map_locations_related_task_slugs", "slug"),
     queryArrayByParent(client, "map_locations_related_npc_names", "name"),
     queryArrayByParent(client, "map_locations_related_area_names", "name"),
+    queryArrayByParent(client, "event_templates_trigger_location_slugs", "slug"),
+    queryArrayByParent(client, "event_templates_trigger_task_slugs", "slug"),
+    queryArrayByParent(client, "event_templates_trigger_npc_names", "name"),
+    queryArrayByParent(client, "event_templates_trigger_area_names", "name"),
+    queryArrayByParent(client, "event_templates_unlock_milestones", "milestone"),
+    queryArrayByParent(client, "story_entries_related_task_slugs", "slug"),
+    queryArrayByParent(client, "story_entries_related_event_slugs", "slug"),
+    queryArrayByParent(client, "story_entries_related_location_slugs", "slug"),
+    queryArrayByParent(client, "story_entries_related_npc_names", "name"),
   ]);
+
+  const taskTemplateIds = taskTemplateRows.map((row) => row.id as number);
+  const visualEffects = await loadTaskTemplateVisualEffects(client, taskTemplateIds);
 
   const data: ContentHealthCheckData = {
     hasLocationActionsTable,
+    hasEventTemplatesTable,
+    hasStoryEntriesTable,
     locationActions: locationActionRows.map((row) => ({
       slug: String(row.slug || ""),
       locationSlug: String(row.location_slug || ""),
       triggerTaskSlugs: locationActionTaskSlugs.get(row.id as number) || [],
+      storySlug: String(row.story_slug || row.storySlug || "") || undefined,
     })),
     mapLocations: mapLocationRows.map((row) => ({
       slug: String(row.slug || ""),
@@ -301,11 +1025,26 @@ export async function loadContentHealthCheckDataFromSqlite(
       relatedNpcNames: mapLocationNpcNames.get(row.id as number) || [],
       relatedAreaNames: mapLocationAreaNames.get(row.id as number) || [],
     })),
-    taskTemplates: taskTemplateRows.map((row) => ({
+    taskTemplates: taskTemplateRows.map((row) =>
+      mapPayloadTaskTemplateRow(row, visualEffects[row.id as number]),
+    ),
+    eventTemplates: eventTemplateRows.map((row) => ({
       slug: String(row.slug || "(unknown)"),
-      area: String(row.area || ""),
       inkFile: String(row.ink_file || row.inkFile || ""),
-      milestoneEffects: parseMilestoneEffects(row.milestone_effects ?? row.milestoneEffects),
+      storySlug: String(row.story_slug || row.storySlug || "") || undefined,
+      triggerLocationSlugs: eventTriggerLocationSlugs.get(row.id as number) || [],
+      triggerTaskSlugs: eventTriggerTaskSlugs.get(row.id as number) || [],
+      triggerNpcNames: eventTriggerNpcNames.get(row.id as number) || [],
+      triggerAreaNames: eventTriggerAreaNames.get(row.id as number) || [],
+      unlockMilestones: eventUnlockMilestones.get(row.id as number) || [],
+    })),
+    storyEntries: storyEntryRows.map((row) => ({
+      slug: String(row.slug || "(unknown)"),
+      inkFile: String(row.ink_file || row.inkFile || ""),
+      relatedTaskSlugs: storyRelatedTaskSlugs.get(row.id as number) || [],
+      relatedEventSlugs: storyRelatedEventSlugs.get(row.id as number) || [],
+      relatedLocationSlugs: storyRelatedLocationSlugs.get(row.id as number) || [],
+      relatedNpcNames: storyRelatedNpcNames.get(row.id as number) || [],
     })),
     npcNames: npcRows.map((row) => String(row.name || "")).filter(Boolean),
     areaNames: areaRows.map((row) => String(row.name || "")).filter(Boolean),
@@ -340,24 +1079,31 @@ export async function runContentHealthCheckFromPayload(): Promise<ContentHealthC
       locationActionsResult,
       mapLocationsResult,
       taskTemplatesResult,
+      eventTemplatesResult,
+      storyEntriesResult,
       npcsResult,
       areasResult,
     ] = await Promise.all([
       payload.find({ collection: "location-actions", limit: 500 }),
       payload.find({ collection: "map-locations", limit: 500 }),
       payload.find({ collection: "task-templates", limit: 500 }),
+      payload.find({ collection: "event-templates", limit: 500 }),
+      payload.find({ collection: "story-entries", limit: 500 }),
       payload.find({ collection: "npcs", limit: 500 }),
       payload.find({ collection: "areas", limit: 500 }),
     ]);
 
     const data: ContentHealthCheckData = {
       hasLocationActionsTable: true,
+      hasEventTemplatesTable: true,
+      hasStoryEntriesTable: true,
       locationActions: locationActionsResult.docs.map((doc) => ({
         slug: String(doc.slug || ""),
         locationSlug: String(doc.locationSlug || ""),
         triggerTaskSlugs:
           (doc.triggerTaskSlugs as { slug: string }[] | null)?.map((item) => item.slug).filter(Boolean) ||
           [],
+        storySlug: doc.storySlug ? String(doc.storySlug) : undefined,
       })),
       mapLocations: mapLocationsResult.docs.map((doc) => ({
         slug: String(doc.slug || ""),
@@ -371,11 +1117,58 @@ export async function runContentHealthCheckFromPayload(): Promise<ContentHealthC
           (doc.relatedAreaNames as { name: string }[] | null)?.map((item) => item.name).filter(Boolean) ||
           [],
       })),
-      taskTemplates: taskTemplatesResult.docs.map((doc) => ({
+      taskTemplates: taskTemplatesResult.docs.map((doc) =>
+        mapPayloadTaskTemplateRow(doc as Record<string, unknown>, {
+          successMetricEffects: (doc.successMetricEffects as MetricEffectRow[] | null) || [],
+          failMetricEffects: (doc.failMetricEffects as MetricEffectRow[] | null) || [],
+          milestoneEffectList: (doc.milestoneEffectList as MilestoneEffectRow[] | null) || [],
+          choiceEffectList: (doc.choiceEffectList as ChoiceEffectRow[] | null) || [],
+        }),
+      ),
+      eventTemplates: eventTemplatesResult.docs.map((doc) => ({
         slug: String(doc.slug || "(unknown)"),
-        area: String(doc.area || ""),
         inkFile: String(doc.inkFile || ""),
-        milestoneEffects: (doc.milestoneEffects as Record<string, unknown> | null) || {},
+        storySlug: doc.storySlug ? String(doc.storySlug) : undefined,
+        triggerLocationSlugs:
+          (doc.triggerLocationSlugs as { slug: string }[] | null)
+            ?.map((item) => item.slug)
+            .filter(Boolean) || [],
+        triggerTaskSlugs:
+          (doc.triggerTaskSlugs as { slug: string }[] | null)
+            ?.map((item) => item.slug)
+            .filter(Boolean) || [],
+        triggerNpcNames:
+          (doc.triggerNpcNames as { name: string }[] | null)
+            ?.map((item) => item.name)
+            .filter(Boolean) || [],
+        triggerAreaNames:
+          (doc.triggerAreaNames as { name: string }[] | null)
+            ?.map((item) => item.name)
+            .filter(Boolean) || [],
+        unlockMilestones:
+          (doc.unlockMilestones as { milestone: string }[] | null)
+            ?.map((item) => item.milestone)
+            .filter(Boolean) || [],
+      })),
+      storyEntries: storyEntriesResult.docs.map((doc) => ({
+        slug: String(doc.slug || "(unknown)"),
+        inkFile: String(doc.inkFile || ""),
+        relatedTaskSlugs:
+          (doc.relatedTaskSlugs as { slug: string }[] | null)
+            ?.map((item) => item.slug)
+            .filter(Boolean) || [],
+        relatedEventSlugs:
+          (doc.relatedEventSlugs as { slug: string }[] | null)
+            ?.map((item) => item.slug)
+            .filter(Boolean) || [],
+        relatedLocationSlugs:
+          (doc.relatedLocationSlugs as { slug: string }[] | null)
+            ?.map((item) => item.slug)
+            .filter(Boolean) || [],
+        relatedNpcNames:
+          (doc.relatedNpcNames as { name: string }[] | null)
+            ?.map((item) => item.name)
+            .filter(Boolean) || [],
       })),
       npcNames: npcsResult.docs.map((doc) => String(doc.name || "")).filter(Boolean),
       areaNames: areasResult.docs.map((doc) => String(doc.name || "")).filter(Boolean),
@@ -403,10 +1196,13 @@ export function buildContentHealthCheckFromStudioData(
 ): ContentHealthCheckReport {
   return buildContentHealthCheckReport({
     hasLocationActionsTable: studio.overview.locationActions > 0,
+    hasEventTemplatesTable: studio.overview.eventTemplates > 0,
+    hasStoryEntriesTable: studio.overview.storyEntries > 0,
     locationActions: studio.locationActions.map((action) => ({
       slug: action.id,
       locationSlug: action.locationId,
       triggerTaskSlugs: action.triggerTaskSlugs || [],
+      storySlug: action.storySlug,
     })),
     mapLocations: studio.mapLocations.map((location) => ({
       slug: location.id,
@@ -416,9 +1212,36 @@ export function buildContentHealthCheckFromStudioData(
     })),
     taskTemplates: studio.taskTemplates.map((template) => ({
       slug: template.slug,
+      category: template.category,
       area: template.area || "",
       inkFile: template.inkFile || "",
+      storySlug: template.storySlug,
       milestoneEffects: (template.milestoneEffects as Record<string, unknown> | null) || {},
+      successEffects: (template.successEffects as Record<string, unknown> | null) || {},
+      failEffects: (template.failEffects as Record<string, unknown> | null) || {},
+      choiceEffects: (template.choiceEffects as Record<string, unknown> | null) || {},
+      successMetricEffects: [],
+      failMetricEffects: [],
+      milestoneEffectList: [],
+      choiceEffectList: [],
+    })),
+    eventTemplates: studio.eventTemplates.map((event) => ({
+      slug: event.slug,
+      inkFile: event.inkFile || "",
+      storySlug: event.storySlug,
+      triggerLocationSlugs: event.triggerLocationSlugs || [],
+      triggerTaskSlugs: event.triggerTaskSlugs || [],
+      triggerNpcNames: event.triggerNpcNames || [],
+      triggerAreaNames: event.triggerAreaNames || [],
+      unlockMilestones: event.unlockMilestones || [],
+    })),
+    storyEntries: studio.storyEntries.map((entry) => ({
+      slug: entry.slug,
+      inkFile: entry.inkFile,
+      relatedTaskSlugs: entry.relatedTaskSlugs || [],
+      relatedEventSlugs: entry.relatedEventSlugs || [],
+      relatedLocationSlugs: entry.relatedLocationSlugs || [],
+      relatedNpcNames: entry.relatedNpcNames || [],
     })),
     npcNames: studio.npcs.map((npc) => npc.name),
     areaNames: studio.areas.map((area) => area.name),

@@ -15,6 +15,7 @@ export const AREA_CATEGORIES: CategoryOption[] = [
   { label: "消防安全", value: "fire_safety" },
   { label: "验收移交", value: "handover" },
   { label: "材料后勤", value: "logistics" },
+  { label: "项目管理", value: "project_management" },
 ];
 
 export const EVENT_CATEGORIES: CategoryOption[] = [
@@ -109,6 +110,7 @@ export function inferNpcCategory(type: string, category?: string) {
 
 export function inferAreaCategory(name: string, stage?: string, category?: string) {
   if (category) return category;
+  if (name.includes("总控") || name.includes("项目管理")) return "project_management";
   if (name.includes("消防")) return "fire_safety";
   if (name.includes("资料")) return "handover";
   if (name.includes("物业") || name.includes("交接")) return "handover";
@@ -166,6 +168,7 @@ const NPC_TYPE_UNLOCK_STAGE: Record<string, ProjectStageId> = {
 };
 
 const AREA_NAME_UNLOCK_STAGE: Record<string, ProjectStageId> = {
+  项目总控: "INITIATION",
   项目资料室: "INITIATION",
   物业交接区: "ACCEPTANCE",
   L1商业街: "CONSTRUCTION",
@@ -191,6 +194,7 @@ export function inferAreaUnlockStage(
   unlockStage?: ProjectStageId,
 ): ProjectStageId {
   if (unlockStage) return unlockStage;
+  if (name === "项目总控") return "INITIATION";
   if (AREA_NAME_UNLOCK_STAGE[name]) return AREA_NAME_UNLOCK_STAGE[name];
   if (stage && AREA_STAGE_UNLOCK_STAGE[stage]) return AREA_STAGE_UNLOCK_STAGE[stage];
   return "CONSTRUCTION";

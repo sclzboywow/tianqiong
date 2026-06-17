@@ -2,21 +2,15 @@ import type { MapLocation } from "@/data/locations";
 import { LOCATION_GROUP_ORDER } from "@/data/locations";
 import type { LocationAction } from "@/data/locationActions";
 import type { AreaData, NpcData } from "@/data/content";
-import type { TaskTemplateData } from "./types";
+import type { TaskTemplateData, EventTemplateData, StoryEntryData } from "./types";
 import { getMapLocations } from "./locationLoader";
 import { getLocationActions } from "./locationActionLoader";
 import { getTaskTemplates } from "./contentLoader";
+import { getEventTemplates } from "./eventTemplateLoader";
+import { getStoryEntries } from "./storyEntryLoader";
 import { getNpcs, getAreas } from "./worldContentLoader";
 
-export type EventTemplateData = {
-  payloadDocId?: string | number;
-  title: string;
-  rarity: string;
-  area?: string;
-  eventType?: string;
-  inkFile: string;
-  npcList: string[];
-};
+export type { EventTemplateData };
 
 export type ContentStudioLocationRow = {
   location: MapLocation;
@@ -32,6 +26,7 @@ export type ContentStudioOverview = {
   locationActions: number;
   taskTemplates: number;
   eventTemplates: number;
+  storyEntries: number;
   npcs: number;
   areas: number;
 };
@@ -45,55 +40,34 @@ export type ContentStudioData = {
   mapLocationDocIds: Record<string, string | number>;
   taskTemplates: TaskTemplateData[];
   taskTemplateDocIds: Record<string, string | number>;
+  eventTemplateDocIds: Record<string, string | number>;
   eventTemplates: EventTemplateData[];
+  storyEntries: StoryEntryData[];
+  storyEntryDocIds: Record<string, string | number>;
   npcs: NpcData[];
   areas: AreaData[];
 };
-
-function mapEventTemplate(doc: Record<string, unknown>): EventTemplateData {
-  return {
-    payloadDocId: doc.id as string | number,
-    title: String(doc.title || ""),
-    rarity: String(doc.rarity || ""),
-    area: doc.area ? String(doc.area) : undefined,
-    eventType: doc.eventType ? String(doc.eventType) : undefined,
-    inkFile: String(doc.inkFile || ""),
-    npcList:
-      (doc.npcList as { npc: string }[] | null)?.map((item) => item.npc).filter(Boolean) || [],
-  };
-}
-
-async function getEventTemplates(): Promise<EventTemplateData[]> {
-  try {
-    const { getPayload } = await import("payload");
-    const config = (await import("@payload-config")).default;
-    const payload = await getPayload({ config });
-    const result = await payload.find({
-      collection: "event-templates",
-      where: { enabled: { equals: true } },
-      limit: 200,
-    });
-    return result.docs.map((doc) => mapEventTemplate(doc as Record<string, unknown>));
-  } catch {
-    return [];
-  }
-}
 
 async function loadPayloadDocIdMaps() {
   const mapLocationDocIds: Record<string, string | number> = {};
   const locationActionDocIds: Record<string, string | number> = {};
   const taskTemplateDocIds: Record<string, string | number> = {};
+  const eventTemplateDocIds: Record<string, string | number> = {};
+  const storyEntryDocIds: Record<string, string | number> = {};
 
   try {
     const { getPayload } = await import("payload");
     const config = (await import("@payload-config")).default;
     const payload = await getPayload({ config });
 
-    const [mapLocations, locationActions, taskTemplates] = await Promise.all([
-      payload.find({ collection: "map-locations", limit: 500 }),
-      payload.find({ collection: "location-actions", limit: 500 }),
-      payload.find({ collection: "task-templates", limit: 500 }),
-    ]);
+    const [mapLocations, locationActions, taskTemplates, eventTemplates, storyEntries] =
+      await Promise.all([
+        payload.find({ collection: "map-locations", limit: 500 }),
+        payload.find({ collection: "location-actions", limit: 500 }),
+        payload.find({ collection: "task-templates", limit: 500 }),
+        payload.find({ collection: "event-templates", limit: 500 }),
+        payload.find({ collection: "story-entries", limit: 500 }),
+      ]);
 
     for (const doc of mapLocations.docs) {
       if (doc.slug) mapLocationDocIds[String(doc.slug)] = doc.id;
@@ -104,11 +78,23 @@ async function loadPayloadDocIdMaps() {
     for (const doc of taskTemplates.docs) {
       if (doc.slug) taskTemplateDocIds[String(doc.slug)] = doc.id;
     }
+    for (const doc of eventTemplates.docs) {
+      if (doc.slug) eventTemplateDocIds[String(doc.slug)] = doc.id;
+    }
+    for (const doc of storyEntries.docs) {
+      if (doc.slug) storyEntryDocIds[String(doc.slug)] = doc.id;
+    }
   } catch {
     // 静态回退时无 Payload 文档 ID
   }
 
-  return { mapLocationDocIds, locationActionDocIds, taskTemplateDocIds };
+  return {
+    mapLocationDocIds,
+    locationActionDocIds,
+    taskTemplateDocIds,
+    eventTemplateDocIds,
+    storyEntryDocIds,
+  };
 }
 
 export async function loadContentStudioData(): Promise<ContentStudioData> {
@@ -117,6 +103,7 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     locationActions,
     taskTemplates,
     eventTemplates,
+    storyEntries,
     npcs,
     areas,
     docIds,
@@ -125,6 +112,7 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     getLocationActions(),
     getTaskTemplates(),
     getEventTemplates(),
+    getStoryEntries(),
     getNpcs(),
     getAreas(),
     loadPayloadDocIdMaps(),
@@ -172,6 +160,7 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
       locationActions: locationActions.length,
       taskTemplates: taskTemplates.length,
       eventTemplates: eventTemplates.length,
+      storyEntries: storyEntries.length,
       npcs: npcs.length,
       areas: areas.length,
     },
@@ -182,7 +171,10 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     mapLocationDocIds: docIds.mapLocationDocIds,
     taskTemplates,
     taskTemplateDocIds: docIds.taskTemplateDocIds,
+    eventTemplateDocIds: docIds.eventTemplateDocIds,
     eventTemplates,
+    storyEntries,
+    storyEntryDocIds: docIds.storyEntryDocIds,
     npcs,
     areas,
   };
@@ -212,6 +204,23 @@ export function getTaskTemplateBySlug(
   slug: string,
 ): TaskTemplateData | undefined {
   return data.taskTemplates.find((template) => template.slug === slug);
+}
+
+export function getEventsForLocationStudio(
+  data: ContentStudioData,
+  locationId: string,
+): EventTemplateData[] {
+  return data.eventTemplates.filter((event) => {
+    const slugs = event.triggerLocationSlugs || [];
+    return slugs.length === 0 || slugs.includes(locationId);
+  });
+}
+
+export function getEventTemplateBySlug(
+  data: ContentStudioData,
+  slug: string,
+): EventTemplateData | undefined {
+  return data.eventTemplates.find((event) => event.slug === slug);
 }
 
 export function payloadAdminUrl(collection: string, docId?: string | number): string {

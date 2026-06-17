@@ -592,6 +592,11 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
     ? new Date(Date.now() + template.deadlineHours * 60 * 60 * 1000)
     : null;
 
+  const { resolveInkFileFromStorySlug } = await import("./storyEntryLoader");
+  const resolvedInkFile =
+    (await resolveInkFileFromStorySlug(template.storySlug, template.inkFile)) ||
+    template.inkFile;
+
   return prisma.task.create({
     data: {
       seasonId: SEASON_ID,
@@ -607,7 +612,7 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
       requiredCount: template.requiredCount || 1,
       resolutionMode,
       minResolveCount,
-      inkFile: template.inkFile,
+      inkFile: resolvedInkFile,
       successEffects: JSON.stringify(template.successEffects || {}),
       failEffects: JSON.stringify(template.failEffects || {}),
       choiceEffects: JSON.stringify(template.choiceEffects || {}),

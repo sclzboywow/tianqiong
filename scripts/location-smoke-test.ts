@@ -38,7 +38,15 @@ async function main() {
   console.log("\n=== 协同地图 Smoke 测试 ===\n");
   let failed = false;
 
-  await request("/api/admin/seed", { method: "POST" });
+  const { spawnSync } = await import("child_process");
+  spawnSync("npx", ["tsx", "scripts/migrate-event-templates-schema.ts"], {
+    cwd: process.cwd(),
+    shell: true,
+    stdio: "ignore",
+  });
+
+  const { initializeProjectForSeed } = await import("../src/game/projectEngine");
+  await initializeProjectForSeed();
 
   const qqId = String(Date.now()).slice(-11);
   const { status: registerStatus, cookies } = await request("/api/auth/register", {
@@ -154,6 +162,63 @@ async function main() {
         `体力 ${statsAfterFirst.stamina}→${statsAfterSecond.stamina}，精神 ${statsAfterFirst.spirit}→${statsAfterSecond.spirit}`,
       );
       if (!noExtraCost) failed = true;
+    }
+  }
+
+  {
+    const { getEventTemplates } = await import("../src/game/eventTemplateLoader");
+    const events = await getEventTemplates();
+    log("11. seed 后 event-templates 有数据", events.length > 0, `共 ${events.length} 个`);
+    if (events.length === 0) failed = true;
+  }
+
+  {
+    const { runContentHealthCheckFromSqlite } = await import("../src/game/contentHealthCheck");
+    const report = await runContentHealthCheckFromSqlite();
+    const eventChecks = report.results.filter((item) => item.name.startsWith("event-templates."));
+    const eventPass = eventChecks.length > 0 && eventChecks.every((item) => item.pass);
+    log(
+      "12. content:check 事件引用检查",
+      eventPass,
+      `${eventChecks.filter((item) => item.pass).length}/${eventChecks.length} 通过`,
+    );
+    if (!eventPass) failed = true;
+  }
+
+  {
+    const { triggerEventForLocationAction, getAvailableEventsForLocation } = await import(
+      "../src/game/eventPoolEngine"
+    );
+    const { getProjectState } = await import("../src/game/projectEngine");
+    const project = await getProjectState();
+    if (!project) {
+      log("13. 事件池引擎", false, "项目状态未初始化");
+      failed = true;
+    } else {
+      const locationId = "owner_project_management_dept";
+      const available = await getAvailableEventsForLocation(locationId, project);
+      log("13. 事件池可用事件查询", true, `${available.length} 个可触发`);
+
+      const { prisma } = await import("../src/prisma/client");
+      const user = await prisma.user.findFirst({ orderBy: { createdAt: "desc" } });
+      if (user) {
+        const result = await triggerEventForLocationAction({
+          locationId,
+          locationName: "项目管理部",
+          actionId: "action_risk_register",
+          actionLabel: "建立风险清单",
+          userId: user.id,
+          projectState: project,
+        });
+        log(
+          "14. 事件池触发不报错",
+          true,
+          result.triggeredEvent ? `触发 ${result.triggeredEvent.slug}` : "无可触发事件或已冷却",
+        );
+      } else {
+        log("14. 事件池触发", false, "无测试用户");
+        failed = true;
+      }
     }
   }
 

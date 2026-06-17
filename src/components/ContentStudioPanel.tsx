@@ -5,12 +5,19 @@ import type { ContentHealthCheckReport } from "@/game/contentHealthCheck";
 import type { ContentStudioData } from "@/game/contentStudioLoader";
 import {
   getActionsForLocationStudio,
+  getEventsForLocationStudio,
   getLocationStudioRow,
   getTaskTemplateBySlug,
   payloadAdminUrl,
 } from "@/game/contentStudioLoader";
-import { METRIC_LABELS, type TaskTemplateData } from "@/game/types";
-import { MILESTONE_LABELS, PROJECT_STAGES } from "@/game/projectStages";
+import { type EventTemplateData, type StoryEntryData, type TaskTemplateData } from "@/game/types";
+import { PROJECT_STAGES } from "@/game/projectStages";
+import {
+  formatChoiceEffectLines,
+  formatMetricEffectLines,
+  formatMilestoneEffectLines,
+  formatResolutionMode,
+} from "@/game/taskEffectDisplay";
 import type { LocationAction } from "@/data/locationActions";
 
 type ContentStudioPanelProps = {
@@ -25,17 +32,15 @@ function stageLabel(stageId?: string) {
 }
 
 function formatMetricEffects(effects?: Record<string, number>) {
-  if (!effects || Object.keys(effects).length === 0) return ["—"];
-  return Object.entries(effects).map(
-    ([key, value]) => `${METRIC_LABELS[key] || key}: ${value > 0 ? "+" : ""}${value}`,
-  );
+  return formatMetricEffectLines(effects);
 }
 
 function formatMilestoneEffects(effects?: Record<string, boolean>) {
-  if (!effects || Object.keys(effects).length === 0) return ["—"];
-  return Object.entries(effects)
-    .filter(([, enabled]) => enabled)
-    .map(([key]) => MILESTONE_LABELS[key] || key);
+  return formatMilestoneEffectLines(effects);
+}
+
+function formatChoiceEffects(effects?: Record<string, Record<string, number>>) {
+  return formatChoiceEffectLines(effects);
 }
 
 function formatActionCosts(action: LocationAction) {
@@ -63,19 +68,22 @@ function TaskTemplatePreview({ template, docId }: { template: TaskTemplateData; 
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">{template.rarity}</Badge>
           <Badge variant="outline">{stageLabel(template.stage)}</Badge>
+          {template.category ? <Badge variant="outline">{template.category}</Badge> : null}
         </div>
       </div>
       <div className="grid gap-2 text-sm text-zinc-400 sm:grid-cols-2">
         <p>区域：{template.area || "—"}</p>
         <p>来源：{template.sourceName || template.sourceType || "—"}</p>
+        <p>结算模式：{formatResolutionMode(template.resolutionMode)}</p>
+        <p>剧情入口：{template.storySlug || template.inkFile || "—"}</p>
         <p className="sm:col-span-2 font-mono text-xs text-zinc-500">Ink：{template.inkFile || "—"}</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3 text-xs">
+      <div className="grid gap-3 sm:grid-cols-2 text-xs">
         <div>
           <p className="mb-1 text-zinc-500">成功效果</p>
           <ul className="space-y-0.5 text-emerald-300/90">
             {formatMetricEffects(template.successEffects).map((line) => (
-              <li key={line}>{line}</li>
+              <li key={`success-${line}`}>{line}</li>
             ))}
           </ul>
         </div>
@@ -83,15 +91,23 @@ function TaskTemplatePreview({ template, docId }: { template: TaskTemplateData; 
           <p className="mb-1 text-zinc-500">失败效果</p>
           <ul className="space-y-0.5 text-rose-300/90">
             {formatMetricEffects(template.failEffects).map((line) => (
-              <li key={line}>{line}</li>
+              <li key={`fail-${line}`}>{line}</li>
             ))}
           </ul>
         </div>
         <div>
-          <p className="mb-1 text-zinc-500">关键节点</p>
+          <p className="mb-1 text-zinc-500">关键节点效果</p>
           <ul className="space-y-0.5 text-amber-300/90">
             {formatMilestoneEffects(template.milestoneEffects).map((line) => (
-              <li key={line}>{line}</li>
+              <li key={`milestone-${line}`}>{line}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="mb-1 text-zinc-500">选项效果</p>
+          <ul className="space-y-0.5 text-sky-300/90">
+            {formatChoiceEffects(template.choiceEffects).map((line) => (
+              <li key={`choice-${line}`}>{line}</li>
             ))}
           </ul>
         </div>
@@ -114,6 +130,140 @@ function FlowArrow() {
   );
 }
 
+function countStoryReferences(data: ContentStudioData, storySlug: string) {
+  const tasks = data.taskTemplates.filter((t) => t.storySlug === storySlug).length;
+  const events = data.eventTemplates.filter((e) => e.storySlug === storySlug).length;
+  const locations = data.locationActions.filter((a) => a.storySlug === storySlug).length;
+  return { tasks, events, locations };
+}
+
+function contentHealthIssues(healthReport: ContentHealthCheckReport, slug: string, prefix: string) {
+  const issues: string[] = [];
+  for (const result of healthReport.results) {
+    if (!result.name.startsWith(prefix)) continue;
+    for (const failure of result.failures) {
+      if (failure.startsWith(slug) || failure.startsWith(`${slug}:`)) {
+        issues.push(failure);
+      }
+    }
+  }
+  return issues;
+}
+
+function eventHealthIssues(healthReport: ContentHealthCheckReport, eventSlug: string) {
+  return contentHealthIssues(healthReport, eventSlug, "event-templates.");
+}
+
+function storyHealthIssues(healthReport: ContentHealthCheckReport, storySlug: string) {
+  return [
+    ...contentHealthIssues(healthReport, storySlug, "story-entries."),
+    ...contentHealthIssues(healthReport, storySlug, "task-templates.storySlug"),
+    ...contentHealthIssues(healthReport, storySlug, "event-templates.storySlug"),
+  ];
+}
+
+function StoryEntryCard({
+  entry,
+  docId,
+  data,
+  healthReport,
+}: {
+  entry: StoryEntryData;
+  docId?: string | number;
+  data: ContentStudioData;
+  healthReport: ContentHealthCheckReport;
+}) {
+  const refs = countStoryReferences(data, entry.slug);
+  const issues = storyHealthIssues(healthReport, entry.slug);
+  const healthy = issues.length === 0;
+
+  return (
+    <div className="rounded-lg border border-sky-900/40 bg-zinc-950/60 p-4 space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="font-medium text-sky-200">{entry.title}</p>
+          <p className="text-xs text-zinc-500 font-mono">{entry.slug}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={healthy ? "default" : "destructive"}>{healthy ? "健康" : "异常"}</Badge>
+          <Badge variant="outline">{entry.storyType}</Badge>
+          <Badge variant="outline">{entry.status}</Badge>
+        </div>
+      </div>
+      <div className="grid gap-2 text-sm text-zinc-400 sm:grid-cols-2">
+        <p>阶段：{stageLabel(entry.stage)}</p>
+        <p>启用：{entry.enabled === false ? "否" : "是"}</p>
+        <p>引用：任务 {refs.tasks} · 事件 {refs.events} · 地点 {refs.locations}</p>
+        <p className="sm:col-span-2 font-mono text-xs text-zinc-500">Ink：{entry.inkFile}</p>
+      </div>
+      <div className="flex flex-wrap gap-3 text-xs">
+        <Link href={`/ops/story-preview/${entry.slug}`} className="text-sky-400 hover:text-sky-300">
+          剧情预览 →
+        </Link>
+        <Link
+          href={payloadAdminUrl("story-entries", docId)}
+          className="text-sky-400 hover:text-sky-300"
+        >
+          在 Payload 编辑 →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function EventPoolCard({
+  event,
+  docId,
+  healthReport,
+}: {
+  event: EventTemplateData;
+  docId?: string | number;
+  healthReport: ContentHealthCheckReport;
+}) {
+  const issues = eventHealthIssues(healthReport, event.slug);
+  const healthy = issues.length === 0;
+
+  return (
+    <div className="rounded-lg border border-violet-900/40 bg-zinc-950/60 p-4 space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="font-medium text-violet-200">{event.title}</p>
+          <p className="text-xs text-zinc-500 font-mono">{event.slug}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={healthy ? "default" : "destructive"}>{healthy ? "健康" : "异常"}</Badge>
+          <Badge variant="outline">{event.rarity}</Badge>
+          <Badge variant="outline">权重 {event.weight ?? 10}</Badge>
+        </div>
+      </div>
+      <div className="grid gap-2 text-sm text-zinc-400 sm:grid-cols-2">
+        <p>触发阶段：{stageLabel(event.triggerStage)}</p>
+        <p>地点：{event.triggerLocationSlugs?.join("、") || "任意"}</p>
+        <p>风险标签：{event.riskTags?.join("、") || "—"}</p>
+        <p>
+          限制：{event.onceOnly ? "仅一次" : "可重复"}
+          {(event.cooldownDays ?? 0) > 0 ? ` · 冷却 ${event.cooldownDays} 天` : ""}
+        </p>
+        <p className="sm:col-span-2">触发任务：{event.triggerTaskSlugs?.join("、") || "—"}</p>
+        <p className="sm:col-span-2 font-mono text-xs text-zinc-500">Ink：{event.inkFile || "—"}</p>
+      </div>
+      {!healthy && (
+        <ul className="space-y-0.5 text-xs text-rose-300/90">
+          {issues.slice(0, 4).map((issue) => (
+            <li key={issue}>— {issue}</li>
+          ))}
+        </ul>
+      )}
+      <Link
+        href={payloadAdminUrl("event-templates", docId)}
+        className="inline-block text-xs text-sky-400 hover:text-sky-300"
+      >
+        在 Payload 编辑事件模板 →
+      </Link>
+    </div>
+  );
+}
+
 export function ContentStudioPanel({
   data,
   healthReport,
@@ -123,12 +273,16 @@ export function ContentStudioPanel({
   const selectedActions = selectedLocationId
     ? getActionsForLocationStudio(data, selectedLocationId)
     : [];
+  const selectedEvents = selectedLocationId
+    ? getEventsForLocationStudio(data, selectedLocationId)
+    : [];
 
   const overviewItems = [
     { label: "地图地点", value: data.overview.mapLocations },
     { label: "地点行动", value: data.overview.locationActions },
     { label: "任务模板", value: data.overview.taskTemplates },
     { label: "事件模板", value: data.overview.eventTemplates },
+    { label: "剧情入口", value: data.overview.storyEntries },
     { label: "NPC", value: data.overview.npcs },
     { label: "区域", value: data.overview.areas },
   ];
@@ -272,10 +426,96 @@ export function ContentStudioPanel({
                       ) : (
                         taskSlugs.map((slug) => {
                           const template = getTaskTemplateBySlug(data, slug);
+                          const linkedEvents = selectedEvents.filter((event) =>
+                            (event.triggerTaskSlugs || []).includes(slug),
+                          );
                           return (
                             <div key={`${action.id}-${slug}`}>
                               <FlowArrow />
-                              {template ? (
+                              {linkedEvents.length > 0 ? (
+                                linkedEvents.map((event) => (
+                                  <div key={event.slug} className="space-y-1">
+                                    <Card className="border-violet-900/40 bg-violet-950/20">
+                                      <CardContent className="p-3 space-y-1">
+                                        <p className="text-sm font-medium text-violet-200">
+                                          事件池 · {event.title}
+                                        </p>
+                                        <p className="font-mono text-xs text-zinc-500">{event.slug}</p>
+                                        <p className="text-xs text-zinc-400">
+                                          权重 {event.weight ?? 10}
+                                          {event.onceOnly ? " · 仅一次" : ""}
+                                          {(event.cooldownDays ?? 0) > 0
+                                            ? ` · 冷却 ${event.cooldownDays} 天`
+                                            : ""}
+                                        </p>
+                                        <Link
+                                          href={payloadAdminUrl(
+                                            "event-templates",
+                                            data.eventTemplateDocIds[event.slug],
+                                          )}
+                                          className="inline-block text-xs text-sky-400 hover:text-sky-300"
+                                        >
+                                          编辑事件 →
+                                        </Link>
+                                      </CardContent>
+                                    </Card>
+                                    <FlowArrow />
+                                    {template ? (
+                                      <>
+                                        <Card className="border-zinc-700 bg-zinc-950/70">
+                                          <CardContent className="p-3 space-y-1">
+                                            <p className="text-sm font-medium text-zinc-100">
+                                              {template.title}
+                                            </p>
+                                            <p className="font-mono text-xs text-zinc-500">{slug}</p>
+                                            <p className="text-xs text-zinc-400">
+                                              {template.rarity} · {template.area} ·{" "}
+                                              {stageLabel(template.stage)}
+                                            </p>
+                                          </CardContent>
+                                        </Card>
+                                        <FlowArrow />
+                                        <Card className="border-zinc-800 bg-zinc-950/50">
+                                          <CardContent className="p-3 space-y-2 text-xs">
+                                            <p className="font-mono text-zinc-500">
+                                              Ink：{template.inkFile}
+                                            </p>
+                                            <div>
+                                              <p className="text-zinc-500">成功效果</p>
+                                              <p className="text-emerald-300/90">
+                                                {formatMetricEffects(template.successEffects).join("；")}
+                                              </p>
+                                            </div>
+                                            <div>
+                                              <p className="text-zinc-500">关键节点</p>
+                                              <p className="text-amber-300/90">
+                                                {formatMilestoneEffects(template.milestoneEffects).join(
+                                                  "；",
+                                                )}
+                                              </p>
+                                            </div>
+                                            <Link
+                                              href={payloadAdminUrl(
+                                                "task-templates",
+                                                data.taskTemplateDocIds[slug],
+                                              )}
+                                              className="inline-block text-sky-400 hover:text-sky-300"
+                                            >
+                                              编辑任务 →
+                                            </Link>
+                                          </CardContent>
+                                        </Card>
+                                      </>
+                                    ) : (
+                                      <Card className="border-rose-900/40 bg-rose-950/20">
+                                        <CardContent className="p-3 text-xs text-rose-300">
+                                          任务模板缺失：{slug}
+                                        </CardContent>
+                                      </Card>
+                                    )}
+                                  </div>
+                                ))
+                              ) : template ? (
                                 <>
                                   <Card className="border-zinc-700 bg-zinc-950/70">
                                     <CardContent className="p-3 space-y-1">
@@ -335,6 +575,57 @@ export function ContentStudioPanel({
       </section>
 
       <section>
+        <h2 className="mb-3 text-lg font-medium text-zinc-200">事件池</h2>
+        <p className="mb-4 text-sm text-zinc-500">
+          地点行动生成任务后，系统按权重从事件池随机触发事件，并可能追加关联任务。
+        </p>
+        {data.eventTemplates.length === 0 ? (
+          <Card className="border-zinc-800 bg-zinc-900/50">
+            <CardContent className="p-4 text-sm text-zinc-500">
+              暂无事件模板，请先运行 seed 或在 Payload 后台配置。
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {data.eventTemplates.map((event) => (
+              <EventPoolCard
+                key={event.slug}
+                event={event}
+                docId={data.eventTemplateDocIds[event.slug]}
+                healthReport={healthReport}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-medium text-zinc-200">剧情入口</h2>
+        <p className="mb-4 text-sm text-zinc-500">
+          统一管理 Ink 剧情文件，任务/事件通过 storySlug 引用，可在此预览剧情。
+        </p>
+        {data.storyEntries.length === 0 ? (
+          <Card className="border-zinc-800 bg-zinc-900/50">
+            <CardContent className="p-4 text-sm text-zinc-500">
+              暂无剧情入口，请先运行 seed 或在 Payload 后台配置。
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {data.storyEntries.map((entry) => (
+              <StoryEntryCard
+                key={entry.slug}
+                entry={entry}
+                docId={data.storyEntryDocIds[entry.slug]}
+                data={data}
+                healthReport={healthReport}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
         <h2 className="mb-3 text-lg font-medium text-zinc-200">任务模板预览</h2>
         <div className="grid gap-4 xl:grid-cols-2">
           {data.taskTemplates.map((template) => (
@@ -359,8 +650,29 @@ export function ContentStudioPanel({
               <>
                 <p className="text-sm text-zinc-400">
                   合计 {healthReport.passCount} 通过，{healthReport.failCount} 失败
+                  {healthReport.warnCount > 0 ? `，${healthReport.warnCount} 警告` : ""}
                 </p>
                 <div className="space-y-2">
+                  {healthReport.warnings?.map((result) => (
+                    <div
+                      key={result.name}
+                      className="rounded border border-amber-900/40 bg-amber-950/20 p-3 text-sm"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="border-amber-700 text-amber-300">
+                          WARN
+                        </Badge>
+                        <span className="text-zinc-200">{result.name}</span>
+                      </div>
+                      {result.failures.length > 0 && (
+                        <ul className="mt-2 space-y-1 text-xs text-amber-300/90">
+                          {result.failures.slice(0, 8).map((failure) => (
+                            <li key={failure}>— {failure}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
                   {healthReport.results.map((result) => (
                     <div
                       key={result.name}

@@ -149,6 +149,19 @@ model GameLog {
   user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
+model EventTriggerLog {
+  id          String   @id @default(cuid())
+  seasonId    String
+  eventSlug   String
+  locationId  String
+  userId      String
+  dayCount    Int      @default(1)
+  triggeredAt DateTime @default(now())
+
+  @@index([seasonId, eventSlug])
+  @@index([seasonId, locationId])
+}
+
 model BroadcastLog {
   id            String   @id @default(cuid())
   type          String

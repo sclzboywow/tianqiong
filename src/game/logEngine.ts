@@ -4,6 +4,7 @@ import type { LogType } from "@/game/prisma-types";
 const SEASON_ID = process.env.SEASON_ID || "season-1";
 
 export const MAP_ACTION_LOG_PREFIX = "【协同地图】";
+export const EVENT_POOL_LOG_PREFIX = "【事件池】";
 
 export type GameLogSummary = {
   id: string;
@@ -92,4 +93,24 @@ export function buildMapActionLogContent(params: {
     detail = message;
   }
   return `${MAP_ACTION_LOG_PREFIX}在「${locationName}」(${locationId})执行「${actionLabel}」，${detail}。`;
+}
+
+export function buildEventPoolLogContent(params: {
+  locationId: string;
+  locationName: string;
+  actionLabel: string;
+  eventTitle: string;
+  eventSlug: string;
+  createdCount: number;
+  skippedCount: number;
+  message: string;
+}) {
+  const { locationId, locationName, actionLabel, eventTitle, eventSlug, createdCount, skippedCount, message } =
+    params;
+  let detail = message;
+  if (createdCount > 0) {
+    detail = `已生成 ${createdCount} 项任务`;
+    if (skippedCount > 0) detail += `，跳过 ${skippedCount} 项`;
+  }
+  return `${EVENT_POOL_LOG_PREFIX}在「${locationName}」(${locationId})执行「${actionLabel}」后触发事件「${eventTitle}」(${eventSlug})，${detail}。`;
 }

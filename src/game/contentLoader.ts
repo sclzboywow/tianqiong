@@ -2,11 +2,14 @@ import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import type { TaskTemplateData, ResolutionMode } from "./types";
 import type { ProjectStageId } from "./projectStages";
 import { inferMinResolveCount, inferResolutionMode } from "./taskEngine";
+import { resolveTaskTemplateEffects, type TaskTemplateEffectDoc } from "./taskTemplateEffectMapper";
 
 function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
   const rarity = doc.rarity as string;
   const resolutionMode = (doc.resolutionMode as ResolutionMode | undefined) ?? inferResolutionMode(rarity);
   const requiredCount = doc.requiredCount as number | undefined;
+
+  const effects = resolveTaskTemplateEffects(doc as TaskTemplateEffectDoc);
 
   return {
     slug: doc.slug as string,
@@ -21,11 +24,12 @@ function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
     requiredCount,
     deadlineHours: doc.deadlineHours as number | undefined,
     inkFile: doc.inkFile as string,
+    storySlug: doc.storySlug as string | undefined,
     baseSuccessRate: doc.baseSuccessRate as number | undefined,
-    successEffects: doc.successEffects as TaskTemplateData["successEffects"],
-    failEffects: doc.failEffects as TaskTemplateData["failEffects"],
-    choiceEffects: doc.choiceEffects as TaskTemplateData["choiceEffects"],
-    milestoneEffects: doc.milestoneEffects as TaskTemplateData["milestoneEffects"],
+    successEffects: effects.successEffects,
+    failEffects: effects.failEffects,
+    choiceEffects: effects.choiceEffects,
+    milestoneEffects: effects.milestoneEffects,
     resolutionMode,
     minResolveCount: inferMinResolveCount(
       resolutionMode,
@@ -33,6 +37,7 @@ function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
       doc.minResolveCount as number | undefined,
     ),
     triggerBroadcast: doc.triggerBroadcast as boolean | undefined,
+    category: doc.category as string | undefined,
   };
 }
 

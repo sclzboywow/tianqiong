@@ -24,6 +24,7 @@ function mapPayloadDoc(doc: Record<string, unknown>): LocationAction {
     minReputation: doc.minReputation as number | undefined,
     resultText: (doc.resultText as string) || undefined,
     noTaskText: (doc.noTaskText as string) || undefined,
+    storySlug: doc.storySlug ? String(doc.storySlug) : undefined,
     sortOrder: doc.sortOrder as number | undefined,
   };
 }

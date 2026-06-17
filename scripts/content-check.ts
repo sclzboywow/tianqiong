@@ -28,7 +28,18 @@ function printReport(report: ContentHealthCheckReport) {
     }
   }
 
-  console.log(`\n合计: ${report.passCount} 通过, ${report.failCount} 失败\n`);
+  for (const result of report.warnings || []) {
+    console.log(`[WARN] ${result.name} (${result.failures.length}/${result.total})`);
+    for (const failure of result.failures) {
+      console.log(`       — ${failure}`);
+    }
+  }
+
+  console.log(
+    `\n合计: ${report.passCount} 通过, ${report.failCount} 失败` +
+      (report.warnCount > 0 ? `, ${report.warnCount} 警告` : "") +
+      "\n",
+  );
 }
 
 async function main() {

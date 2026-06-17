@@ -33,6 +33,7 @@ export interface TaskTemplateData {
   requiredCount?: number;
   deadlineHours?: number;
   inkFile: string;
+  storySlug?: string;
   baseSuccessRate?: number;
   successEffects?: MetricEffects;
   failEffects?: MetricEffects;
@@ -43,6 +44,68 @@ export interface TaskTemplateData {
   stage?: ProjectStageId;
   milestoneEffects?: Record<string, boolean>;
   category?: string;
+}
+
+export interface EventTemplateData {
+  slug: string;
+  title: string;
+  description?: string;
+  rarity: string;
+  area?: string;
+  eventType?: string;
+  inkFile: string;
+  storySlug?: string;
+  npcList?: string[];
+  recommendedJobs?: string[];
+  baseSuccessRate?: number;
+  triggerBroadcast?: boolean;
+  triggerStage?: ProjectStageId;
+  triggerLocationSlugs?: string[];
+  triggerAreaNames?: string[];
+  triggerNpcNames?: string[];
+  riskTags?: string[];
+  unlockMilestones?: string[];
+  minDay?: number;
+  maxDay?: number;
+  weight?: number;
+  onceOnly?: boolean;
+  cooldownDays?: number;
+  triggerTaskSlugs?: string[];
+  resultText?: string;
+  noTaskText?: string;
+  enabled?: boolean;
+  payloadDocId?: string | number;
+}
+
+export type StoryEntryStatus = "draft" | "published";
+export type StoryEntryType =
+  | "mainline_stage"
+  | "task_story"
+  | "event_story"
+  | "location_story"
+  | "npc_dialogue"
+  | "ending";
+
+export interface StoryEntryData {
+  slug: string;
+  title: string;
+  description?: string;
+  storyType: StoryEntryType;
+  status: StoryEntryStatus;
+  inkFile: string;
+  compiledFile?: string;
+  startKnot?: string;
+  stage?: ProjectStageId;
+  relatedLocationSlugs?: string[];
+  relatedTaskSlugs?: string[];
+  relatedEventSlugs?: string[];
+  relatedNpcNames?: string[];
+  tags?: string[];
+  previewText?: string;
+  estimatedMinutes?: number;
+  sortOrder?: number;
+  enabled?: boolean;
+  payloadDocId?: string | number;
 }
 
 export interface AchievementTemplateData {

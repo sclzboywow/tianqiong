@@ -60,6 +60,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     description: "项目推进的核心协调部门，负责总控计划、阶段推进、问题协调和跨单位沟通。",
     unlockStage: "INITIATION",
     relatedTaskSlugs: ["setup_project_team", "prepare_master_plan", "create_risk_register"],
+    relatedAreaNames: ["项目总控"],
     relatedNpcNames: ["甲方代表", "总承包单位"],
     riskTags: ["progress", "coordination"],
     achievementHooks: ["first_owner_office_visit"],

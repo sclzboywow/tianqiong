@@ -118,6 +118,15 @@ export const NPCS: NpcData[] = [
 
 export const AREAS: AreaData[] = [
   {
+    name: "项目总控",
+    description: "项目级主线任务、阶段门推进、综合协调与运营调度的虚拟管理场景。",
+    stage: "管理",
+    riskTags: ["coordination", "management", "mainline"],
+    unlockStage: "INITIATION",
+    relatedLocationSlugs: ["owner_project_management_dept"],
+    visibleWhenLocked: false,
+  },
+  {
     name: "L1商业街",
     description: "商户集中区域",
     stage: "精装修",

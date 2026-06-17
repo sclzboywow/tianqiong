@@ -5,6 +5,11 @@ import { ACHIEVEMENTS } from "@/data/achievements";
 import { MAP_LOCATIONS } from "@/data/locations";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import type { TaskTemplateData } from "@/game/types";
+import {
+  choiceEffectsToRows,
+  metricEffectsToRows,
+  milestoneEffectsToRows,
+} from "@/game/taskTemplateEffectMapper";
 import { inferMinResolveCount, inferResolutionMode } from "@/game/taskEngine";
 import {
   inferAchievementCategory,
@@ -26,6 +31,7 @@ export type CollectionSeedStats = {
 export type PayloadSeedStats = {
   npcs: CollectionSeedStats;
   areas: CollectionSeedStats;
+  storyEntries: CollectionSeedStats;
   taskTemplates: CollectionSeedStats;
   eventTemplates: CollectionSeedStats;
   items: CollectionSeedStats;
@@ -47,6 +53,7 @@ function emptySeedStats(): PayloadSeedStats {
   return {
     npcs: emptyCollectionStats(),
     areas: emptyCollectionStats(),
+    storyEntries: emptyCollectionStats(),
     taskTemplates: emptyCollectionStats(),
     eventTemplates: emptyCollectionStats(),
     items: emptyCollectionStats(),
@@ -102,6 +109,11 @@ function buildTaskTemplatePayloadData(template: TaskTemplateData) {
     successEffects: template.successEffects || {},
     failEffects: template.failEffects || {},
     choiceEffects: template.choiceEffects || {},
+    successMetricEffects: metricEffectsToRows(template.successEffects),
+    failMetricEffects: metricEffectsToRows(template.failEffects),
+    milestoneEffectList: milestoneEffectsToRows(template.milestoneEffects),
+    choiceEffectList: choiceEffectsToRows(template.choiceEffects),
+    storySlug: template.inkFile,
     inkFile: template.inkFile,
     baseSuccessRate: template.baseSuccessRate || 60,
     triggerBroadcast: template.triggerBroadcast || false,
@@ -109,19 +121,61 @@ function buildTaskTemplatePayloadData(template: TaskTemplateData) {
   };
 }
 
+function inferEventTriggerLocationSlugs(taskSlug: string): string[] {
+  const slugs = new Set<string>();
+  for (const action of LOCATION_ACTIONS) {
+    if ((action.triggerTaskSlugs || []).includes(taskSlug)) {
+      slugs.add(action.locationId);
+    }
+  }
+  return [...slugs];
+}
+
 function buildEventTemplatePayloadData(template: TaskTemplateData) {
+  const eventSlug = `evt_${template.slug}`;
   return {
+    slug: eventSlug,
     title: template.title,
+    description: template.description,
     category: inferTaskCategory(template),
     rarity: template.rarity,
     area: template.area,
     npcList: template.sourceName ? [{ npc: template.sourceName }] : [],
     eventType: template.sourceType,
     inkFile: template.inkFile,
+    storySlug: template.inkFile,
     recommendedJobs: (template.requiredJobs || []).map((j) => ({ job: j })),
     baseSuccessRate: template.baseSuccessRate || 60,
     triggerBroadcast: template.triggerBroadcast || false,
+    triggerStage: template.stage,
+    triggerLocationSlugs: inferEventTriggerLocationSlugs(template.slug).map((slug) => ({ slug })),
+    triggerAreaNames: template.area ? [{ name: template.area }] : [],
+    triggerNpcNames: template.sourceName ? [{ name: template.sourceName }] : [],
+    riskTags: [],
+    unlockMilestones: [],
+    weight: 10,
+    onceOnly: false,
+    cooldownDays: 0,
+    triggerTaskSlugs: [{ slug: template.slug }],
     enabled: true,
+  };
+}
+
+function buildStoryEntryPayloadData(template: TaskTemplateData, storyType: "task_story" | "event_story") {
+  const eventSlug = `evt_${template.slug}`;
+  return {
+    slug: template.inkFile,
+    title: template.title,
+    description: template.description,
+    storyType,
+    status: "published",
+    inkFile: template.inkFile,
+    compiledFile: `${template.inkFile}.json`,
+    stage: template.stage,
+    relatedTaskSlugs: [{ slug: template.slug }],
+    relatedEventSlugs: storyType === "event_story" ? [{ slug: eventSlug }] : [],
+    enabled: true,
+    sortOrder: 0,
   };
 }
 
@@ -204,6 +258,22 @@ export async function seedPayloadCollections(
   }
 
   for (const template of templates) {
+    const data = buildStoryEntryPayloadData(template, "task_story");
+    const existing = await payload.find({
+      collection: "story-entries",
+      where: { slug: { equals: data.slug } },
+    });
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.storyEntries,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "story-entries", data }),
+      () => payload.update({ collection: "story-entries", id: doc.id, data }),
+    );
+  }
+
+  for (const template of templates) {
     const data = buildTaskTemplatePayloadData(template);
     const existing = await payload.find({
       collection: "task-templates",
@@ -223,7 +293,7 @@ export async function seedPayloadCollections(
     const data = buildEventTemplatePayloadData(template);
     const existing = await payload.find({
       collection: "event-templates",
-      where: { inkFile: { equals: template.inkFile } },
+      where: { slug: { equals: data.slug } },
     });
     const doc = existing.docs[0];
     await applySeedRecord(

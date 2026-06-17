@@ -6,11 +6,13 @@ import { hasReachedStage } from "./contentUnlockEngine";
 import { parseMilestones, getProjectState } from "./projectEngine";
 import { createTaskFromTemplateSlug } from "./taskEngine";
 import { buildMapActionLogContent, writeGameLog } from "./logEngine";
+import { triggerEventForLocationAction, type EventTriggerResult } from "./eventPoolEngine";
 
 export type LocationActionExecuteResult = {
   createdTasks: Task[];
   skippedTasks: { slug: string; title: string; reason: string }[];
   message: string;
+  eventResult?: EventTriggerResult;
 };
 
 export function isLocationActionUnlocked(action: LocationAction, projectState: ProjectState): boolean {
@@ -188,5 +190,24 @@ export async function executeLocationAction(
     }),
   });
 
-  return { createdTasks, skippedTasks, message };
+  let eventResult: EventTriggerResult | undefined;
+  if (createdTasks.length > 0) {
+    try {
+      eventResult = await triggerEventForLocationAction({
+        locationId: location.id,
+        locationName: location.name,
+        actionId: action.id,
+        actionLabel: action.label,
+        userId,
+        projectState: project,
+      });
+      if (eventResult.message) {
+        message = `${message} ${eventResult.message}`;
+      }
+    } catch {
+      // 事件池触发失败不影响地点行动
+    }
+  }
+
+  return { createdTasks, skippedTasks, message, eventResult };
 }
