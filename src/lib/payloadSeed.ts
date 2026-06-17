@@ -4,7 +4,8 @@ import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
 import { ACHIEVEMENTS } from "@/data/achievements";
 import { MAP_LOCATIONS } from "@/data/locations";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
-import type { TaskTemplateData } from "@/game/types";
+import { CHAPTER1_EVENTS } from "@/data/chapter1Content";
+import type { TaskTemplateData, EventTemplateData } from "@/game/types";
 import {
   choiceEffectsToRows,
   metricEffectsToRows,
@@ -113,7 +114,7 @@ function buildTaskTemplatePayloadData(template: TaskTemplateData) {
     failMetricEffects: metricEffectsToRows(template.failEffects),
     milestoneEffectList: milestoneEffectsToRows(template.milestoneEffects),
     choiceEffectList: choiceEffectsToRows(template.choiceEffects),
-    storySlug: template.inkFile,
+    storySlug: template.storySlug || template.inkFile,
     inkFile: template.inkFile,
     baseSuccessRate: template.baseSuccessRate || 60,
     triggerBroadcast: template.triggerBroadcast || false,
@@ -162,9 +163,10 @@ function buildEventTemplatePayloadData(template: TaskTemplateData) {
 }
 
 function buildStoryEntryPayloadData(template: TaskTemplateData, storyType: "task_story" | "event_story") {
+  const storySlug = template.storySlug || template.inkFile;
   const eventSlug = `evt_${template.slug}`;
   return {
-    slug: template.inkFile,
+    slug: storySlug,
     title: template.title,
     description: template.description,
     storyType,
@@ -176,6 +178,28 @@ function buildStoryEntryPayloadData(template: TaskTemplateData, storyType: "task
     relatedEventSlugs: storyType === "event_story" ? [{ slug: eventSlug }] : [],
     enabled: true,
     sortOrder: 0,
+  };
+}
+
+function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
+  return {
+    slug: event.slug,
+    title: event.title,
+    description: event.description,
+    category: "mainline",
+    rarity: event.rarity || "R",
+    area: event.area,
+    inkFile: event.inkFile,
+    storySlug: event.storySlug,
+    triggerStage: event.triggerStage,
+    triggerLocationSlugs: (event.triggerLocationSlugs || []).map((slug) => ({ slug })),
+    triggerTaskSlugs: (event.triggerTaskSlugs || []).map((slug) => ({ slug })),
+    triggerAreaNames: event.area ? [{ name: event.area }] : [],
+    riskTags: (event.riskTags || []).map((tag) => ({ tag })),
+    weight: event.weight ?? 10,
+    onceOnly: event.onceOnly ?? false,
+    cooldownDays: event.cooldownDays ?? 0,
+    enabled: event.enabled ?? true,
   };
 }
 
@@ -294,6 +318,23 @@ export async function seedPayloadCollections(
     const existing = await payload.find({
       collection: "event-templates",
       where: { slug: { equals: data.slug } },
+    });
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.eventTemplates,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "event-templates", data }),
+      () => payload.update({ collection: "event-templates", id: doc.id, data }),
+    );
+  }
+
+  for (const event of CHAPTER1_EVENTS) {
+    if (!event.slug) continue;
+    const data = buildChapter1EventPayloadData(event);
+    const existing = await payload.find({
+      collection: "event-templates",
+      where: { slug: { equals: event.slug } },
     });
     const doc = existing.docs[0];
     await applySeedRecord(

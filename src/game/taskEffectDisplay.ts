@@ -10,9 +10,11 @@ const METRIC_LABEL_MAP: Record<string, string> = {
 
 export function formatMetricEffectLines(effects?: MetricEffects): string[] {
   if (!effects || Object.keys(effects).length === 0) return ["—"];
-  return Object.entries(effects).map(
-    ([key, value]) => `${METRIC_LABEL_MAP[key] || key} ${value > 0 ? "+" : ""}${value}`,
-  );
+  return Object.entries(effects)
+    .filter((entry): entry is [string, number] => entry[1] !== undefined)
+    .map(
+      ([key, value]) => `${METRIC_LABEL_MAP[key] || key} ${value > 0 ? "+" : ""}${value}`,
+    );
 }
 
 export function formatMilestoneEffectLines(effects?: Record<string, boolean>): string[] {

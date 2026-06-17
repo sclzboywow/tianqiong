@@ -159,6 +159,7 @@ export const MILESTONE_LABELS: Record<string, string> = {
   completionAccepted: "竣工验收通过",
   archiveCompleted: "资料归档完成",
   propertyHandoverDone: "物业移交完成",
+  firstCoordinationMeetingDone: "首次项目协调会完成",
 };
 
 export const STAGE_GATE_STATUS_LABELS: Record<string, string> = {

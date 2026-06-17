@@ -1,4 +1,5 @@
 import type { ProjectStageId } from "@/game/projectStages";
+import { CHAPTER1_LOCATION_ACTIONS } from "@/data/chapter1Content";
 
 export type LocationAction = {
   id: string;
@@ -21,30 +22,7 @@ export type LocationAction = {
 };
 
 export const LOCATION_ACTIONS: LocationAction[] = [
-  {
-    id: "action_coordinate_master_plan",
-    locationId: "owner_project_management_dept",
-    label: "协调总控计划",
-    description: "与甲方代表对接，启动项目推进小组并编制总控计划。",
-    unlockStage: "INITIATION",
-    triggerTaskSlugs: ["setup_project_team", "prepare_master_plan"],
-    relatedNpcNames: ["甲方代表"],
-    riskTags: ["progress", "coordination"],
-    spiritCost: 8,
-    minLevel: 1,
-  },
-  {
-    id: "action_risk_register",
-    locationId: "owner_project_management_dept",
-    label: "建立风险清单",
-    description: "梳理项目潜在风险，形成风险登记台账。",
-    unlockStage: "INITIATION",
-    triggerTaskSlugs: ["create_risk_register"],
-    relatedNpcNames: ["甲方代表"],
-    riskTags: ["coordination"],
-    spiritCost: 6,
-    minLevel: 1,
-  },
+  ...CHAPTER1_LOCATION_ACTIONS,
   {
     id: "action_pre_approval_push",
     locationId: "owner_pre_approval_office",
@@ -58,18 +36,6 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     spiritCost: 12,
     minLevel: 2,
     minReputation: 20,
-  },
-  {
-    id: "action_document_ledger",
-    locationId: "project_document_room",
-    label: "整理资料台账",
-    description: "在资料室建立项目资料台账，规范归档流程。",
-    unlockStage: "INITIATION",
-    triggerTaskSlugs: ["create_document_ledger"],
-    relatedNpcNames: ["监理单位"],
-    riskTags: ["document"],
-    spiritCost: 6,
-    minLevel: 1,
   },
   {
     id: "action_gov_service_approval",

@@ -44,9 +44,16 @@ function mapPayloadDoc(doc: Record<string, unknown>): StoryEntryData {
 }
 
 let cachedEntries: StoryEntryData[] | null = null;
+let cacheExpiresAt = 0;
+
+const STORY_ENTRY_CACHE_TTL_MS = Number(process.env.STORY_ENTRY_CACHE_TTL_MS || 5000);
+
+function isCacheValid(): boolean {
+  return cachedEntries !== null && Date.now() < cacheExpiresAt;
+}
 
 export async function getStoryEntries(): Promise<StoryEntryData[]> {
-  if (cachedEntries) return cachedEntries;
+  if (isCacheValid() && cachedEntries) return cachedEntries;
   try {
     const { getPayload } = await import("payload");
     const config = (await import("@payload-config")).default;
@@ -60,6 +67,7 @@ export async function getStoryEntries(): Promise<StoryEntryData[]> {
     cachedEntries = result.docs
       .map((doc) => mapPayloadDoc(doc as Record<string, unknown>))
       .filter((entry) => entry.slug.trim().length > 0);
+    cacheExpiresAt = Date.now() + STORY_ENTRY_CACHE_TTL_MS;
     return cachedEntries;
   } catch {
     return [];
@@ -85,4 +93,5 @@ export async function resolveInkFileFromStorySlug(
 
 export function clearStoryEntryCache() {
   cachedEntries = null;
+  cacheExpiresAt = 0;
 }

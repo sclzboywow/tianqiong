@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ContentHealthCheckReport } from "@/game/contentHealthCheck";
 import type { ContentStudioData } from "@/game/contentStudioLoader";
+import { buildChapter1AcceptanceFromStudio } from "@/game/chapter1Acceptance";
 import {
   getActionsForLocationStudio,
   getEventsForLocationStudio,
@@ -10,7 +11,7 @@ import {
   getTaskTemplateBySlug,
   payloadAdminUrl,
 } from "@/game/contentStudioLoader";
-import { type EventTemplateData, type StoryEntryData, type TaskTemplateData } from "@/game/types";
+import { type EventTemplateData, type StoryEntryData, type TaskTemplateData, type MetricEffects, type ChoiceEffectsMap } from "@/game/types";
 import { PROJECT_STAGES } from "@/game/projectStages";
 import {
   formatChoiceEffectLines,
@@ -31,7 +32,7 @@ function stageLabel(stageId?: string) {
   return PROJECT_STAGES.find((stage) => stage.id === stageId)?.name || stageId;
 }
 
-function formatMetricEffects(effects?: Record<string, number>) {
+function formatMetricEffects(effects?: MetricEffects) {
   return formatMetricEffectLines(effects);
 }
 
@@ -39,7 +40,7 @@ function formatMilestoneEffects(effects?: Record<string, boolean>) {
   return formatMilestoneEffectLines(effects);
 }
 
-function formatChoiceEffects(effects?: Record<string, Record<string, number>>) {
+function formatChoiceEffects(effects?: ChoiceEffectsMap) {
   return formatChoiceEffectLines(effects);
 }
 
@@ -287,6 +288,16 @@ export function ContentStudioPanel({
     { label: "区域", value: data.overview.areas },
   ];
 
+  const chapter1Report = buildChapter1AcceptanceFromStudio(data);
+  const chapter1Items = [
+    { label: "主线任务", item: chapter1Report.tasks },
+    { label: "StoryEntry", item: chapter1Report.storyEntries },
+    { label: "Ink 文件", item: chapter1Report.inkFiles },
+    { label: "地点行动", item: chapter1Report.locationActions },
+    { label: "事件池", item: chapter1Report.events },
+    { label: "阶段门节点", item: chapter1Report.stageGate },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
@@ -308,6 +319,49 @@ export function ContentStudioPanel({
             </Card>
           ))}
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-medium text-zinc-200">第一章验收</h2>
+        <p className="mb-4 text-sm text-zinc-500">
+          {chapter1Report.chapterName}（{stageLabel(chapter1Report.stage)}）可玩内容包完成度摘要。
+        </p>
+        <Card
+          className={`border-zinc-800 ${chapter1Report.allOk ? "bg-emerald-950/20" : "bg-zinc-900/80"}`}
+        >
+          <CardContent className="p-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={chapter1Report.allOk ? "default" : "outline"}>
+                {chapter1Report.allOk ? "验收就绪" : "待补齐"}
+              </Badge>
+              <span className="text-sm text-zinc-400">
+                运行 <span className="font-mono text-zinc-300">npm run test:chapter1</span> 做完整检查
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {chapter1Items.map(({ label, item }) => (
+                <div
+                  key={label}
+                  className={`rounded-lg border p-3 ${
+                    item.ok ? "border-emerald-900/40 bg-zinc-950/50" : "border-amber-900/40 bg-amber-950/10"
+                  }`}
+                >
+                  <p className="text-xs text-zinc-500">{label}</p>
+                  <p className="mt-1 text-lg font-semibold text-zinc-100">
+                    {item.done}/{item.total}
+                  </p>
+                  {item.missing.length > 0 ? (
+                    <p className="mt-1 text-xs text-amber-300/90 font-mono truncate" title={item.missing.join(", ")}>
+                      缺失：{item.missing.join(", ")}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-emerald-400/90">完整</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-5">

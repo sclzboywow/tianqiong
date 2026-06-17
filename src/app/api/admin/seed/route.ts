@@ -5,6 +5,8 @@ import { getTaskTemplates } from "@/game/contentLoader";
 import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import { normalizeStageId } from "@/game/projectStages";
 import { seedPayloadCollections } from "@/lib/payloadSeed";
+import { getCurrentUserId } from "@/lib/session";
+import { isGameAdmin } from "@/lib/gameAdmin";
 
 function resolveSeedOverwrite(request: Request): boolean {
   const { searchParams } = new URL(request.url);
@@ -14,7 +16,19 @@ function resolveSeedOverwrite(request: Request): boolean {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "未登录" }, { status: 401 });
+    }
+
     const overwrite = resolveSeedOverwrite(request);
+    if (overwrite && !(await isGameAdmin(userId))) {
+      return NextResponse.json({ error: "仅管理员可覆盖 seed" }, { status: 403 });
+    }
+    if (!(await isGameAdmin(userId))) {
+      return NextResponse.json({ error: "仅管理员可执行 seed" }, { status: 403 });
+    }
+
     const project = await initializeProjectForSeed();
 
     const { getPayload } = await import("payload");

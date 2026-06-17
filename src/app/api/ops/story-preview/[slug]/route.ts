@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStoryEntryBySlug } from "@/game/storyEntryLoader";
 import { createStory, getStoryState, makeChoice } from "@/ink/inkRunner";
+import { getCurrentUserId } from "@/lib/session";
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
@@ -18,7 +19,18 @@ function replayStory(inkFile: string, choicePath: number[]) {
   return state;
 }
 
+async function requirePreviewAuth() {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ ok: false, error: "未登录" }, { status: 401 });
+  }
+  return null;
+}
+
 export async function GET(_request: Request, context: RouteContext) {
+  const authError = await requirePreviewAuth();
+  if (authError) return authError;
+
   const { slug } = await context.params;
   const entry = await getStoryEntryBySlug(slug);
   if (!entry) {
@@ -41,6 +53,9 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const authError = await requirePreviewAuth();
+  if (authError) return authError;
+
   const { slug } = await context.params;
   const entry = await getStoryEntryBySlug(slug);
   if (!entry) {

@@ -1,5 +1,6 @@
 import type { TaskTemplateData } from "@/game/types";
 import type { ProjectStageId } from "@/game/projectStages";
+import { CHAPTER1_TASK_TEMPLATES } from "@/data/chapter1Content";
 
 const genericChoiceEffects = {
   immediate_fix: {},
@@ -25,6 +26,7 @@ function stageTask(
     inkFile: slug,
     choiceEffects: genericChoiceEffects,
     successEffects: { stageProgress: 25, dataIntegrity: 2 },
+    failEffects: { latentRisk: 5, ownerTrust: -2, stageProgress: -5 },
     milestoneEffects: { [milestone]: true },
     category: "mainline",
     ...extra,
@@ -32,18 +34,7 @@ function stageTask(
 }
 
 export const STAGE_TASK_TEMPLATES: TaskTemplateData[] = [
-  stageTask("setup_project_team", "组建项目推进小组", "INITIATION", "projectOrgDone", {
-    successEffects: { stageProgress: 25, ownerTrust: 3, dataIntegrity: 2 },
-  }),
-  stageTask("prepare_master_plan", "编制项目总控计划", "INITIATION", "masterPlanDone", {
-    successEffects: { stageProgress: 25, dataIntegrity: 3, latentRisk: -2 },
-  }),
-  stageTask("create_risk_register", "建立项目风险清单", "INITIATION", "riskRegisterDone", {
-    successEffects: { stageProgress: 25, latentRisk: -5 },
-  }),
-  stageTask("create_document_ledger", "建立项目资料台账", "INITIATION", "documentLedgerDone", {
-    successEffects: { stageProgress: 25, dataIntegrity: 8 },
-  }),
+  ...CHAPTER1_TASK_TEMPLATES,
 
   stageTask("confirm_approval_path", "明确报批路径", "APPROVAL", "approvalPathConfirmed", {
     successEffects: { stageProgress: 25, ownerTrust: 2, dataIntegrity: 3 },

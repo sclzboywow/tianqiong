@@ -200,6 +200,11 @@ export async function executeLocationAction(
         actionLabel: action.label,
         userId,
         projectState: project,
+        locationRiskTags: location.riskTags,
+        locationRelatedAreaNames: location.relatedAreaNames,
+        locationRelatedNpcNames: location.relatedNpcNames,
+        actionRiskTags: action.riskTags,
+        actionRelatedNpcNames: action.relatedNpcNames,
       });
       if (eventResult.message) {
         message = `${message} ${eventResult.message}`;

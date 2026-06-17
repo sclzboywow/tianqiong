@@ -1,5 +1,6 @@
 import { prisma } from "@/prisma/client";
 import type { LogType } from "@/game/prisma-types";
+import { CHARACTER_GROWTH_LOG_PREFIX } from "./playerProgressEngine";
 
 const SEASON_ID = process.env.SEASON_ID || "season-1";
 
@@ -10,7 +11,44 @@ export type GameLogSummary = {
   id: string;
   content: string;
   createdAt: Date;
+  logType?: LogType;
+  category?: "action" | "event" | "task" | "other";
 };
+
+function categorizeLog(log: { content: string; logType: LogType }): GameLogSummary["category"] {
+  if (log.content.startsWith(MAP_ACTION_LOG_PREFIX)) return "action";
+  if (log.content.startsWith(EVENT_POOL_LOG_PREFIX)) return "event";
+  if (log.logType === "TASK" || log.content.startsWith(CHARACTER_GROWTH_LOG_PREFIX)) return "task";
+  return "other";
+}
+
+export async function getRecentPlayerActivityLogs(
+  limit = 8,
+  seasonId = SEASON_ID,
+): Promise<GameLogSummary[]> {
+  const rows = await prisma.gameLog.findMany({
+    where: {
+      seasonId,
+      OR: [
+        { content: { startsWith: MAP_ACTION_LOG_PREFIX } },
+        { content: { startsWith: EVENT_POOL_LOG_PREFIX } },
+        { logType: "TASK" },
+        { content: { startsWith: CHARACTER_GROWTH_LOG_PREFIX } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: { id: true, content: true, createdAt: true, logType: true },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    content: row.content,
+    createdAt: row.createdAt,
+    logType: row.logType as LogType,
+    category: categorizeLog({ content: row.content, logType: row.logType as LogType }),
+  }));
+}
 
 export async function writeGameLog(params: {
   seasonId?: string;

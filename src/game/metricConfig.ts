@@ -16,12 +16,6 @@ export const PROJECT_METRIC_OPTIONS: ProjectMetricOption[] = [
     goodDirection: "up",
   },
   {
-    key: "overallProgress",
-    label: "总体进度",
-    description: "项目整体建设进度",
-    goodDirection: "up",
-  },
-  {
     key: "progress",
     label: "工程进度",
     description: "施工现场工程推进进度",
@@ -80,6 +74,9 @@ export const PROJECT_METRIC_OPTIONS: ProjectMetricOption[] = [
 export const VALID_PROJECT_METRIC_KEYS = new Set(
   PROJECT_METRIC_OPTIONS.map((option) => option.key),
 );
+
+/** 任务效果可配置的指标 key（不含 legacy progress / stageProgress） */
+export type ConfigurableMetricKey = (typeof PROJECT_METRIC_OPTIONS)[number]["key"];
 
 export const METRIC_SELECT_OPTIONS = PROJECT_METRIC_OPTIONS.map((option) => ({
   label: option.label,

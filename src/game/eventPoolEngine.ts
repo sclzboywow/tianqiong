@@ -1,6 +1,6 @@
+import type { EventTemplateData } from "./types";
 import type { ProjectState, Task } from "@prisma/client";
 import { prisma } from "@/prisma/client";
-import type { EventTemplateData } from "./types";
 import { getEventTemplates } from "./eventTemplateLoader";
 import { parseMilestones } from "./projectEngine";
 import { createTaskFromTemplateSlug } from "./taskEngine";
@@ -14,6 +14,44 @@ export type EventTriggerResult = {
   skippedTasks: { slug: string; title: string; reason: string }[];
   message: string;
 };
+
+export type EventPoolFilterContext = {
+  locationRiskTags?: string[];
+  locationRelatedAreaNames?: string[];
+  locationRelatedNpcNames?: string[];
+  actionRiskTags?: string[];
+  actionRelatedNpcNames?: string[];
+};
+
+function hasIntersection(required: string[], candidates: string[]): boolean {
+  if (required.length === 0) return true;
+  if (candidates.length === 0) return false;
+  const candidateSet = new Set(candidates);
+  return required.some((value) => candidateSet.has(value));
+}
+
+function matchesRiskTags(event: EventTemplateData, context: EventPoolFilterContext): boolean {
+  const eventTags = event.riskTags || [];
+  if (eventTags.length === 0) return true;
+  const combined = [...(context.locationRiskTags || []), ...(context.actionRiskTags || [])];
+  return hasIntersection(eventTags, combined);
+}
+
+function matchesAreaNames(event: EventTemplateData, context: EventPoolFilterContext): boolean {
+  const required = event.triggerAreaNames || [];
+  if (required.length === 0) return true;
+  return hasIntersection(required, context.locationRelatedAreaNames || []);
+}
+
+function matchesNpcNames(event: EventTemplateData, context: EventPoolFilterContext): boolean {
+  const required = event.triggerNpcNames || [];
+  if (required.length === 0) return true;
+  const combined = [
+    ...(context.locationRelatedNpcNames || []),
+    ...(context.actionRelatedNpcNames || []),
+  ];
+  return hasIntersection(required, combined);
+}
 
 function isStageMatch(event: EventTemplateData, projectState: ProjectState): boolean {
   if (!event.triggerStage) return true;
@@ -82,6 +120,7 @@ function pickWeightedEvent(events: EventTemplateData[]): EventTemplateData | nul
 export async function getAvailableEventsForLocation(
   locationId: string,
   projectState: ProjectState,
+  filterContext: EventPoolFilterContext = {},
 ): Promise<EventTemplateData[]> {
   const allEvents = await getEventTemplates();
   const logs = await getTriggerLogsForSeason(SEASON_ID);
@@ -93,6 +132,9 @@ export async function getAvailableEventsForLocation(
     if (!isLocationMatch(event, locationId)) continue;
     if (!areMilestonesUnlocked(event, projectState)) continue;
     if (!isDayInRange(event, projectState.dayCount)) continue;
+    if (!matchesRiskTags(event, filterContext)) continue;
+    if (!matchesAreaNames(event, filterContext)) continue;
+    if (!matchesNpcNames(event, filterContext)) continue;
     if (await isOnceOnlyBlocked(event, logs)) continue;
     if (await isCooldownBlocked(event, projectState.dayCount, logs)) continue;
     available.push(event);
@@ -108,6 +150,11 @@ export async function triggerEventForLocationAction(params: {
   actionLabel: string;
   userId: string;
   projectState: ProjectState;
+  locationRiskTags?: string[];
+  locationRelatedAreaNames?: string[];
+  locationRelatedNpcNames?: string[];
+  actionRiskTags?: string[];
+  actionRelatedNpcNames?: string[];
 }): Promise<EventTriggerResult> {
   const empty: EventTriggerResult = {
     triggeredEvent: null,
@@ -117,7 +164,13 @@ export async function triggerEventForLocationAction(params: {
   };
 
   try {
-    const available = await getAvailableEventsForLocation(params.locationId, params.projectState);
+    const available = await getAvailableEventsForLocation(params.locationId, params.projectState, {
+      locationRiskTags: params.locationRiskTags,
+      locationRelatedAreaNames: params.locationRelatedAreaNames,
+      locationRelatedNpcNames: params.locationRelatedNpcNames,
+      actionRiskTags: params.actionRiskTags,
+      actionRelatedNpcNames: params.actionRelatedNpcNames,
+    });
     if (available.length === 0) return empty;
 
     const selected = pickWeightedEvent(available);

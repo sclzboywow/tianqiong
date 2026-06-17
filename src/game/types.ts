@@ -1,20 +1,10 @@
 import type { ProjectStageId } from "@/game/projectStages";
+import type { ConfigurableMetricKey } from "@/game/metricConfig";
 
 export type ResolutionMode = "SOLO" | "VOTE" | "ROLE_CHECKLIST";
 
-export type MetricKey =
-  | "progress"
-  | "quality"
-  | "safety"
-  | "cost"
-  | "dataIntegrity"
-  | "fireRisk"
-  | "ownerTrust"
-  | "propertyHandover"
-  | "spirit"
-  | "latentRisk"
-  | "stageProgress"
-  | "merchantSatisfaction";
+/** 与 PROJECT_METRIC_OPTIONS 一致，并保留 progress / stageProgress 兼容字段 */
+export type MetricKey = ConfigurableMetricKey | "progress" | "stageProgress";
 
 export type MetricEffects = Partial<Record<MetricKey, number>>;
 
