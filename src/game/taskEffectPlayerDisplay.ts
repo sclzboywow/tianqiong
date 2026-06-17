@@ -42,6 +42,14 @@ export function formatPlayerMetricEffectLines(
   return lines.slice(0, maxLines);
 }
 
+export function formatPlayerMetricEffectLinesFromRecord(
+  effects?: Record<string, number> | null,
+  maxLines = 6,
+): PlayerEffectLine[] {
+  if (!effects) return [];
+  return formatPlayerMetricEffectLines(effects as MetricEffects, maxLines);
+}
+
 export function formatPlayerMilestoneLabels(
   milestoneEffects?: Record<string, boolean> | null,
   maxLabels = 2,

@@ -155,6 +155,33 @@ export async function getRecentTaskBoardLogs(
     category: "task" as const,
   }));
 }
+export async function getRecentLogsForTask(
+  taskTitle: string,
+  limit = 3,
+  seasonId = SEASON_ID,
+): Promise<GameLogSummary[]> {
+  const rows = await prisma.gameLog.findMany({
+    where: {
+      seasonId,
+      OR: [
+        { logType: "TASK", content: { contains: taskTitle } },
+        { content: { startsWith: CHARACTER_GROWTH_LOG_PREFIX, contains: taskTitle } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: { id: true, content: true, createdAt: true, logType: true },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    content: row.content,
+    createdAt: row.createdAt,
+    logType: row.logType as LogType,
+    category: "task" as const,
+  }));
+}
+
 export function buildEventPoolLogContent(params: {
   locationId: string;
   locationName: string;

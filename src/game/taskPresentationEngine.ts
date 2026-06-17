@@ -218,7 +218,7 @@ export function buildTaskItem(
 }
 
 function taskMatchesCategory(item: TaskItem, categoryId: TaskBoardCategoryId): boolean {
-  if (categoryId === "all") return true;
+  if (categoryId === "all") return !item.isCompleted;
   if (categoryId === "completed") return item.isCompleted;
   if (item.isCompleted) return false;
   if (categoryId === "mainline") return item.isMainline;
@@ -230,7 +230,7 @@ function taskMatchesCategory(item: TaskItem, categoryId: TaskBoardCategoryId): b
 export function buildTaskBoardCategories(items: TaskItem[]): TaskBoardCategory[] {
   const active = items.filter((item) => !item.isCompleted);
   return [
-    { id: "all", label: "全部任务", count: items.length },
+    { id: "all", label: "全部待处理", count: active.length },
     {
       id: "mainline",
       label: "主线任务",

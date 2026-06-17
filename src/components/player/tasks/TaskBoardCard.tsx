@@ -108,7 +108,7 @@ export function TaskBoardCard({ item }: TaskBoardCardProps) {
           成功率 {Math.round(item.baseSuccessRate)}%
         </span>
         <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
-          推荐 {item.rarity}
+          任务等级 {item.rarity}
         </span>
         {(item.isCollaboration || item.requiredCount > 1) && (
           <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(168,85,247,0.25)] px-2 py-0.5 text-[#C084FC]">
@@ -133,6 +133,12 @@ export function TaskBoardCard({ item }: TaskBoardCardProps) {
       {!isCompleted && item.successEffectsSummary.length > 0 && (
         <div className="mt-3">
           <EffectLines lines={item.successEffectsSummary} label="成功影响" />
+        </div>
+      )}
+
+      {isEmergency && item.failEffectsSummary.length > 0 && (
+        <div className="mt-3">
+          <EffectLines lines={item.failEffectsSummary.slice(0, 2)} label="失败风险" />
         </div>
       )}
 
