@@ -7,6 +7,7 @@ import { ChapterMilestoneCard } from "@/components/player/ChapterMilestoneCard";
 import { PendingTasksSummary } from "@/components/player/PendingTasksSummary";
 import { RecentActivityCard } from "@/components/player/RecentActivityCard";
 import { CommandCenterLayout } from "@/components/player/CommandCenterLayout";
+import { ChapterOneOnboardingCard } from "@/components/player/ChapterOneOnboardingCard";
 import { getCurrentUserId } from "@/lib/session";
 import { prisma } from "@/prisma/client";
 import { getProjectState, ensureProjectState } from "@/game/projectEngine";
@@ -46,6 +47,13 @@ export default async function ProjectPage() {
       pendingTaskCount={pendingCount}
     >
       <CommandCenterLayout
+        onboarding={
+          <ChapterOneOnboardingCard
+            recommendedHref={recommendedAction.href}
+            recommendedLocationName={recommendedAction.locationName}
+            recommendedActionLabel={recommendedAction.actionLabel}
+          />
+        }
         recommendedAction={<RecommendedActionCard action={recommendedAction} />}
         resourceBar={
           <PlayerResourceBar

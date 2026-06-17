@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, LoaderCircle, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  isFirstActionHintSeen,
+  markFirstActionHintSeen,
+} from "@/lib/onboardingStorage";
 import type { LocationActionDisplayItem } from "@/game/locationPresentationEngine";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
 
@@ -53,6 +57,18 @@ export function LocationActionExecutePanel({
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ExecuteFeedback | null>(null);
+  const [showFirstActionHint, setShowFirstActionHint] = useState(false);
+
+  useEffect(() => {
+    if (
+      feedback?.createdTasks &&
+      feedback.createdTasks.length > 0 &&
+      !isFirstActionHintSeen()
+    ) {
+      setShowFirstActionHint(true);
+      markFirstActionHintSeen();
+    }
+  }, [feedback]);
 
   if (!unlocked) return null;
 
@@ -224,6 +240,11 @@ export function LocationActionExecutePanel({
             {feedback.createdTasks && feedback.createdTasks.length > 0 && (
               <div className="mt-2">
                 <p className="text-xs font-medium">已生成任务：</p>
+                {showFirstActionHint && (
+                  <p className="mt-2 text-xs leading-relaxed text-[#93C5FD]">
+                    下一步请前往任务台处理任务，完成后会影响项目指标和章节目标。
+                  </p>
+                )}
                 <ul className="mt-1 space-y-1.5 text-xs">
                   {feedback.createdTasks.map((task) => (
                     <li key={task.id}>

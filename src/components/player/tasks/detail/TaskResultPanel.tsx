@@ -1,8 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Compass } from "lucide-react";
+import { ArrowRight, Compass, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  isFirstTaskResultHintSeen,
+  markFirstTaskResultHintSeen,
+} from "@/lib/onboardingStorage";
 import {
   formatPlayerMetricEffectLinesFromRecord,
   sanitizeTaskLogContent,
@@ -59,6 +64,14 @@ export function TaskResultPanel({
   const showResult = result?.finalized || isCompleted;
   const success = result?.success ?? resolvedSuccess;
   const effectLines = formatPlayerMetricEffectLinesFromRecord(result?.effects, 6);
+  const [showFirstResultHint, setShowFirstResultHint] = useState(false);
+
+  useEffect(() => {
+    if (showResult && !isFirstTaskResultHintSeen()) {
+      setShowFirstResultHint(true);
+      markFirstTaskResultHintSeen();
+    }
+  }, [showResult]);
 
   return (
     <div className="space-y-4">
@@ -111,8 +124,21 @@ export function TaskResultPanel({
                 </div>
               )}
 
+              {showFirstResultHint && (
+                <p className="text-sm leading-relaxed text-[#93C5FD]">
+                  项目指标和章节目标已更新，可返回指挥中心查看下一步行动。
+                </p>
+              )}
+
               {showResult && (
-                <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+                <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap">
+                  <Link
+                    href="/project"
+                    className="inline-flex h-10 items-center justify-center gap-1 rounded-lg bg-[#1E88FF] px-4 text-sm font-medium text-white hover:bg-[#2EA8FF]"
+                  >
+                    <LayoutDashboard className="size-4" />
+                    返回指挥中心
+                  </Link>
                   <Link
                     href="/tasks"
                     className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-[rgba(60,160,255,0.25)] px-4 text-sm text-[#EAF3FF] hover:border-[#2EA8FF]"
@@ -122,7 +148,7 @@ export function TaskResultPanel({
                   </Link>
                   <Link
                     href="/locations"
-                    className="inline-flex h-10 items-center justify-center gap-1 rounded-lg bg-[#1E88FF] px-4 text-sm font-medium text-white hover:bg-[#2EA8FF]"
+                    className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-[rgba(60,160,255,0.25)] px-4 text-sm text-[#EAF3FF] hover:border-[#2EA8FF]"
                   >
                     <Compass className="size-4" />
                     继续探索

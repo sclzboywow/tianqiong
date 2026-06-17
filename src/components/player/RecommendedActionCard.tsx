@@ -45,8 +45,13 @@ export function RecommendedActionCard({ action }: RecommendedActionCardProps) {
           )}
 
           <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[#8EA3B8] lg:mt-3 lg:line-clamp-none lg:text-sm">
-            {action.reason}
+            这是推进当前章节目标的最短路径。
           </p>
+          {action.reason && (
+            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8EA3B8]/90 lg:line-clamp-none lg:text-sm">
+              {action.reason}
+            </p>
+          )}
         </div>
 
         <div className="mt-4 lg:mt-6">

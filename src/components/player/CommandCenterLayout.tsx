@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 type CommandCenterLayoutProps = {
+  onboarding?: ReactNode;
   recommendedAction: ReactNode;
   resourceBar: ReactNode;
   projectStatus: ReactNode;
@@ -12,6 +13,7 @@ type CommandCenterLayoutProps = {
 };
 
 export function CommandCenterLayout({
+  onboarding,
   recommendedAction,
   resourceBar,
   projectStatus,
@@ -23,12 +25,14 @@ export function CommandCenterLayout({
 }: CommandCenterLayoutProps) {
   return (
     <div className="flex flex-col gap-3 lg:gap-5">
-      {/* 移动端单列：主行动 → 资源 */}
+      {/* 移动端：导览 → 主行动 → 资源 */}
+      {onboarding && <div className="lg:hidden">{onboarding}</div>}
       <div className="lg:hidden">{recommendedAction}</div>
       <div className="lg:hidden">{resourceBar}</div>
 
-      {/* PC 端：资源条置顶 */}
+      {/* PC 端：资源条 → 导览 → 主内容区 */}
       <div className="hidden lg:block">{resourceBar}</div>
+      {onboarding && <div className="hidden lg:block">{onboarding}</div>}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-5">
         <div className="hidden lg:col-span-8 lg:block">{recommendedAction}</div>
