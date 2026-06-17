@@ -45,26 +45,33 @@ export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
             </div>
 
             {requirements.length > 0 ? (
-              <ul className="mt-3 space-y-2">
-                {requirements.map((req) => (
-                  <li
-                    key={req.label}
-                    className="flex items-start justify-between gap-2 rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.45)] px-3 py-2"
-                  >
-                    <span
-                      className={`text-[13px] leading-snug ${
-                        req.passed ? "text-[#22C55E]" : "text-[#EAF3FF]/90"
-                      }`}
+              <>
+                <ul className="mt-3 space-y-2">
+                  {requirements.map((req) => (
+                    <li
+                      key={req.label}
+                      className="flex items-start justify-between gap-2 rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.45)] px-3 py-2"
                     >
-                      {req.passed ? "✓ " : "○ "}
-                      {req.label}
-                    </span>
-                    <span className="shrink-0 text-xs tabular-nums text-[#8EA3B8]">
-                      {req.current}/{String(req.target)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                      <span
+                        className={`text-[13px] leading-snug ${
+                          req.passed ? "text-[#22C55E]" : "text-[#EAF3FF]/90"
+                        }`}
+                      >
+                        {req.passed ? "✓ " : "○ "}
+                        {req.label}
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-[#8EA3B8]">
+                        {req.current}/{String(req.target)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {requirements.some((req) => req.type === "mainline") ? (
+                  <p className="mt-2 text-xs text-[#8EA3B8]">
+                    主线任务仅统计你参与并提交方案的任务。
+                  </p>
+                ) : null}
+              </>
             ) : null}
           </div>
         ) : (

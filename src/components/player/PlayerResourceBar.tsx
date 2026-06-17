@@ -14,6 +14,7 @@ type PlayerResourceBarProps = {
   exp: number;
   reputation: number;
   gold: number;
+  careerRankTitle?: string;
 };
 
 function meterFillColor(kind: "stamina" | "spirit" | "exp") {
@@ -124,6 +125,7 @@ export function PlayerResourceBar({
   exp,
   reputation,
   gold,
+  careerRankTitle,
 }: PlayerResourceBarProps) {
   const expRequired = getRequiredExpForLevel(level);
 
@@ -221,6 +223,13 @@ export function PlayerResourceBar({
           </button>
         </div>
       </div>
+
+      {careerRankTitle ? (
+        <p className="mt-2 text-xs text-[#8EA3B8] lg:mt-3">
+          当前阶位：
+          <span className="text-[#2EA8FF]">{careerRankTitle}</span>
+        </p>
+      ) : null}
     </section>
   );
 }

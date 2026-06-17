@@ -19,6 +19,7 @@ import {
   getNextRecommendedAction,
   getPendingTaskGroups,
 } from "@/game/playerGuidanceEngine";
+import { getCurrentCareerRank } from "@/game/careerRankEngine";
 
 export default async function ProjectPage() {
   const userId = await getCurrentUserId();
@@ -39,6 +40,24 @@ export default async function ProjectPage() {
   const pendingGroups = getPendingTaskGroups(tasks);
   const pendingCount =
     pendingGroups.mainline.length + pendingGroups.emergency.length;
+
+  const careerRank = getCurrentCareerRank(
+    {
+      id: user.id,
+      level: user.level,
+      reputation: user.reputation,
+      job: user.job,
+    },
+    project,
+    tasks.map((task) => ({
+      templateId: task.templateId,
+      status: task.status,
+      participants: task.participants.map((p) => ({
+        userId: p.userId,
+        choiceId: p.choiceId,
+      })),
+    })),
+  );
 
   return (
     <PlayerShell
@@ -63,6 +82,7 @@ export default async function ProjectPage() {
             exp={user.exp}
             reputation={user.reputation}
             gold={user.gold}
+            careerRankTitle={careerRank.title}
           />
         }
         projectStatus={<ProjectStatusCard project={project} />}

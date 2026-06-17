@@ -136,14 +136,16 @@ function main() {
       ["CONSTRUCTION_ASSISTANT", "site_track"],
       ["SAFETY_ASSISTANT", "risk_safety_track"],
       ["COST_ASSISTANT", "cost_contract_track"],
-      ["MECHANICAL_ASSISTANT", "coordination_track"],
+      ["MECHANICAL_ASSISTANT", "site_track"],
+      ["MATERIAL_ASSISTANT", "cost_contract_track"],
+      ["QUALITY_ASSISTANT", "risk_safety_track"],
     ];
     let allOk = true;
     for (const [job, expectedTrack] of cases) {
       const track = inferCareerTrackFromJob(job);
       if (track.id !== expectedTrack) allOk = false;
     }
-    log("6. 专业方向可根据 job 推断", allOk, "5 种岗位映射");
+    log("6. 专业方向可根据 job 推断", allOk, `${cases.length} 种岗位映射`);
     if (!allOk) failed += 1;
   }
 

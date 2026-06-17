@@ -62,6 +62,9 @@ const JOB_TO_TRACK: Partial<Record<Job, CareerTrackId>> = {
   CONSTRUCTION_ASSISTANT: "site_track",
   SAFETY_ASSISTANT: "risk_safety_track",
   COST_ASSISTANT: "cost_contract_track",
+  MECHANICAL_ASSISTANT: "site_track",
+  MATERIAL_ASSISTANT: "cost_contract_track",
+  QUALITY_ASSISTANT: "risk_safety_track",
 };
 
 export function inferCareerTrackFromJob(job: string): CareerTrackConfig {
