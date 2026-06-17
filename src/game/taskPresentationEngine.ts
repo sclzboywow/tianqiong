@@ -10,7 +10,7 @@ import {
   formatPlayerMilestoneLabels,
   type PlayerEffectLine,
 } from "./taskEffectPlayerDisplay";
-import { getStageConfig, normalizeStageId } from "./projectStages";
+import { getStageDisplayName, normalizeStageId } from "./projectStages";
 
 export type TaskWithParticipants = Task & {
   participants: (TaskParticipant & { user: Pick<User, "id" | "nickname" | "job"> })[];
@@ -198,10 +198,10 @@ export function buildTaskItem(
     area: task.area,
     sourceName: task.sourceName || task.area,
     rarity: task.rarity,
-    resolutionMode: RESOLUTION_MODE_LABELS[task.resolutionMode] || task.resolutionMode,
+    resolutionMode: RESOLUTION_MODE_LABELS[task.resolutionMode] || "单人任务",
     baseSuccessRate: task.baseSuccessRate,
     requiredJobs: jobList,
-    requiredJobLabels: jobList.map((job) => JOB_LABELS[job as Job] || job),
+    requiredJobLabels: jobList.map((job) => JOB_LABELS[job as Job] || "项目成员"),
     requiredCount: task.requiredCount,
     participantCount: task.currentCount,
     successEffectsSummary: formatPlayerMetricEffectLines(successEffects, 3),
@@ -336,7 +336,6 @@ export function buildTaskBoardData(params: {
   recentTaskLogs: GameLogSummary[];
 }): TaskBoardData {
   const { project, tasks, chapterGoals, recentTaskLogs } = params;
-  const stageConfig = getStageConfig(project.currentStage);
 
   const baseItems = tasks.map((task) => buildTaskItem(task, project));
   const recommended = getRecommendedTaskForBoard(baseItems, project, chapterGoals);
@@ -353,7 +352,7 @@ export function buildTaskBoardData(params: {
   const active = taskItems.filter((item) => !item.isCompleted);
 
   return {
-    stageName: stageConfig?.name || project.currentStage,
+    stageName: getStageDisplayName(project.currentStage),
     summary: {
       totalActive: active.length,
       mainlineCount: active.filter((item) => item.isMainline).length,

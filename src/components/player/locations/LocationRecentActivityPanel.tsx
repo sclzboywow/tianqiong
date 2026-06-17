@@ -1,4 +1,5 @@
 import { getRecentLocationActionLogs } from "@/game/logEngine";
+import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
 
 type LocationRecentActivityPanelProps = {
@@ -14,10 +15,6 @@ function formatLogTime(date: Date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function stripLogPrefix(content: string): string {
-  return content.replace(/^【协同地图】/, "").replace(/^【事件池】/, "").trim();
 }
 
 export async function LocationRecentActivityPanel({
@@ -42,7 +39,7 @@ export async function LocationRecentActivityPanel({
                 key={log.id}
                 className="rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.35)] px-3 py-2.5 text-[13px] leading-relaxed text-[#EAF3FF]/90"
               >
-                <p>{stripLogPrefix(log.content)}</p>
+                <p>{sanitizePlayerLogContent(log.content)}</p>
                 <p className="mt-1 text-[11px] text-[#8EA3B8]">{formatLogTime(log.createdAt)}</p>
               </li>
             ))}

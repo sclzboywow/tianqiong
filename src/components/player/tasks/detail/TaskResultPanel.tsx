@@ -10,7 +10,7 @@ import {
 } from "@/lib/onboardingStorage";
 import {
   formatPlayerMetricEffectLinesFromRecord,
-  sanitizeTaskLogContent,
+  sanitizePlayerLogContent,
   type PlayerEffectLine,
 } from "@/game/taskEffectPlayerDisplay";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../../playerTheme";
@@ -168,7 +168,7 @@ export function TaskResultPanel({
           <div className={playerCardBodyClass}>
             <ul className="space-y-2 text-[13px] leading-relaxed text-[#EAF3FF]/90">
               {recentLogs.map((log) => (
-                <li key={log.id}>{sanitizeTaskLogContent(log.content)}</li>
+                <li key={log.id}>{sanitizePlayerLogContent(log.content)}</li>
               ))}
             </ul>
           </div>

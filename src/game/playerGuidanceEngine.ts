@@ -109,7 +109,7 @@ const INITIATION_CHAPTER_GOALS: Array<{
 const INITIATION_GUIDANCE = INITIATION_CHAPTER_GOALS;
 
 function getLocationName(locationId: string): string {
-  return MAP_LOCATIONS.find((loc) => loc.id === locationId)?.name || locationId;
+  return MAP_LOCATIONS.find((loc) => loc.id === locationId)?.name || "相关地点";
 }
 
 function getTaskTitle(taskSlug: string): string {
@@ -281,8 +281,8 @@ export function getChapterInfo(project: ProjectState): ChapterInfo {
 
   const stageConfig = getStageConfig(project.currentStage);
   return {
-    chapterName: stageConfig?.name || project.currentStage,
-    chapterSubtitle: stageConfig?.name || project.currentStage,
+    chapterName: stageConfig?.name || CHAPTER1_NAME,
+    chapterSubtitle: stageConfig?.name || CHAPTER1_NAME,
     stageGoal: stageConfig?.description || "",
   };
 }

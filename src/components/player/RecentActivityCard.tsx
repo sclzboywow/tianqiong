@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { GameLogSummary } from "@/game/logEngine";
+import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "./playerTheme";
 
 type RecentActivityCardProps = {
@@ -13,14 +14,6 @@ function formatLogTime(date: Date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function stripLogPrefix(content: string): string {
-  return content
-    .replace(/^【协同地图】/, "")
-    .replace(/^【事件池】/, "")
-    .replace(/^【角色成长】/, "")
-    .trim();
 }
 
 export function RecentActivityCard({ logs, maxItems = 5, title = "最近动态" }: RecentActivityCardProps) {
@@ -45,7 +38,7 @@ export function RecentActivityCard({ logs, maxItems = 5, title = "最近动态" 
                 <span className="mr-2 tabular-nums text-[#8EA3B8]">
                   {formatLogTime(log.createdAt)}
                 </span>
-                {stripLogPrefix(log.content)}
+                {sanitizePlayerLogContent(log.content)}
               </li>
             ))}
           </ul>

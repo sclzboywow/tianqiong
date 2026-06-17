@@ -190,6 +190,11 @@ export function getStageConfig(stageId?: string | null) {
   return PROJECT_STAGES.find((stage) => stage.id === normalizeStageId(stageId));
 }
 
+/** 玩家端展示用阶段名，避免回退为 INITIATION 等技术 id */
+export function getStageDisplayName(stageId?: string | null): string {
+  return getStageConfig(stageId)?.name ?? "项目推进中";
+}
+
 export const BUILD_STAGE_OPTIONS = PROJECT_STAGES.filter((stage) => stage.id !== "OPENING").map(
   (stage) => ({
     label: stage.name,

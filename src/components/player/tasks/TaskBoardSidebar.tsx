@@ -1,6 +1,6 @@
 import type { TaskBoardSummary, RecommendedTaskBoardItem } from "@/game/taskPresentationEngine";
 import type { GameLogSummary } from "@/game/logEngine";
-import { sanitizeTaskLogContent } from "@/game/taskEffectPlayerDisplay";
+import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
 import { ChapterMilestoneCard } from "../ChapterMilestoneCard";
 import type { ChapterGoalItem } from "@/game/playerGuidanceEngine";
 import { TaskBoardRecommendedCard } from "./TaskBoardHeader";
@@ -50,7 +50,7 @@ export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
                 key={log.id}
                 className="rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.35)] px-3 py-2 text-[13px] leading-relaxed text-[#EAF3FF]/90"
               >
-                {sanitizeTaskLogContent(log.content)}
+                {sanitizePlayerLogContent(log.content)}
               </li>
             ))}
           </ul>

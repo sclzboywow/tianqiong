@@ -16,7 +16,7 @@ import { isLocationActionUnlocked } from "./locationActionEngine";
 import { getEventTemplates } from "./eventTemplateLoader";
 import type { EventTemplateData } from "./types";
 import { parseMilestones } from "./projectEngine";
-import { getStageConfig } from "./projectStages";
+import { getStageConfig, getStageDisplayName } from "./projectStages";
 import type { RecommendedAction } from "./playerGuidanceEngine";
 import type { ChapterGoalItem } from "./playerGuidanceEngine";
 
@@ -282,7 +282,7 @@ export async function buildExplorePageData(params: {
   const stageConfig = getStageConfig(project.currentStage);
 
   return {
-    stageName: stageConfig?.name || project.currentStage,
+    stageName: getStageDisplayName(project.currentStage),
     stageSubtitle: stageConfig?.description || "",
     unlockedCount: displayItems.filter((item) => item.unlocked).length,
     totalCount: displayItems.length,

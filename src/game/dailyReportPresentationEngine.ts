@@ -36,7 +36,10 @@ export type DailyReportCategory = {
 
 export type DailyReportSummary = {
   totalLogs: number;
+  /** 所有任务类日志（加入、提交、结算等） */
   taskLogs: number;
+  /** 已完成/失败的任务结算条数 */
+  completedTaskLogs: number;
   growthLogs: number;
   riskLogs: number;
   projectLogs: number;
@@ -62,7 +65,7 @@ export type DailyReportViewData = {
 
 const CATEGORY_LABELS: Record<DailyLogCategory, string> = {
   project: "项目动态",
-  task: "任务结算",
+  task: "任务记录",
   growth: "角色成长",
   risk: "风险变化",
 };
@@ -246,29 +249,41 @@ function transformLog(log: RawLog): LogItem {
   };
 }
 
-function buildSummary(logItems: LogItem[]): DailyReportSummary {
-  const completedTasks = logItems.filter(
+const RISK_EFFECT_KEYWORDS = ["风险", "隐患", "安全", "消防"];
+
+export function matchesRiskCategoryItem(item: LogItem): boolean {
+  if (item.type === "risk") return true;
+  return item.effectLines.some((line) =>
+    RISK_EFFECT_KEYWORDS.some((keyword) => line.text.includes(keyword)),
+  );
+}
+
+function countCompletedTaskLogs(logItems: LogItem[]): number {
+  return logItems.filter(
     (item) =>
       item.type === "task" &&
       (item.title === "任务结算" ||
         item.content.includes("完成任务") ||
         item.content.includes("任务失败")),
   ).length;
+}
 
+function buildSummary(logItems: LogItem[]): DailyReportSummary {
   return {
     totalLogs: logItems.length,
-    taskLogs: completedTasks,
+    taskLogs: logItems.filter((item) => item.type === "task").length,
+    completedTaskLogs: countCompletedTaskLogs(logItems),
     growthLogs: logItems.filter((item) => item.type === "growth").length,
-    riskLogs: logItems.filter((item) => item.type === "risk").length,
+    riskLogs: logItems.filter(matchesRiskCategoryItem).length,
     projectLogs: logItems.filter((item) => item.type === "project").length,
   };
 }
 
-function buildCategories(summary: DailyReportSummary, logItems: LogItem[]): DailyReportCategory[] {
+function buildCategories(summary: DailyReportSummary): DailyReportCategory[] {
   return [
     { id: "all", label: "全部", count: summary.totalLogs },
     { id: "project", label: "项目动态", count: summary.projectLogs },
-    { id: "task", label: "任务结算", count: logItems.filter((item) => item.type === "task").length },
+    { id: "task", label: "任务记录", count: summary.taskLogs },
     { id: "growth", label: "角色成长", count: summary.growthLogs },
     { id: "risk", label: "风险变化", count: summary.riskLogs },
   ];
@@ -320,7 +335,7 @@ export async function buildDailyReportViewData(
 
   return {
     summary,
-    categories: buildCategories(summary, logItems),
+    categories: buildCategories(summary),
     logItems,
     keyChanges: extractKeyChanges(logItems),
     nextSuggestion: buildNextSuggestion(recommendedAction),
@@ -332,5 +347,6 @@ export function filterLogItemsByCategory(
   categoryId: DailyReportCategoryId,
 ): LogItem[] {
   if (categoryId === "all") return logItems;
+  if (categoryId === "risk") return logItems.filter(matchesRiskCategoryItem);
   return logItems.filter((item) => item.type === categoryId);
 }

@@ -57,7 +57,8 @@ export function formatPlayerMilestoneLabels(
   if (!milestoneEffects) return [];
   return Object.entries(milestoneEffects)
     .filter(([, enabled]) => enabled)
-    .map(([key]) => MILESTONE_LABELS[key] || key)
+    .map(([key]) => MILESTONE_LABELS[key])
+    .filter((label): label is string => Boolean(label))
     .slice(0, maxLabels);
 }
 
@@ -100,6 +101,7 @@ export function sanitizePlayerLogContent(content: string): string {
     text = text.replace(new RegExp(`\\b${job}\\b`, "g"), label);
   }
 
+  // 兜底：移除未映射的 snake_case 片段（可能误伤少量英文，后续建议改为显式 slug 映射表）
   return text
     .replace(/\b[a-z]+_[a-z0-9_]+\b/gi, "")
     .replace(/\blocationId\b[^\s,。]*/gi, "")

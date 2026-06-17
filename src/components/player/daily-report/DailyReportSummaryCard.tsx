@@ -22,7 +22,8 @@ export function DailyReportSummaryCard({ summary }: DailyReportSummaryCardProps)
       </div>
       <div className={`${playerCardBodyClass} space-y-2`}>
         <SummaryRow label="今日记录" value={summary.totalLogs} />
-        <SummaryRow label="完成任务" value={summary.taskLogs} />
+        <SummaryRow label="任务记录" value={summary.taskLogs} />
+        <SummaryRow label="完成任务" value={summary.completedTaskLogs} />
         <SummaryRow label="获得成长" value={summary.growthLogs} />
         <SummaryRow label="风险变化" value={summary.riskLogs} />
       </div>

@@ -6,7 +6,7 @@ import { getTaskTemplates } from "./contentLoader";
 import type { GameLogSummary } from "./logEngine";
 import { getRecentLogsForTask } from "./logEngine";
 import { resolveInkFileFromStorySlug } from "./storyEntryLoader";
-import { getStageConfig } from "./projectStages";
+import { getStageDisplayName } from "./projectStages";
 import type { MetricEffects } from "./types";
 import {
   buildTaskItem,
@@ -123,7 +123,6 @@ export async function buildTaskDetailViewData(
   const isActive = task.status === "PENDING" || task.status === "IN_PROGRESS";
   const isCompleted = task.status === "COMPLETED" || task.status === "FAILED";
 
-  const stageConfig = getStageConfig(task.stage || project.currentStage);
   const recentLogs = await getRecentLogsForTask(task.title, 3);
 
   return {
@@ -136,7 +135,7 @@ export async function buildTaskDetailViewData(
     type: item.type,
     typeLabel: item.typeLabel,
     rarity: item.rarity,
-    stageName: stageConfig?.name || task.stage || project.currentStage,
+    stageName: getStageDisplayName(task.stage || project.currentStage),
     area: item.area,
     sourceName: item.sourceName,
     resolutionModeLabel: item.resolutionMode,
@@ -164,7 +163,7 @@ export async function buildTaskDetailViewData(
     participants: task.participants.map((participant) => ({
       id: participant.id,
       nickname: participant.user.nickname,
-      jobLabel: JOB_LABELS[participant.user.job as Job] || participant.user.job,
+      jobLabel: JOB_LABELS[participant.user.job as Job] || "项目成员",
       hasSubmitted: !!participant.choiceId,
     })),
     recentLogs,
