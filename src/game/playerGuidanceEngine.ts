@@ -3,6 +3,7 @@ import type { Task } from "@prisma/client";
 import {
   CHAPTER1_LOCATION_ACTIONS,
   CHAPTER1_NAME,
+  CHAPTER1_TASK_SLUGS,
   CHAPTER1_TASK_TEMPLATES,
 } from "@/data/chapter1Content";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
@@ -175,6 +176,18 @@ function isActiveMainlineTask(task: Task): boolean {
   );
 }
 
+function sortActiveMainlineTasks(tasks: Task[]): Task[] {
+  const priority = CHAPTER1_TASK_SLUGS as readonly string[];
+  return [...tasks].sort((a, b) => {
+    const aOrder = priority.indexOf(a.templateId as (typeof priority)[number]);
+    const bOrder = priority.indexOf(b.templateId as (typeof priority)[number]);
+    const aRank = aOrder === -1 ? 999 : aOrder;
+    const bRank = bOrder === -1 ? 999 : bOrder;
+    if (aRank !== bRank) return aRank - bRank;
+    return a.createdAt.getTime() - b.createdAt.getTime();
+  });
+}
+
 function isEmergencyTask(task: Task): boolean {
   if (MAINLINE_TEMPLATE_IDS.has(task.templateId)) return false;
   if (task.status !== "PENDING" && task.status !== "IN_PROGRESS") return false;
@@ -198,35 +211,26 @@ export function getNextRecommendedAction(
   project: ProjectState,
   tasks: Task[],
 ): RecommendedAction {
-  const activeMainline = tasks.filter(isActiveMainlineTask);
+  const activeMainline = sortActiveMainlineTasks(tasks.filter(isActiveMainlineTask));
 
   if (activeMainline.length > 0) {
     const task = activeMainline[0];
     const locationContext = resolveTaskLocationContext(task.templateId);
 
-    if (locationContext) {
-      return {
-        title: locationContext.actionLabel,
-        headline: "下一步推荐行动",
-        description: task.description || "当前有进行中的主线任务，建议优先处理。",
-        href: `/locations/${locationContext.locationId}`,
-        reason: "综合研判当前项目状态，建议优先推进主线行动。",
-        priority: 100,
-        taskSlug: task.templateId,
-        locationId: locationContext.locationId,
-        locationName: locationContext.locationName,
-        actionLabel: locationContext.actionLabel,
-      };
-    }
-
     return {
-      title: `处理主线任务：${task.title}`,
+      title: task.title,
       headline: "下一步推荐行动",
-      description: task.description || "当前有进行中的主线任务，建议优先处理。",
+      description:
+        task.description || "任务已在任务台生成，请阅读现场情况并提交处理方案。",
       href: `/tasks/${task.id}`,
-      reason: "综合研判当前项目状态，建议优先推进主线行动。",
+      reason: locationContext
+        ? `「${task.title}」待处理，请前往任务台提交方案。`
+        : "主线任务待处理，请优先提交处理方案。",
       priority: 100,
       taskSlug: task.templateId,
+      locationId: locationContext?.locationId,
+      locationName: locationContext?.locationName,
+      actionLabel: "前往任务台处理",
     };
   }
 
@@ -241,9 +245,9 @@ export function getNextRecommendedAction(
         return {
           title: taskTitle,
           headline: "下一步推荐行动",
-          description: `前往 ${locationName}，${actionLabel || taskTitle}。`,
+          description: `前往「${locationName}」执行「${actionLabel || taskTitle}」，生成相关任务。`,
           href: `/locations/${item.locationId}`,
-          reason: `阶段关键节点「${MILESTONE_LABELS[item.milestone] || item.milestone}」尚未完成。`,
+          reason: `章节目标「${MILESTONE_LABELS[item.milestone] || item.label}」尚未完成，需先在现场触发任务。`,
           priority: 80,
           locationId: item.locationId,
           locationName,

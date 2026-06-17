@@ -10,6 +10,7 @@ type RecommendedActionCardProps = {
 };
 
 export function RecommendedActionCard({ action }: RecommendedActionCardProps) {
+  const isTaskHref = action.href.startsWith("/tasks/");
   const locationName = action.locationName;
   const actionLabel = action.actionLabel || action.title;
 
@@ -30,7 +31,12 @@ export function RecommendedActionCard({ action }: RecommendedActionCardProps) {
             <span className="hidden lg:inline">{action.headline || "下一步推荐行动"}</span>
           </div>
 
-          {locationName ? (
+          {isTaskHref ? (
+            <h2 className="line-clamp-3 text-[22px] font-semibold leading-snug text-[#EAF3FF] lg:text-2xl lg:line-clamp-none">
+              处理任务：
+              <span className="text-[#2EA8FF]"> {action.title}</span>
+            </h2>
+          ) : locationName ? (
             <h2 className="line-clamp-3 text-[22px] font-semibold leading-snug text-[#EAF3FF] lg:text-2xl lg:line-clamp-none">
               前往 <span className="text-[#2EA8FF]">{locationName}</span>
               <span className="hidden lg:inline">
@@ -59,8 +65,10 @@ export function RecommendedActionCard({ action }: RecommendedActionCardProps) {
             href={action.href}
             className="flex h-12 w-[72%] min-w-[200px] max-w-full items-center justify-center gap-2 rounded-xl bg-[#1E88FF] text-[15px] font-medium text-white shadow-[0_0_20px_rgba(30,136,255,0.35)] transition-colors hover:bg-[#2EA8FF] lg:inline-flex lg:h-[52px] lg:w-auto lg:min-w-[240px] lg:rounded-lg lg:px-8 lg:text-base"
           >
-            <span className="lg:hidden">立即前往</span>
-            <span className="hidden lg:inline">前往处理</span>
+            <span className="lg:hidden">{isTaskHref ? "处理任务" : "立即前往"}</span>
+            <span className="hidden lg:inline">
+              {isTaskHref ? "前往任务台处理" : "前往处理"}
+            </span>
             <ArrowRight className="size-5" />
           </Link>
         </div>

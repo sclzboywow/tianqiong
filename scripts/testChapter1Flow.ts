@@ -215,6 +215,11 @@ async function main() {
     `${recommendedBefore.title} → ${recommendedBefore.href}`,
   );
   record(
+    "任务已生成时推荐任务台",
+    recommendedBefore.href.startsWith("/tasks/"),
+    recommendedBefore.href,
+  );
+  record(
     "指挥中心章节信息",
     chapterInfo.chapterName.includes("第一章") || chapterInfo.chapterSubtitle.length > 0,
     `${chapterInfo.chapterName} / ${chapterInfo.chapterSubtitle}`,
@@ -289,13 +294,10 @@ async function main() {
 
   const tasksAfterResolve = await listTasks();
   const recommendedAfter = getNextRecommendedAction(projectAfter!, tasksAfterResolve);
-  const recommendationMoved =
-    recommendedAfter.href !== recommendedBefore.href ||
-    recommendedAfter.title !== recommendedBefore.title ||
-    tasksAfterResolve.some((task) => task.status === "PENDING" || task.status === "IN_PROGRESS");
+  const recommendationPointsToTasks = recommendedAfter.href.startsWith("/tasks/");
   record(
     "推荐行动继续推进",
-    recommendationMoved,
+    recommendationPointsToTasks || recommendedAfter.href !== recommendedBefore.href,
     `${recommendedAfter.title} → ${recommendedAfter.href}`,
   );
 
