@@ -36,6 +36,7 @@ export type TaskDetailParticipant = {
 
 export type TaskDetailViewData = {
   id: string;
+  currentUserId: string;
   title: string;
   description: string;
   status: string;
@@ -127,6 +128,7 @@ export async function buildTaskDetailViewData(
 
   return {
     id: task.id,
+    currentUserId: userId,
     title: item.title,
     description: item.description,
     status: item.status,

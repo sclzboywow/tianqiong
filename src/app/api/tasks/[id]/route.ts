@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getTaskById } from "@/game/taskEngine";
 import { createStory, getStoryState } from "@/ink/inkRunner";
+import { JOB_LABELS } from "@/utils/formatter";
+import type { Job } from "@/game/prisma-types";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,6 +32,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         userId: p.userId,
         nickname: p.user.nickname,
         job: p.user.job,
+        jobLabel: JOB_LABELS[p.user.job as Job] || p.user.job,
         status: p.status,
         choiceId: p.choiceId,
         choiceSubmittedAt: p.choiceSubmittedAt,

@@ -26,6 +26,7 @@ type ApiTaskPayload = {
       userId: string;
       nickname: string;
       job: string;
+      jobLabel?: string;
       choiceId?: string | null;
     }>;
   };
@@ -37,6 +38,7 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
   const [data, setData] = useState(initialData);
   const [story, setStory] = useState<TaskStoryState | null>(initialData.storyState);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<{
     message: string;
     submittedCount: number;
@@ -66,46 +68,53 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
     const isCompleted = task.status === "COMPLETED" || task.status === "FAILED";
     const submittedCount =
       task.submittedCount ?? task.participants.filter((participant) => participant.choiceId).length;
-    const minResolveCount = task.minResolveCount || data.requiredCount || 1;
-    const hasSubmitted = task.participants.some((participant) => participant.choiceId);
 
     setStory(payload.story);
-    setData((prev) => ({
-      ...prev,
-      status: task.status,
-      statusLabel:
-        task.status === "PENDING"
-          ? "待处理"
-          : task.status === "IN_PROGRESS"
-            ? "进行中"
-            : task.status === "COMPLETED"
-              ? "已完成"
-              : task.status === "FAILED"
-                ? "失败"
-                : task.status,
-      participantCount: task.currentCount,
-      submittedCount,
-      minResolveCount,
-      isActive,
-      isCompleted,
-      isJoined: true,
-      hasSubmitted,
-      resolvedSuccess:
-        task.status === "COMPLETED" ? true : task.status === "FAILED" ? false : prev.resolvedSuccess,
-      canResolve: isActive && !hasSubmitted && prev.inkAvailable,
-      participants: task.participants.map((participant) => ({
-        id: participant.id,
-        nickname: participant.nickname,
-        jobLabel: participant.job,
-        hasSubmitted: !!participant.choiceId,
-      })),
-    }));
+    setData((prev) => {
+      const myParticipant = task.participants.find(
+        (participant) => participant.userId === prev.currentUserId,
+      );
+      const isJoined = !!myParticipant;
+      const hasSubmitted = !!myParticipant?.choiceId;
+      const minResolveCount = task.minResolveCount || prev.requiredCount || 1;
+
+      return {
+        ...prev,
+        status: task.status,
+        statusLabel:
+          task.status === "PENDING"
+            ? "待处理"
+            : task.status === "IN_PROGRESS"
+              ? "进行中"
+              : task.status === "COMPLETED"
+                ? "已完成"
+                : task.status === "FAILED"
+                  ? "失败"
+                  : task.status,
+        participantCount: task.currentCount,
+        submittedCount,
+        minResolveCount,
+        isActive,
+        isCompleted,
+        isJoined,
+        hasSubmitted,
+        resolvedSuccess:
+          task.status === "COMPLETED" ? true : task.status === "FAILED" ? false : prev.resolvedSuccess,
+        canResolve: isActive && isJoined && !hasSubmitted && prev.inkAvailable,
+        participants: task.participants.map((participant) => ({
+          id: participant.id,
+          nickname: participant.nickname,
+          jobLabel: participant.jobLabel || participant.job,
+          hasSubmitted: !!participant.choiceId,
+        })),
+      };
+    });
 
     if (isCompleted) {
       setPending(null);
       setResult((prev) => prev ?? { finalized: true, success: task.status === "COMPLETED" });
     }
-  }, [data.requiredCount]);
+  }, []);
 
   async function refreshTask() {
     const res = await fetch(`/api/tasks/${data.id}`);
@@ -117,11 +126,17 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
   async function handleJoin() {
     setLoading(true);
     const res = await fetch(`/api/tasks/${data.id}/join`, { method: "POST" });
+    const payload = (await res.json().catch(() => ({}))) as { error?: string };
     setLoading(false);
-    if (res.ok) {
-      setData((prev) => ({ ...prev, isJoined: true }));
-      await refreshTask();
+
+    if (!res.ok) {
+      setError(typeof payload.error === "string" ? payload.error : "加入任务失败，请稍后重试");
+      return;
     }
+
+    setError(null);
+    setData((prev) => ({ ...prev, isJoined: true }));
+    await refreshTask();
   }
 
   async function handleChoose(choiceId: string, choiceText: string) {
@@ -132,10 +147,20 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ choiceId }),
     });
-    const payload = await res.json();
+    const payload = (await res.json().catch(() => ({}))) as TaskResolveResult & {
+      error?: string;
+      message?: string;
+      submittedCount?: number;
+      requiredCount?: number;
+    };
     setLoading(false);
 
-    if (!res.ok) return;
+    if (!res.ok) {
+      setError(typeof payload.error === "string" ? payload.error : "提交方案失败，请稍后重试");
+      return;
+    }
+
+    setError(null);
 
     if (payload.finalized) {
       setPending(null);
@@ -146,9 +171,9 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
     }
 
     setPending({
-      message: payload.message,
-      submittedCount: payload.submittedCount,
-      requiredCount: payload.requiredCount,
+      message: payload.message || "你已提交选择，等待其他成员参与后统一结算",
+      submittedCount: payload.submittedCount ?? 0,
+      requiredCount: payload.requiredCount ?? data.minResolveCount,
     });
     await refreshTask();
   }
@@ -169,6 +194,7 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
           isJoined={data.isJoined}
           hasSubmitted={data.hasSubmitted}
           loading={loading}
+          error={error}
           onJoin={handleJoin}
           onChoose={handleChoose}
           pending={pending}

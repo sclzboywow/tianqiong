@@ -20,6 +20,7 @@ type TaskStoryPanelProps = {
     requiredCount: number;
   } | null;
   showChoices: boolean;
+  error?: string | null;
 };
 
 export function TaskStoryPanel({
@@ -33,6 +34,7 @@ export function TaskStoryPanel({
   onChoose,
   pending,
   showChoices,
+  error,
 }: TaskStoryPanelProps) {
   const lines = story?.lines?.length ? story.lines : ["暂无剧情文本。"];
   const choices = story?.choices || [];
@@ -45,6 +47,12 @@ export function TaskStoryPanel({
       </div>
 
       <div className={`${playerCardBodyClass} space-y-4`}>
+        {error && (
+          <p className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[#FCA5A5]">
+            {error}
+          </p>
+        )}
+
         {!inkAvailable && (
           <p className="rounded-lg border border-[rgba(250,204,21,0.35)] bg-[rgba(250,204,21,0.08)] px-4 py-3 text-sm text-[#FDE68A]">
             该任务尚未配置剧情，无法进入处理。
