@@ -5,6 +5,7 @@ import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "./p
 type RecentActivityCardProps = {
   logs: GameLogSummary[];
   maxItems?: number;
+  title?: string;
 };
 
 function formatLogTime(date: Date) {
@@ -22,13 +23,13 @@ function stripLogPrefix(content: string): string {
     .trim();
 }
 
-export function RecentActivityCard({ logs, maxItems = 5 }: RecentActivityCardProps) {
+export function RecentActivityCard({ logs, maxItems = 5, title = "最近动态" }: RecentActivityCardProps) {
   const displayLogs = logs.slice(0, maxItems);
 
   return (
     <section className={playerCardClass}>
       <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">最近动态</h3>
+        <h3 className="text-base font-semibold text-[#EAF3FF]">{title}</h3>
       </div>
 
       <div className={playerCardBodyClass}>
