@@ -14,8 +14,9 @@ import {
 } from "./locationEngine";
 import { isLocationActionUnlocked } from "./locationActionEngine";
 import { getEventTemplates } from "./eventTemplateLoader";
+import type { EventTemplateData } from "./types";
 import { parseMilestones } from "./projectEngine";
-import { getStageConfig, normalizeStageId } from "./projectStages";
+import { getStageConfig } from "./projectStages";
 import type { RecommendedAction } from "./playerGuidanceEngine";
 import type { ChapterGoalItem } from "./playerGuidanceEngine";
 
@@ -38,6 +39,7 @@ export type LocationDisplayItem = {
   riskTagLabels: string[];
   recommendReason?: string;
   unlockRequirements: string[];
+  unlockRequirementHints: string[];
   href: string;
 };
 
@@ -62,36 +64,102 @@ export type ExplorePageData = {
 
 const HIGH_RISK_TAGS = new Set(["safety", "fire", "cost", "contract"]);
 
-function countPossibleEvents(
+type LocationEventFilterContext = {
+  locationRiskTags?: string[];
+  locationRelatedAreaNames?: string[];
+  locationRelatedNpcNames?: string[];
+};
+
+function hasIntersection(required: string[], candidates: string[]): boolean {
+  if (required.length === 0) return true;
+  if (candidates.length === 0) return false;
+  const candidateSet = new Set(candidates);
+  return required.some((value) => candidateSet.has(value));
+}
+
+function matchesEventRiskTags(
+  event: EventTemplateData,
+  context: LocationEventFilterContext,
+): boolean {
+  const eventTags = event.riskTags || [];
+  if (eventTags.length === 0) return true;
+  return hasIntersection(eventTags, context.locationRiskTags || []);
+}
+
+function matchesEventAreaNames(
+  event: EventTemplateData,
+  context: LocationEventFilterContext,
+): boolean {
+  const required = event.triggerAreaNames || [];
+  if (required.length === 0) return true;
+  return hasIntersection(required, context.locationRelatedAreaNames || []);
+}
+
+function matchesEventNpcNames(
+  event: EventTemplateData,
+  context: LocationEventFilterContext,
+): boolean {
+  const required = event.triggerNpcNames || [];
+  if (required.length === 0) return true;
+  return hasIntersection(required, context.locationRelatedNpcNames || []);
+}
+
+function matchesEventForLocationClue(
+  event: EventTemplateData,
   location: MapLocation,
   project: ProjectState,
-  eventCount: number,
-): string {
+): boolean {
+  if (event.enabled === false) return false;
+  if (event.triggerStage && event.triggerStage !== project.currentStage) return false;
+
+  const slugs = event.triggerLocationSlugs || [];
+  if (slugs.length > 0 && !slugs.includes(location.id)) return false;
+
+  const milestones = parseMilestones(project);
+  if (event.unlockMilestones?.some((key) => !milestones[key])) return false;
+
+  const filterContext: LocationEventFilterContext = {
+    locationRiskTags: location.riskTags,
+    locationRelatedAreaNames: location.relatedAreaNames,
+    locationRelatedNpcNames: location.relatedNpcNames,
+  };
+
+  if (!matchesEventRiskTags(event, filterContext)) return false;
+  if (!matchesEventAreaNames(event, filterContext)) return false;
+  if (!matchesEventNpcNames(event, filterContext)) return false;
+
+  return true;
+}
+
+function countEventsForLocation(
+  location: MapLocation,
+  project: ProjectState,
+  events: EventTemplateData[],
+): number {
+  return events.filter((event) => matchesEventForLocationClue(event, location, project)).length;
+}
+
+function formatEventClueLabel(location: MapLocation, eventCount: number): string {
   if (eventCount > 0) {
-    return `${eventCount} 项可能事件`;
+    return `${eventCount} 项事件线索`;
   }
   if (location.riskTags?.length) {
     const labels = location.riskTags.slice(0, 3).map(getRiskTagLabel);
-    return labels.join(" · ");
+    return `事件线索 · ${labels.join(" · ")}`;
   }
-  return "可能事件";
+  return "事件线索";
 }
 
-async function countEventsForLocation(
-  locationId: string,
-  project: ProjectState,
-): Promise<number> {
-  const events = await getEventTemplates();
-  const milestones = parseMilestones(project);
-  const stage = normalizeStageId(project.currentStage);
+export function formatUnlockRequirementHint(requirement: string): string {
+  const stageMatch = requirement.match(/^进入「(.+)」阶段$/);
+  if (stageMatch) return `阶段推进至 ${stageMatch[1]}`;
+  const milestoneMatch = requirement.match(/^完成关键节点「(.+)」$/);
+  if (milestoneMatch) return `完成「${milestoneMatch[1]}」`;
+  return requirement;
+}
 
-  return events.filter((event) => {
-    const slugs = event.triggerLocationSlugs || [];
-    if (slugs.length > 0 && !slugs.includes(locationId)) return false;
-    if (event.triggerStage && event.triggerStage !== stage) return false;
-    if (event.unlockMilestones?.some((key) => !milestones[key])) return false;
-    return true;
-  }).length;
+export function buildUnlockRequirementHints(requirements: string[]): string[] {
+  return requirements.map(formatUnlockRequirementHint);
 }
 
 function getActionsForLocationRaw(
@@ -106,7 +174,7 @@ function getActionsForLocationRaw(
   return { total: atLocation.length, available };
 }
 
-export async function buildLocationDisplayItem(
+export function buildLocationDisplayItem(
   location: MapLocation,
   project: ProjectState,
   tasks: Task[],
@@ -116,15 +184,15 @@ export async function buildLocationDisplayItem(
     recommendReason?: string;
     eventCount?: number;
   },
-): Promise<LocationDisplayItem> {
+): LocationDisplayItem {
   const unlocked = isLocationUnlocked(location, project);
   const enriched = enrichLocationStatus(location, project, tasks);
   const { total, available } = getActionsForLocationRaw(location.id, actions, project);
-  const eventCount =
-    options?.eventCount ?? (await countEventsForLocation(location.id, project));
+  const eventCount = options?.eventCount ?? 0;
   const isRecommended = options?.recommendedLocationId === location.id;
   const riskTagLabels = (location.riskTags || []).map(getRiskTagLabel);
   const highRisk = (location.riskTags || []).some((tag) => HIGH_RISK_TAGS.has(tag));
+  const unlockRequirements = getUnlockRequirements(location);
 
   let status: LocationDisplayStatus = unlocked ? "unlocked" : "locked";
   if (isRecommended && unlocked) status = "recommended";
@@ -140,12 +208,13 @@ export async function buildLocationDisplayItem(
     actionCount: unlocked ? available : total,
     totalActionCount: total,
     relatedTaskCount: enriched.activeTaskCount,
-    possibleEventsLabel: countPossibleEvents(location, project, eventCount),
+    possibleEventsLabel: formatEventClueLabel(location, eventCount),
     hasRisk: riskTagLabels.length > 0,
     highRisk,
     riskTagLabels,
     recommendReason: isRecommended ? options?.recommendReason : undefined,
-    unlockRequirements: getUnlockRequirements(location),
+    unlockRequirements,
+    unlockRequirementHints: buildUnlockRequirementHints(unlockRequirements),
     href: unlocked ? `/locations/${location.id}` : "#",
   };
 }
@@ -188,23 +257,15 @@ export async function buildExplorePageData(params: {
   const recommendedLocationId = recommendedAction.locationId;
   const recommendReason = recommendedAction.reason;
 
-  const eventCountCache = new Map<string, number>();
-  const displayItems: LocationDisplayItem[] = [];
-
-  for (const location of locations) {
-    let eventCount = eventCountCache.get(location.id);
-    if (eventCount === undefined) {
-      eventCount = await countEventsForLocation(location.id, project);
-      eventCountCache.set(location.id, eventCount);
-    }
-    displayItems.push(
-      await buildLocationDisplayItem(location, project, tasks, actions, {
-        recommendedLocationId,
-        recommendReason,
-        eventCount,
-      }),
-    );
-  }
+  const events = await getEventTemplates();
+  const displayItems: LocationDisplayItem[] = locations.map((location) => {
+    const eventCount = countEventsForLocation(location, project, events);
+    return buildLocationDisplayItem(location, project, tasks, actions, {
+      recommendedLocationId,
+      recommendReason,
+      eventCount,
+    });
+  });
 
   displayItems.sort((a, b) => {
     const statusOrder = { recommended: 0, unlocked: 1, locked: 2 };
@@ -244,9 +305,14 @@ export type LocationActionDisplayItem = {
   triggerTaskCount: number;
   relatedNpcNames: string[];
   riskTagLabels: string[];
+  isRecommended?: boolean;
 };
 
-export function buildActionDisplayItems(actions: LocationAction[]): LocationActionDisplayItem[] {
+export function buildActionDisplayItems(
+  actions: LocationAction[],
+  recommendedActionId?: string,
+): LocationActionDisplayItem[] {
+  const fallbackRecommendedId = recommendedActionId ?? actions[0]?.id;
   return actions.map((action) => ({
     id: action.id,
     label: action.label,
@@ -258,6 +324,7 @@ export function buildActionDisplayItems(actions: LocationAction[]): LocationActi
     triggerTaskCount: action.triggerTaskSlugs?.length ?? 0,
     relatedNpcNames: action.relatedNpcNames || [],
     riskTagLabels: (action.riskTags || []).map(getRiskTagLabel),
+    isRecommended: action.id === fallbackRecommendedId,
   }));
 }
 

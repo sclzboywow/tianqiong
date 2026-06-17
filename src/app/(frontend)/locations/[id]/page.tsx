@@ -9,6 +9,7 @@ import { getStageConfig } from "@/game/projectStages";
 import { buildActionDisplayItems } from "@/game/locationPresentationEngine";
 import {
   getChapterInfo,
+  getNextRecommendedAction,
   getPendingTaskGroups,
 } from "@/game/playerGuidanceEngine";
 import { listTasks } from "@/game/taskEngine";
@@ -39,7 +40,23 @@ export default async function LocationDetailPage({
     pendingGroups.mainline.length + pendingGroups.emergency.length;
 
   const stageConfig = getStageConfig(project.currentStage);
-  const actionItems = buildActionDisplayItems(overview.availableActions);
+  const recommendedAction = getNextRecommendedAction(project, tasks);
+
+  let recommendedActionId = overview.availableActions[0]?.id;
+  if (
+    recommendedAction.locationId === overview.location.id &&
+    recommendedAction.actionLabel
+  ) {
+    const matched = overview.availableActions.find(
+      (action) => action.label === recommendedAction.actionLabel,
+    );
+    if (matched) recommendedActionId = matched.id;
+  }
+
+  const actionItems = buildActionDisplayItems(
+    overview.availableActions,
+    recommendedActionId,
+  );
 
   return (
     <PlayerShell

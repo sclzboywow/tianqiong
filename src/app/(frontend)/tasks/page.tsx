@@ -1,27 +1,51 @@
 import { redirect } from "next/navigation";
-import { SiteHeader } from "@/components/SiteHeader";
-import { TaskCard } from "@/components/TaskCard";
+import { PlayerShell } from "@/components/player/PlayerShell";
+import { TaskBoardLayout } from "@/components/player/tasks/TaskBoardLayout";
 import { getCurrentUserId } from "@/lib/session";
+import { prisma } from "@/prisma/client";
+import { getProjectState, ensureProjectState } from "@/game/projectEngine";
 import { listTasks } from "@/game/taskEngine";
+import { getRecentTaskBoardLogs } from "@/game/logEngine";
+import { buildTaskBoardData } from "@/game/taskPresentationEngine";
+import {
+  getChapterGoalItems,
+  getChapterInfo,
+  getPendingTaskGroups,
+} from "@/game/playerGuidanceEngine";
 
 export default async function TasksPage() {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/register");
 
-  const tasks = await listTasks();
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) redirect("/register");
+
+  await ensureProjectState();
+  const project = await getProjectState();
+  if (!project) redirect("/register");
+
+  const [tasks, recentTaskLogs] = await Promise.all([listTasks(), getRecentTaskBoardLogs(3)]);
+
+  const chapterInfo = getChapterInfo(project);
+  const chapterGoals = getChapterGoalItems(project, tasks);
+  const pendingGroups = getPendingTaskGroups(tasks);
+  const pendingCount =
+    pendingGroups.mainline.length + pendingGroups.emergency.length;
+
+  const boardData = buildTaskBoardData({
+    project,
+    tasks,
+    chapterGoals,
+    recentTaskLogs,
+  });
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <SiteHeader />
-      <main className="mx-auto max-w-5xl space-y-4 px-4 py-6">
-        <h1 className="text-xl font-bold text-amber-400">任务大厅</h1>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </div>
-        {tasks.length === 0 && <p className="text-zinc-400">暂无可用任务，请运行 seed 脚本</p>}
-      </main>
-    </div>
+    <PlayerShell
+      chapterSubtitle={chapterInfo.chapterSubtitle}
+      userNickname={user.nickname}
+      pendingTaskCount={pendingCount}
+    >
+      <TaskBoardLayout data={boardData} />
+    </PlayerShell>
   );
 }

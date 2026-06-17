@@ -73,12 +73,24 @@ export function ExploreLocationCard({ item }: ExploreLocationCardProps) {
         <p className="mt-2 text-xs leading-relaxed text-[#2EA8FF]/90">{item.recommendReason}</p>
       )}
 
-      <div className="mt-4">
+      <div className="mt-4 space-y-1.5">
         {isLocked ? (
-          <div className="flex items-center gap-2 text-xs text-[#8EA3B8]">
-            <Lock className="size-3.5" />
-            尚未解锁
-          </div>
+          <>
+            <div className="flex items-center gap-2 text-xs text-[#8EA3B8]">
+              <Lock className="size-3.5" />
+              尚未解锁
+            </div>
+            {item.unlockRequirementHints.length > 0 && (
+              <div className="space-y-0.5 text-xs leading-relaxed text-[#8EA3B8]/90">
+                {item.unlockRequirementHints.slice(0, 2).map((hint) => (
+                  <p key={hint}>需要：{hint}</p>
+                ))}
+                {item.unlockRequirementHints.length > 2 && (
+                  <p className="text-[#8EA3B8]/70">等条件</p>
+                )}
+              </div>
+            )}
+          </>
         ) : (
           <span className="inline-flex items-center gap-1 text-sm font-medium text-[#2EA8FF]">
             进入地点

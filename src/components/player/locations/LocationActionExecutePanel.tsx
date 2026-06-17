@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, LoaderCircle, Zap } from "lucide-react";
+import { AlertTriangle, LoaderCircle, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LocationActionDisplayItem } from "@/game/locationPresentationEngine";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
@@ -105,14 +106,26 @@ export function LocationActionExecutePanel({
           actions.map((action) => {
             const blockReason = canExecuteAction(action, user);
             const isPending = pendingId === action.id;
+            const isRecommended = action.isRecommended;
 
             return (
               <article
                 key={action.id}
-                className="rounded-lg border border-[rgba(60,160,255,0.15)] bg-[rgba(5,11,20,0.45)] p-4"
+                className={cn(
+                  "rounded-lg border bg-[rgba(5,11,20,0.45)] p-4",
+                  isRecommended
+                    ? "border-[#2EA8FF] shadow-[0_0_12px_rgba(30,136,255,0.15)]"
+                    : "border-[rgba(60,160,255,0.15)]",
+                )}
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1">
+                    {isRecommended && (
+                      <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-[rgba(30,136,255,0.15)] px-2 py-0.5 text-[11px] text-[#2EA8FF]">
+                        <Sparkles className="size-3" />
+                        推荐行动
+                      </span>
+                    )}
                     <h4 className="text-[15px] font-medium text-[#EAF3FF]">{action.label}</h4>
                     <p className="mt-1 text-[13px] leading-relaxed text-[#8EA3B8]">
                       {action.description}
@@ -209,11 +222,22 @@ export function LocationActionExecutePanel({
           >
             <p>{feedback.message}</p>
             {feedback.createdTasks && feedback.createdTasks.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs">
-                {feedback.createdTasks.map((task) => (
-                  <li key={task.id}>· {task.title}</li>
-                ))}
-              </ul>
+              <div className="mt-2">
+                <p className="text-xs font-medium">已生成任务：</p>
+                <ul className="mt-1 space-y-1.5 text-xs">
+                  {feedback.createdTasks.map((task) => (
+                    <li key={task.id}>
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="inline-flex items-center gap-2 hover:underline"
+                      >
+                        <span>· {task.title}</span>
+                        <span className="text-[#2EA8FF]">前往处理</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         )}
