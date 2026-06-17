@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Crosshair } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RecommendedAction } from "@/game/playerGuidanceEngine";
+import { CommandCenterCardBackground } from "./CommandCenterCardBackground";
 import { playerCardClass } from "./playerTheme";
 
 type RecommendedActionCardProps = {
@@ -19,17 +20,9 @@ export function RecommendedActionCard({ action }: RecommendedActionCardProps) {
         "relative min-h-[220px] max-h-[280px] overflow-hidden lg:min-h-[340px] lg:max-h-none",
       )}
     >
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg, rgba(7,17,31,0.2) 0%, rgba(5,11,20,0.85) 100%), radial-gradient(ellipse at 70% 20%, rgba(30,136,255,0.28) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(14,165,233,0.12) 0%, transparent 45%)",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#050B14] via-[#050B14]/94 to-[#050B14]/60" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#050B14] via-[#050B14]/40 to-transparent" />
+      <CommandCenterCardBackground />
 
-      <div className="relative flex h-full min-h-[220px] flex-col justify-between p-4 lg:min-h-[340px] lg:p-8">
+      <div className="relative flex h-full min-h-[220px] flex-col justify-between p-4 lg:min-h-[340px] lg:max-w-[62%] lg:p-8">
         <div>
           <div className="mb-3 flex items-center gap-2 text-xs text-[#8EA3B8] lg:mb-4 lg:text-sm">
             <Crosshair className="size-4 text-[#2EA8FF]" />

@@ -122,7 +122,7 @@ export function buildMapActionLogContent(params: {
   skippedCount: number;
   message: string;
 }) {
-  const { locationId, locationName, actionLabel, createdCount, skippedCount, message } = params;
+  const { locationName, actionLabel, createdCount, skippedCount, message } = params;
   let detail: string;
   if (createdCount > 0) {
     detail = `已生成 ${createdCount} 项任务`;
@@ -130,7 +130,7 @@ export function buildMapActionLogContent(params: {
   } else {
     detail = message;
   }
-  return `${MAP_ACTION_LOG_PREFIX}在「${locationName}」(${locationId})执行「${actionLabel}」，${detail}。`;
+  return `${MAP_ACTION_LOG_PREFIX}在「${locationName}」执行「${actionLabel}」，${detail}。`;
 }
 
 export function buildEventPoolLogContent(params: {
@@ -143,12 +143,11 @@ export function buildEventPoolLogContent(params: {
   skippedCount: number;
   message: string;
 }) {
-  const { locationId, locationName, actionLabel, eventTitle, eventSlug, createdCount, skippedCount, message } =
-    params;
+  const { locationName, actionLabel, eventTitle, createdCount, skippedCount, message } = params;
   let detail = message;
   if (createdCount > 0) {
     detail = `已生成 ${createdCount} 项任务`;
     if (skippedCount > 0) detail += `，跳过 ${skippedCount} 项`;
   }
-  return `${EVENT_POOL_LOG_PREFIX}在「${locationName}」(${locationId})执行「${actionLabel}」后触发事件「${eventTitle}」(${eventSlug})，${detail}。`;
+  return `${EVENT_POOL_LOG_PREFIX}在「${locationName}」执行「${actionLabel}」后触发事件「${eventTitle}」，${detail}。`;
 }

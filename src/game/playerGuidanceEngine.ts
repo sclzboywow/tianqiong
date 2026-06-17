@@ -128,6 +128,46 @@ function findActionLabel(locationId: string, taskSlug: string): string | undefin
   return action?.label;
 }
 
+function resolveTaskLocationContext(taskSlug: string): {
+  locationId: string;
+  locationName: string;
+  actionLabel: string;
+} | null {
+  const guidance = INITIATION_GUIDANCE.find((item) => item.taskSlug === taskSlug);
+  if (guidance) {
+    const actionLabel = findActionLabel(guidance.locationId, taskSlug);
+    if (actionLabel) {
+      return {
+        locationId: guidance.locationId,
+        locationName: getLocationName(guidance.locationId),
+        actionLabel,
+      };
+    }
+  }
+
+  for (const action of CHAPTER1_LOCATION_ACTIONS) {
+    if ((action.triggerTaskSlugs || []).includes(taskSlug)) {
+      return {
+        locationId: action.locationId,
+        locationName: getLocationName(action.locationId),
+        actionLabel: action.label,
+      };
+    }
+  }
+
+  for (const action of LOCATION_ACTIONS) {
+    if ((action.triggerTaskSlugs || []).includes(taskSlug)) {
+      return {
+        locationId: action.locationId,
+        locationName: getLocationName(action.locationId),
+        actionLabel: action.label,
+      };
+    }
+  }
+
+  return null;
+}
+
 function isActiveMainlineTask(task: Task): boolean {
   return (
     (task.status === "PENDING" || task.status === "IN_PROGRESS") &&
@@ -162,16 +202,31 @@ export function getNextRecommendedAction(
 
   if (activeMainline.length > 0) {
     const task = activeMainline[0];
+    const locationContext = resolveTaskLocationContext(task.templateId);
+
+    if (locationContext) {
+      return {
+        title: locationContext.actionLabel,
+        headline: "下一步推荐行动",
+        description: task.description || "当前有进行中的主线任务，建议优先处理。",
+        href: `/locations/${locationContext.locationId}`,
+        reason: "综合研判当前项目状态，建议优先推进主线行动。",
+        priority: 100,
+        taskSlug: task.templateId,
+        locationId: locationContext.locationId,
+        locationName: locationContext.locationName,
+        actionLabel: locationContext.actionLabel,
+      };
+    }
+
     return {
-      title: task.title,
+      title: `处理主线任务：${task.title}`,
       headline: "下一步推荐行动",
       description: task.description || "当前有进行中的主线任务，建议优先处理。",
       href: `/tasks/${task.id}`,
       reason: "综合研判当前项目状态，建议优先推进主线行动。",
       priority: 100,
       taskSlug: task.templateId,
-      locationName: task.area,
-      actionLabel: "处理任务",
     };
   }
 
