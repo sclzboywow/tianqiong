@@ -326,7 +326,7 @@ export type LocationActionDisplayItem = {
   isRecommended?: boolean;
 };
 
-const ACTIVE_TASK_STATUSES = new Set(["PENDING", "IN_PROGRESS"]);
+const ACTION_LINKED_TASK_STATUSES = new Set(["PENDING", "IN_PROGRESS", "COMPLETED"]);
 
 const TASK_STATUS_LABELS: Record<string, string> = {
   PENDING: "待处理",
@@ -343,7 +343,7 @@ function getExistingTasksForAction(
 ): LocationActionExistingTask[] {
   const slugSet = new Set(action.triggerTaskSlugs || []);
   return tasks
-    .filter((task) => slugSet.has(task.templateId) && ACTIVE_TASK_STATUSES.has(task.status))
+    .filter((task) => slugSet.has(task.templateId) && ACTION_LINKED_TASK_STATUSES.has(task.status))
     .map((task) => ({
       id: task.id,
       title: task.title,

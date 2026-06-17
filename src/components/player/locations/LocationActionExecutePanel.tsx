@@ -48,25 +48,35 @@ function canExecuteAction(action: LocationActionDisplayItem, user: UserResources
   return null;
 }
 
-function allTriggerTasksExist(action: LocationActionDisplayItem): boolean {
+function allTriggerTasksResolved(action: LocationActionDisplayItem): boolean {
   if (action.triggerTaskSlugs.length === 0) return false;
   return action.triggerTaskSlugs.every((slug) =>
     action.existingTasks.some((task) => task.templateId === slug),
   );
 }
 
+function allTriggerTasksCompleted(action: LocationActionDisplayItem): boolean {
+  if (action.triggerTaskSlugs.length === 0) return false;
+  return action.triggerTaskSlugs.every((slug) =>
+    action.existingTasks.some((task) => task.templateId === slug && task.status === "COMPLETED"),
+  );
+}
+
 function ActionTaskLinks({ action }: { action: LocationActionDisplayItem }) {
+  const allCompleted = allTriggerTasksCompleted(action);
   const single = action.existingTasks.length === 1;
+  const linkLabel = (status: string) => (status === "COMPLETED" ? "查看结果" : "前往处理");
 
   if (single) {
+    const task = action.existingTasks[0];
     return (
       <div className="shrink-0 space-y-2 text-right">
-        <p className="text-xs text-[#8EA3B8]">任务已生成</p>
+        <p className="text-xs text-[#8EA3B8]">{allCompleted ? "任务已完成" : "任务已生成"}</p>
         <Link
-          href={`/tasks/${action.existingTasks[0].id}`}
+          href={`/tasks/${task.id}`}
           className="inline-flex items-center gap-1 rounded-lg border border-[rgba(60,160,255,0.35)] bg-[rgba(30,136,255,0.12)] px-4 py-2 text-sm font-medium text-[#2EA8FF] hover:border-[#2EA8FF]"
         >
-          前往处理
+          {linkLabel(task.status)}
           <ArrowRight className="size-4" />
         </Link>
       </div>
@@ -75,7 +85,9 @@ function ActionTaskLinks({ action }: { action: LocationActionDisplayItem }) {
 
   return (
     <div className="shrink-0 space-y-2 lg:min-w-[200px]">
-      <p className="text-xs text-[#8EA3B8]">已生成 {action.existingTasks.length} 项任务</p>
+      <p className="text-xs text-[#8EA3B8]">
+        {allCompleted ? "任务已完成" : `已生成 ${action.existingTasks.length} 项任务`}
+      </p>
       <ul className="space-y-1.5">
         {action.existingTasks.map((task) => (
           <li key={task.id}>
@@ -84,7 +96,7 @@ function ActionTaskLinks({ action }: { action: LocationActionDisplayItem }) {
               className="flex items-center justify-between gap-2 rounded-lg border border-[rgba(60,160,255,0.2)] bg-[rgba(5,11,20,0.45)] px-3 py-2 text-xs text-[#EAF3FF] hover:border-[rgba(60,160,255,0.4)]"
             >
               <span className="truncate">{task.title}</span>
-              <span className="shrink-0 text-[#2EA8FF]">前往处理</span>
+              <span className="shrink-0 text-[#2EA8FF]">{linkLabel(task.status)}</span>
             </Link>
           </li>
         ))}
@@ -164,7 +176,7 @@ export function LocationActionExecutePanel({
             const isPending = pendingId === action.id;
             const isRecommended = action.isRecommended;
             const hasExistingTasks = action.existingTasks.length > 0;
-            const hideExecute = hasExistingTasks && allTriggerTasksExist(action);
+            const hideExecute = hasExistingTasks && allTriggerTasksResolved(action);
 
             return (
               <article

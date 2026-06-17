@@ -5,7 +5,7 @@
  * 人工测试清单（浏览器）：
  * 1. 注册/登录 → /project 查看章节/推荐行动/资源条/项目状态/章节目标/待处理任务
  * 2. 点击推荐行动 → /locations 或 /locations/[id]
- * 3. 探索页：推荐地点、已解锁、锁定条件、无技术 slug
+ * 3. 协同地图：推荐地点、已解锁、锁定条件、无技术 slug
  * 4. 进入推荐地点 → 执行推荐行动 → 检查体力/精神消耗、任务生成、前往处理链接
  * 5. /tasks → 推荐任务、分类、成功影响、失败风险
  * 6. /tasks/[id] → 剧情、选择项、加入、提交、结算反馈
@@ -21,6 +21,7 @@ import {
 } from "../src/data/chapter1Content";
 import { MAP_LOCATIONS } from "../src/data/locations";
 import { LOCATION_ACTIONS } from "../src/data/locationActions";
+import { buildChapter1AcceptanceFromStatic } from "../src/game/chapter1Acceptance";
 import { executeLocationAction } from "../src/game/locationActionEngine";
 import { getLocationActions } from "../src/game/locationActionLoader";
 import { getAllLocations, getLocationOverview } from "../src/game/locationEngine";
@@ -344,7 +345,7 @@ async function main() {
       item.recommendReason || "",
     ]),
   );
-  record("探索页展示无技术 slug", !exploreSlugHit, exploreSlugHit || "通过");
+  record("协同地图展示无技术 slug", !exploreSlugHit, exploreSlugHit || "通过");
 
   const inkStory = createStory(mainlineTask.inkFile);
   const inkState = getStoryState(inkStory, parseChoiceIds(mainlineTask.choiceEffects));
