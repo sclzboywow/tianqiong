@@ -5,8 +5,11 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
 import type { ProjectLocationFlowNode } from "./projectMapFlowTypes";
 
+const HUB_NODE_IDS = new Set(["owner_project_management_dept", "project_meeting_room"]);
+
 function ProjectLocationNodeComponent({ data }: NodeProps<ProjectLocationFlowNode>) {
   const displayName = data.name.includes("·") ? data.name.split("·").pop()!.trim() : data.name;
+  const isHub = HUB_NODE_IDS.has(data.id);
 
   return (
     <>
@@ -17,6 +20,9 @@ function ProjectLocationNodeComponent({ data }: NodeProps<ProjectLocationFlowNod
           data.unlocked
             ? "border-[rgba(60,160,255,0.28)] bg-[rgba(10,24,40,0.92)]"
             : "border-[rgba(60,160,255,0.12)] bg-[rgba(10,24,40,0.55)] opacity-50 grayscale",
+          isHub &&
+            data.unlocked &&
+            "border-[rgba(46,168,255,0.55)] shadow-[0_0_12px_rgba(30,136,255,0.18)]",
           data.isRecommended && data.unlocked && "border-[#FACC15] shadow-[0_0_14px_rgba(250,204,21,0.2)]",
           data.pendingTaskCount > 0 && data.unlocked && "border-[rgba(250,204,21,0.45)]",
         )}

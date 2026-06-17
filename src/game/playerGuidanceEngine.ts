@@ -247,7 +247,7 @@ export function getNextRecommendedAction(
           headline: "下一步推荐行动",
           description: `前往「${locationName}」执行「${actionLabel || taskTitle}」，生成相关任务。`,
           href: `/locations/${item.locationId}`,
-          reason: `章节目标「${MILESTONE_LABELS[item.milestone] || item.label}」尚未完成，需先在现场触发任务。`,
+          reason: `章节目标「${MILESTONE_LABELS[item.milestone] || item.label}」尚未完成，需先在对应地点执行行动并触发任务。`,
           priority: 80,
           locationId: item.locationId,
           locationName,

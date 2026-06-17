@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Background,
   Controls,
+  MarkerType,
   MiniMap,
   ReactFlow,
   type Edge,
@@ -65,7 +66,13 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
         target: edge.target,
         type: edge.type ?? "smoothstep",
         animated: false,
-        style: { stroke: "rgba(60,160,255,0.35)", strokeWidth: 1.5 },
+        style: { stroke: "rgba(60,160,255,0.22)", strokeWidth: 1.2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 10,
+          height: 10,
+          color: "rgba(60,160,255,0.22)",
+        },
       })),
     [mapData.edges],
   );
@@ -95,7 +102,7 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
         minZoom={0.2}
         maxZoom={1.4}
         fitView
-        fitViewOptions={{ padding: 0.1 }}
+        fitViewOptions={{ padding: 0.12 }}
         proOptions={{ hideAttribution: true }}
       >
         <Background color="rgba(60,160,255,0.08)" gap={20} />
