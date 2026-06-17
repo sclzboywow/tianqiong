@@ -3,6 +3,8 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TaskDetailViewData, TaskStoryState } from "@/game/taskDetailPresentationEngine";
+import type { Job } from "@/game/prisma-types";
+import { JOB_LABELS } from "@/utils/formatter";
 import { TaskDetailLayout } from "./TaskDetailLayout";
 import { TaskDetailHeader } from "./TaskDetailHeader";
 import { TaskIntelPanel } from "./TaskIntelPanel";
@@ -104,7 +106,10 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
         participants: task.participants.map((participant) => ({
           id: participant.id,
           nickname: participant.nickname,
-          jobLabel: participant.jobLabel || participant.job,
+          jobLabel:
+            participant.jobLabel ||
+            JOB_LABELS[participant.job as Job] ||
+            participant.job,
           hasSubmitted: !!participant.choiceId,
         })),
       };
@@ -130,7 +135,7 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
     setLoading(false);
 
     if (!res.ok) {
-      setError(typeof payload.error === "string" ? payload.error : "加入任务失败，请稍后重试");
+      setError(typeof payload.error === "string" ? payload.error : "加入任务失败");
       return;
     }
 
@@ -156,7 +161,7 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
     setLoading(false);
 
     if (!res.ok) {
-      setError(typeof payload.error === "string" ? payload.error : "提交方案失败，请稍后重试");
+      setError(typeof payload.error === "string" ? payload.error : "提交方案失败");
       return;
     }
 
