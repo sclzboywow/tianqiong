@@ -40,10 +40,26 @@ const GROUP_ROW_BASE: Record<string, number> = {
   施工现场: 880,
 };
 
+export type MapGroupHeaderDef = {
+  id: string;
+  label: string;
+  position: MapNodePosition;
+};
+
+/** 地图分区标题节点（不可点击、不参与连线） */
+export const MAP_GROUP_HEADER_DEFS: MapGroupHeaderDef[] = [
+  { id: "map-group-owner", label: "建设主体", position: { x: 0, y: -55 } },
+  { id: "map-group-gov", label: "政府单位", position: { x: 0, y: 165 } },
+  { id: "map-group-project", label: "项目部", position: { x: 0, y: 385 } },
+  { id: "map-group-third", label: "第三方机构", position: { x: 0, y: 605 } },
+  { id: "map-group-site", label: "施工现场", position: { x: 0, y: 825 } },
+];
+
 export type ProjectMapEdgeDef = {
   id: string;
   source: string;
   target: string;
+  type?: "smoothstep";
 };
 
 /** 主关系连线（缺失 locationId 时构建阶段会跳过） */
@@ -81,5 +97,5 @@ export function resolveNodePosition(
 export function buildValidEdges(locationIds: Set<string>): ProjectMapEdgeDef[] {
   return PROJECT_MAP_EDGE_DEFS.filter(
     (edge) => locationIds.has(edge.source) && locationIds.has(edge.target),
-  );
+  ).map((edge) => ({ ...edge, type: "smoothstep" as const }));
 }

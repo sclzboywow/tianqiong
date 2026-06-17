@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const PC_NAV_ITEMS = [
   { href: "/project", label: "指挥中心" },
-  { href: "/locations", label: "探索" },
+  { href: "/locations", label: "协同地图" },
   { href: "/tasks", label: "任务" },
   { href: "/profile", label: "角色" },
   { href: "/daily-report", label: "日志" },

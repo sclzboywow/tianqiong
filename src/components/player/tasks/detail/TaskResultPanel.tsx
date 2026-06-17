@@ -151,7 +151,7 @@ export function TaskResultPanel({
                     className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-[rgba(60,160,255,0.25)] px-4 text-sm text-[#EAF3FF] hover:border-[#2EA8FF]"
                   >
                     <Compass className="size-4" />
-                    继续探索
+                    前往协同地图
                   </Link>
                 </div>
               )}

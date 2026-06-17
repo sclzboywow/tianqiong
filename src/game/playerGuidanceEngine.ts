@@ -259,13 +259,13 @@ export function getNextRecommendedAction(
   }
 
   return {
-    title: "探索可行动地点",
+    title: "选择地点推进事项",
     headline: "下一步推荐行动",
-    description: "当前暂无明确的主线推荐，请前往探索页查看已解锁地点与可执行行动。",
+    description: "当前暂无明确的主线推荐，请前往协同地图查看已解锁地点与可执行行动。",
     href: "/locations",
-    reason: "阶段内暂无可自动推断的下一步，建议主动探索地图。",
+    reason: "阶段内暂无可自动推断的下一步，建议在项目地图中选择地点推进。",
     priority: 10,
-    actionLabel: "前往探索",
+    actionLabel: "前往协同地图",
   };
 }
 

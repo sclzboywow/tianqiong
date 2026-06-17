@@ -298,12 +298,7 @@ export async function buildExplorePageData(params: {
     recentLogs,
     stageProgress: project.stageProgress,
     overallProgress: project.overallProgress,
-    mapData: buildProjectMapViewData(
-      displayItems,
-      getStageDisplayName(project.currentStage),
-      project.stageProgress,
-      project.overallProgress,
-    ),
+    mapData: buildProjectMapViewData(displayItems),
   };
 }
 

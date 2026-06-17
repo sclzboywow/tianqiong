@@ -22,17 +22,9 @@ export type ProjectMapNodeData = {
 export type ProjectMapViewData = {
   nodes: ProjectMapNodeData[];
   edges: ProjectMapEdgeDef[];
-  stageName: string;
-  stageProgress: number;
-  overallProgress: number;
 };
 
-export function buildProjectMapViewData(
-  locations: LocationDisplayItem[],
-  stageName: string,
-  stageProgress: number,
-  overallProgress: number,
-): ProjectMapViewData {
+export function buildProjectMapViewData(locations: LocationDisplayItem[]): ProjectMapViewData {
   const groupCounters: Record<string, number> = {};
 
   const nodes: ProjectMapNodeData[] = locations.map((item) => {
@@ -59,8 +51,5 @@ export function buildProjectMapViewData(
   return {
     nodes,
     edges: buildValidEdges(locationIds),
-    stageName,
-    stageProgress,
-    overallProgress,
   };
 }

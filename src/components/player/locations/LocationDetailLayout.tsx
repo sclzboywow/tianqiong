@@ -31,7 +31,7 @@ export function LocationDetailLayout({
         className="inline-flex items-center gap-1 text-sm text-[#8EA3B8] hover:text-[#2EA8FF]"
       >
         <ChevronLeft className="size-4" />
-        返回探索
+        返回协同地图
       </Link>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">

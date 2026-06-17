@@ -33,12 +33,7 @@ export function ExplorePageLayout({ data }: ExplorePageLayoutProps) {
         overallProgress={data.overallProgress}
       />
 
-      <ProjectMapSection
-        mapData={data.mapData}
-        stageName={data.stageName}
-        stageProgress={data.stageProgress}
-        overallProgress={data.overallProgress}
-      />
+      <ProjectMapSection mapData={data.mapData} />
 
       {data.recommendedLocation && (
         <div className="lg:hidden">

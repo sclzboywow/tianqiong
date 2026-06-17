@@ -8,15 +8,24 @@ import {
   MiniMap,
   ReactFlow,
   type Edge,
-  type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import type { ProjectMapViewData } from "@/game/projectMapPresentationEngine";
+import type { ProjectMapNodeData, ProjectMapViewData } from "@/game/projectMapPresentationEngine";
+import { MAP_GROUP_HEADER_DEFS } from "@/game/projectMapLayout";
 import { ProjectLocationNode } from "./ProjectLocationNode";
+import { ProjectMapGroupHeaderNode } from "./ProjectMapGroupHeaderNode";
+import type {
+  ProjectLocationFlowNode,
+  ProjectMapFlowNode,
+  ProjectMapGroupHeaderFlowNode,
+} from "./projectMapFlowTypes";
 import { playerCardClass } from "../playerTheme";
+
+export type { ProjectLocationFlowNode } from "./projectMapFlowTypes";
 
 const nodeTypes = {
   projectLocation: ProjectLocationNode,
+  projectMapGroupHeader: ProjectMapGroupHeaderNode,
 };
 
 type ProjectMapFlowProps = {
@@ -26,18 +35,27 @@ type ProjectMapFlowProps = {
 export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
   const router = useRouter();
 
-  const nodes: Node[] = useMemo(
-    () =>
-      mapData.nodes.map((node) => ({
-        id: node.id,
-        type: "projectLocation",
-        position: node.position,
-        data: node,
-        draggable: false,
-        selectable: true,
-      })),
-    [mapData.nodes],
-  );
+  const nodes: ProjectMapFlowNode[] = useMemo(() => {
+    const groupHeaders: ProjectMapGroupHeaderFlowNode[] = MAP_GROUP_HEADER_DEFS.map((header) => ({
+      id: header.id,
+      type: "projectMapGroupHeader",
+      position: header.position,
+      data: { label: header.label },
+      draggable: false,
+      selectable: false,
+    }));
+
+    const locationNodes: ProjectLocationFlowNode[] = mapData.nodes.map((node) => ({
+      id: node.id,
+      type: "projectLocation",
+      position: node.position,
+      data: node,
+      draggable: false,
+      selectable: false,
+    }));
+
+    return [...groupHeaders, ...locationNodes];
+  }, [mapData.nodes]);
 
   const edges: Edge[] = useMemo(
     () =>
@@ -45,6 +63,7 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
         id: edge.id,
         source: edge.source,
         target: edge.target,
+        type: edge.type ?? "smoothstep",
         animated: false,
         style: { stroke: "rgba(60,160,255,0.35)", strokeWidth: 1.5 },
       })),
@@ -52,14 +71,15 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
   );
 
   const onNodeClick = useCallback(
-    (_: React.MouseEvent, node: Node) => {
+    (_: React.MouseEvent, node: ProjectMapFlowNode) => {
+      if (node.type === "projectMapGroupHeader") return;
       router.push(`/locations/${node.id}`);
     },
     [router],
   );
 
   return (
-    <div className={`${playerCardClass} h-[680px] overflow-hidden`}>
+    <div className={`${playerCardClass} h-[680px] overflow-hidden touch-pan-x touch-pan-y`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -68,12 +88,14 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
+        panOnDrag
         panOnScroll
         zoomOnScroll
-        minZoom={0.35}
+        zoomOnPinch
+        minZoom={0.2}
         maxZoom={1.4}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: 0.1 }}
         proOptions={{ hideAttribution: true }}
       >
         <Background color="rgba(60,160,255,0.08)" gap={20} />
@@ -83,7 +105,8 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
         />
         <MiniMap
           nodeColor={(node) => {
-            const data = node.data as { unlocked?: boolean; isRecommended?: boolean };
+            if (node.type === "projectMapGroupHeader") return "rgba(60,160,255,0.15)";
+            const data = node.data as ProjectMapNodeData;
             if (!data.unlocked) return "#3f3f46";
             if (data.isRecommended) return "#FACC15";
             return "#1E88FF";

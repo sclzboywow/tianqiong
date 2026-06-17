@@ -13,7 +13,7 @@ const ProjectMapFlow = dynamic(
       <div
         className={`${playerCardClass} flex h-[680px] items-center justify-center text-sm text-[#8EA3B8]`}
       >
-        加载协同地图…
+        加载项目地图…
       </div>
     ),
   },
@@ -21,30 +21,14 @@ const ProjectMapFlow = dynamic(
 
 type ProjectMapSectionProps = {
   mapData: ProjectMapViewData;
-  stageName: string;
-  stageProgress: number;
-  overallProgress: number;
 };
 
-export function ProjectMapSection({
-  mapData,
-  stageName,
-  stageProgress,
-  overallProgress,
-}: ProjectMapSectionProps) {
+export function ProjectMapSection({ mapData }: ProjectMapSectionProps) {
   return (
     <section className="space-y-3">
-      <div className="flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.5)] px-3 py-1.5 text-[#EAF3FF]">
-          当前阶段：{stageName}
-        </span>
-        <span className="rounded-full border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.5)] px-3 py-1.5 text-[#8EA3B8]">
-          阶段进度 {stageProgress}%
-        </span>
-        <span className="rounded-full border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.5)] px-3 py-1.5 text-[#8EA3B8]">
-          总体进度 {overallProgress}%
-        </span>
-      </div>
+      <p className="text-sm text-[#8EA3B8]">
+        点击地图节点进入地点，查看可执行行动、关联任务、NPC 与风险线索。
+      </p>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_240px]">
         <ProjectMapFlow mapData={mapData} />
