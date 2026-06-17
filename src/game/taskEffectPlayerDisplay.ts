@@ -67,3 +67,46 @@ export function sanitizeTaskLogContent(content: string): string {
     .replace(/，最终方案：[^，]+/, "，已完成结算")
     .trim();
 }
+
+const CHOICE_ID_LABELS: Record<string, string> = {
+  steady_push: "稳健推进",
+  fast_push: "加快节奏",
+  delay_coord: "延后协调",
+  immediate_fix: "立即整改",
+  schedule_fix: "计划整改",
+  ignore_sign: "暂缓处理",
+};
+
+/** 玩家日志正文清理：去除技术 slug 与枚举 */
+export function sanitizePlayerLogContent(content: string): string {
+  let text = sanitizeTaskLogContent(content)
+    .replace(/^【协同地图】/, "")
+    .replace(/^【事件池】/, "")
+    .replace(/【([^】]+)】/g, "「$1」")
+    .replace(/最终方案：([a-z_]+)/gi, (_, choiceId: string) => {
+      const label = CHOICE_ID_LABELS[choiceId.toLowerCase()] ?? "已提交方案";
+      return `最终方案：${label}`;
+    });
+
+  for (const [job, label] of Object.entries({
+    DOCUMENT_ASSISTANT: "资料员助理",
+    CONSTRUCTION_ASSISTANT: "施工员助理",
+    SAFETY_ASSISTANT: "安全员助理",
+    MECHANICAL_ASSISTANT: "机电助理",
+    COST_ASSISTANT: "造价助理",
+    MATERIAL_ASSISTANT: "材料员助理",
+    QUALITY_ASSISTANT: "质量员助理",
+  })) {
+    text = text.replace(new RegExp(`\\b${job}\\b`, "g"), label);
+  }
+
+  return text
+    .replace(/\b[a-z]+_[a-z0-9_]+\b/gi, "")
+    .replace(/\blocationId\b[^\s,。]*/gi, "")
+    .replace(/\btemplateId\b[^\s,。]*/gi, "")
+    .replace(/\beventSlug\b[^\s,。]*/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/，+/g, "，")
+    .replace(/^，|，$/g, "")
+    .trim();
+}
