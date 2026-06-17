@@ -39,6 +39,8 @@ type ExplorePageHeaderProps = {
   unlockedCount: number;
   totalCount: number;
   recommendedName?: string;
+  stageProgress?: number;
+  overallProgress?: number;
 };
 
 export function ExplorePageHeader({
@@ -46,21 +48,35 @@ export function ExplorePageHeader({
   unlockedCount,
   totalCount,
   recommendedName,
+  stageProgress,
+  overallProgress,
 }: ExplorePageHeaderProps) {
   return (
     <header className="space-y-3">
       <div>
         <div className="mb-2 flex items-center gap-2 text-[#2EA8FF]">
           <Compass className="size-5" />
-          <h1 className="text-xl font-semibold text-[#EAF3FF] lg:text-2xl">探索</h1>
+          <h1 className="text-xl font-semibold text-[#EAF3FF] lg:text-2xl">协同地图</h1>
         </div>
-        <p className="text-sm text-[#8EA3B8]">前往不同地点，触发行动、事件与任务。</p>
+        <p className="text-sm text-[#8EA3B8]">
+          大厅看全局，地图推事项。点击节点前往地点处理任务与事件。
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2 text-xs">
         <span className="rounded-full border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.5)] px-3 py-1.5 text-[#EAF3FF]">
           当前阶段：{stageName}
         </span>
+        {typeof stageProgress === "number" ? (
+          <span className="rounded-full border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.5)] px-3 py-1.5 text-[#8EA3B8]">
+            阶段进度 {stageProgress}%
+          </span>
+        ) : null}
+        {typeof overallProgress === "number" ? (
+          <span className="rounded-full border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.5)] px-3 py-1.5 text-[#8EA3B8]">
+            总体进度 {overallProgress}%
+          </span>
+        ) : null}
         <span className="rounded-full border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.5)] px-3 py-1.5 text-[#8EA3B8]">
           已解锁 {unlockedCount}/{totalCount}
         </span>

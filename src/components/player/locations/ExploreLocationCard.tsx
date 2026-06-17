@@ -101,12 +101,15 @@ export function ExploreLocationCard({ item }: ExploreLocationCardProps) {
     </>
   );
 
-  if (isLocked) {
-    return <article className={cardClass}>{inner}</article>;
-  }
-
   return (
-    <Link href={item.href} className={cn(cardClass, "hover:border-[rgba(60,160,255,0.35)]")}>
+    <Link
+      href={item.href}
+      className={cn(
+        cardClass,
+        !isLocked && "hover:border-[rgba(60,160,255,0.35)]",
+        isLocked && "cursor-pointer",
+      )}
+    >
       {inner}
     </Link>
   );

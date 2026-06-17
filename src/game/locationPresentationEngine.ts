@@ -17,8 +17,8 @@ import { getEventTemplates } from "./eventTemplateLoader";
 import type { EventTemplateData } from "./types";
 import { parseMilestones } from "./projectEngine";
 import { getStageConfig, getStageDisplayName } from "./projectStages";
-import type { RecommendedAction } from "./playerGuidanceEngine";
-import type { ChapterGoalItem } from "./playerGuidanceEngine";
+import type { RecommendedAction, ChapterGoalItem } from "./playerGuidanceEngine";
+import { buildProjectMapViewData, type ProjectMapViewData } from "./projectMapPresentationEngine";
 
 export type LocationDisplayStatus = "recommended" | "unlocked" | "locked";
 
@@ -40,6 +40,7 @@ export type LocationDisplayItem = {
   recommendReason?: string;
   unlockRequirements: string[];
   unlockRequirementHints: string[];
+  npcCount: number;
   href: string;
 };
 
@@ -60,6 +61,9 @@ export type ExplorePageData = {
   locations: LocationDisplayItem[];
   chapterGoals: ChapterGoalItem[];
   recentLogs: GameLogSummary[];
+  stageProgress: number;
+  overallProgress: number;
+  mapData: ProjectMapViewData;
 };
 
 const HIGH_RISK_TAGS = new Set(["safety", "fire", "cost", "contract"]);
@@ -215,7 +219,8 @@ export function buildLocationDisplayItem(
     recommendReason: isRecommended ? options?.recommendReason : undefined,
     unlockRequirements,
     unlockRequirementHints: buildUnlockRequirementHints(unlockRequirements),
-    href: unlocked ? `/locations/${location.id}` : "#",
+    npcCount: location.relatedNpcNames?.length ?? 0,
+    href: `/locations/${location.id}`,
   };
 }
 
@@ -291,6 +296,14 @@ export async function buildExplorePageData(params: {
     locations: displayItems,
     chapterGoals,
     recentLogs,
+    stageProgress: project.stageProgress,
+    overallProgress: project.overallProgress,
+    mapData: buildProjectMapViewData(
+      displayItems,
+      getStageDisplayName(project.currentStage),
+      project.stageProgress,
+      project.overallProgress,
+    ),
   };
 }
 
