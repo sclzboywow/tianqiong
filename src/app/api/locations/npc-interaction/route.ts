@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/session";
 import { executeNpcInteraction } from "@/game/npcInteractionService";
+import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
 
 export async function POST(request: Request) {
   const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ ok: false, message: "未登录" }, { status: 401 });
+  }
+
   const body = (await request.json()) as {
     locationId?: string;
     npcId?: string;
@@ -22,11 +27,21 @@ export async function POST(request: Request) {
     locationId,
     npcId,
     interaction,
-    userId: userId ?? undefined,
+    userId,
   });
 
   if (!result.ok) {
     return NextResponse.json(result, { status: result.entries?.length ? 200 : 400 });
+  }
+
+  if (result.log) {
+    return NextResponse.json({
+      ...result,
+      log: {
+        ...result.log,
+        content: sanitizePlayerLogContent(result.log.content),
+      },
+    });
   }
 
   return NextResponse.json(result);

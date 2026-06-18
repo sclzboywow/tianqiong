@@ -28,7 +28,7 @@ export async function executeNpcInteraction(params: {
   locationId: string;
   npcId: string;
   interaction: string;
-  userId?: string;
+  userId: string;
 }): Promise<{
   ok: boolean;
   message?: string;
@@ -126,6 +126,7 @@ export async function loadNpcInteractionDialogueHistory(params: {
   locationName: string;
   limit?: number;
 }): Promise<DialogueEntry[]> {
+  const limit = params.limit ?? 24;
   const displayName = getLocationDisplayNameById(params.locationId);
   const rows = await prisma.gameLog.findMany({
     where: {
@@ -141,13 +142,13 @@ export async function loadNpcInteractionDialogueHistory(params: {
         },
       ],
     },
-    orderBy: { createdAt: "asc" },
-    take: params.limit ?? 24,
+    orderBy: { createdAt: "desc" },
+    take: limit,
     select: { id: true, effectSummary: true, createdAt: true },
   });
 
   const entries: DialogueEntry[] = [];
-  for (const row of rows) {
+  for (const row of [...rows].reverse()) {
     const meta = parseNpcInteractionLogMeta(row.effectSummary);
     if (!meta) continue;
     const profile = getNpcProfileById(meta.npcId);
@@ -161,5 +162,5 @@ export async function loadNpcInteractionDialogueHistory(params: {
     );
   }
 
-  return entries.slice(-24);
+  return entries;
 }

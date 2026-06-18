@@ -73,7 +73,7 @@ export function LocationNpcDialoguePanel({
         {entries.length === 0 ? (
           <p className="text-[11px] leading-5 text-slate-500">
             {selectedNpc
-              ? `与 ${npcName} 的交谈记录会显示在这里。`
+              ? "当前尚无对话记录。你可以先交谈了解情况，或发起请示、协调、催办。"
               : "选择 NPC 后，可使用底部动作开始对话。"}
           </p>
         ) : (
