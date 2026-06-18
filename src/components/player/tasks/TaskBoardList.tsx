@@ -43,7 +43,7 @@ function PendingQueueSection({ section }: { section: PendingSection }) {
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-2 px-0.5">
-        <h3 className="text-[11px] font-medium text-cyan-100">{section.title}</h3>
+        <h3 className="text-sm font-medium text-cyan-100">{section.title}</h3>
         <span className="text-[10px] tabular-nums text-slate-600">{section.items.length}</span>
       </div>
       <ul className="space-y-1.5">
@@ -68,7 +68,7 @@ function PendingQueueView({
 
   if (visibleSections.length === 0) {
     return (
-      <p className="border border-dashed border-cyan-400/10 px-3 py-4 text-center text-[11px] text-slate-600">
+      <p className="border border-dashed border-cyan-400/10 px-3 py-4 text-center text-xs text-slate-500">
         {hasExcludedPriority ? "其他队列暂无待处理项。" : "当前无待处理任务。"}
       </p>
     );
@@ -126,10 +126,10 @@ export function TaskBoardList({ taskItems, categories, excludeTaskId }: TaskBoar
       <div className={cn(taskHudPanelHeader, "space-y-2")}>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <h2 className="text-[12px] font-medium text-cyan-50">
+            <h2 className="text-sm font-medium text-cyan-50">
               {isAll ? "待处理队列" : copy?.title}
             </h2>
-            <p className="mt-0.5 text-[10px] text-slate-500">
+            <p className="mt-0.5 text-[13px] text-slate-500">
               {isAll ? "按影响排序，必要时前往地点处理。" : copy?.description}
             </p>
           </div>
@@ -151,7 +151,7 @@ export function TaskBoardList({ taskItems, categories, excludeTaskId }: TaskBoar
             hasExcludedPriority={Boolean(excludeTaskId)}
           />
         ) : filtered.length === 0 ? (
-          <p className="border border-dashed border-cyan-400/10 px-4 py-6 text-center text-[11px] text-slate-600">
+          <p className="border border-dashed border-cyan-400/10 px-4 py-6 text-center text-xs text-slate-500">
             该分类下暂无任务。
           </p>
         ) : (

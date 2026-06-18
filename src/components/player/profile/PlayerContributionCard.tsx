@@ -13,7 +13,7 @@ function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="bg-slate-950/15 px-2 py-1.5">
       <p className="text-[9px] text-slate-600">{label}</p>
-      <p className="text-[12px] font-semibold tabular-nums text-slate-300">{value}</p>
+      <p className="text-sm font-semibold tabular-nums text-slate-300">{value}</p>
     </div>
   );
 }
@@ -25,7 +25,7 @@ export function PlayerContributionCard({ contribution }: PlayerContributionCardP
   return (
     <section className={`${taskDetailPanel} h-full`}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <Target className="size-3.5 text-emerald-400/80" />
           项目贡献
         </h3>
@@ -34,7 +34,7 @@ export function PlayerContributionCard({ contribution }: PlayerContributionCardP
       <div className="space-y-2 p-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <div className="flex shrink-0 flex-col justify-center bg-slate-950/20 px-3 py-2 sm:w-[38%]">
-            <p className="text-[10px] text-slate-600">累计贡献值</p>
+            <p className="text-[11px] text-slate-500">累计贡献值</p>
             <p className="mt-0.5 text-xl font-semibold tabular-nums text-cyan-100">
               {contributionDisplay}
             </p>
@@ -49,7 +49,7 @@ export function PlayerContributionCard({ contribution }: PlayerContributionCardP
         </div>
 
         {contribution.lastRewardSummary ? (
-          <p className="line-clamp-2 text-[10px] leading-[1.45] text-slate-600">
+          <p className="line-clamp-2 text-xs leading-[1.45] text-slate-600">
             <span className="text-slate-700">最近奖励 </span>
             {contribution.lastRewardSummary}
           </p>

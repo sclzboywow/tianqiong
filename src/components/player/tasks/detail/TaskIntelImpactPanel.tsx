@@ -41,21 +41,21 @@ function ImpactColumn({
     >
       <p
         className={cn(
-          "mb-1 text-[10px] font-medium",
+          "mb-1 text-xs font-medium",
           tone === "success" ? "text-emerald-400/75" : "text-rose-400/75",
         )}
       >
         {title}
       </p>
       {lines.length === 0 ? (
-        <p className="text-[10px] text-slate-600">{emptyText}</p>
+        <p className="text-[11px] text-slate-500">{emptyText}</p>
       ) : (
         <ul className="space-y-0.5">
           {visibleLines.map((line) => (
             <li
               key={line.text}
               className={cn(
-                "text-[11px] leading-4",
+                "text-[13px] leading-4",
                 tone === "success"
                   ? line.tone === "negative"
                     ? "text-amber-300/90"
@@ -87,7 +87,7 @@ function TagRow({
 }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-      <span className="shrink-0 text-[10px] text-slate-600">{label}</span>
+      <span className="shrink-0 text-[11px] text-slate-500">{label}</span>
       {tags.length > 0 ? (
         tags.map((tag) => (
           <span key={tag} className={cn(taskDetailTag, tagClassName)}>
@@ -95,7 +95,7 @@ function TagRow({
           </span>
         ))
       ) : (
-        <span className="text-[10px] text-slate-600">{emptyText}</span>
+        <span className="text-[11px] text-slate-500">{emptyText}</span>
       )}
     </div>
   );
@@ -114,15 +114,15 @@ export function TaskIntelImpactPanel({ data }: TaskIntelImpactPanelProps) {
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="text-[12px] font-medium text-cyan-100">任务情报与影响</h3>
+        <h3 className="text-sm font-medium text-cyan-100">任务情报与影响</h3>
       </div>
 
       <div className="space-y-2.5 p-3">
         <div>
-          <p className="mb-0.5 text-[10px] font-medium text-slate-600">任务说明</p>
+          <p className="mb-0.5 text-xs font-medium text-slate-600">任务说明</p>
           <p
             className={cn(
-              "text-[11px] leading-[1.5] text-slate-400",
+              "text-[13px] leading-[1.5] text-slate-400",
               !descriptionExpanded && "line-clamp-2",
             )}
           >
@@ -139,8 +139,8 @@ export function TaskIntelImpactPanel({ data }: TaskIntelImpactPanelProps) {
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-[10px] font-medium text-slate-600">关键信息</p>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-xs font-medium text-slate-600">关键信息</p>
+          <p className="text-xs text-slate-400">
             <span className="text-slate-600">结算模式 </span>
             {data.resolutionModeLabel}
           </p>
@@ -159,7 +159,7 @@ export function TaskIntelImpactPanel({ data }: TaskIntelImpactPanelProps) {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[10px] font-medium text-slate-600">影响预判</p>
+          <p className="mb-1.5 text-xs font-medium text-slate-600">影响预判</p>
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
             <ImpactColumn
               title="成功影响"

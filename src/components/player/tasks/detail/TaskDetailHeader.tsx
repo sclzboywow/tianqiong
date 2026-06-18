@@ -35,9 +35,9 @@ export function TaskDetailHeader({ data }: TaskDetailHeaderProps) {
         <div className="min-w-0">
           <div className="mb-1 flex items-center gap-2 text-cyan-400/80">
             <ClipboardCheck className="size-4" />
-            <p className="text-[11px] font-medium">任务结算室 / 方案决策</p>
+            <p className="text-xs font-medium">任务结算室 / 方案决策</p>
           </div>
-          <h1 className="text-lg font-semibold tracking-wide text-cyan-50">{data.title}</h1>
+          <h1 className="text-xl font-semibold tracking-wide text-cyan-50 lg:text-2xl">{data.title}</h1>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span className={cn(taskDetailTag, typeTagClass(data.type))}>{data.typeLabel}</span>
             <span
@@ -70,28 +70,28 @@ export function TaskDetailHeader({ data }: TaskDetailHeaderProps) {
 
       <div className="grid grid-cols-2 gap-1.5 p-3 sm:grid-cols-3 lg:grid-cols-5">
         <div className={taskDetailMetric}>
-          <p className="text-[10px] text-slate-600">当前阶段</p>
-          <p className="mt-0.5 truncate text-[11px] text-slate-500">{data.stageName}</p>
+          <p className="text-xs text-slate-500">当前阶段</p>
+          <p className="mt-0.5 truncate text-xs text-slate-500">{data.stageName}</p>
         </div>
         <div className={taskDetailMetric}>
-          <p className="text-[10px] text-slate-600">来源</p>
-          <p className="mt-0.5 truncate text-[11px] text-slate-500">{data.sourceName}</p>
+          <p className="text-xs text-slate-500">来源</p>
+          <p className="mt-0.5 truncate text-xs text-slate-500">{data.sourceName}</p>
         </div>
         <div className={taskDetailMetricAccent}>
-          <p className="text-[10px] text-cyan-400/60">基础成功率</p>
-          <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-cyan-50">
+          <p className="text-xs text-cyan-400/60">基础成功率</p>
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-cyan-50">
             {Math.round(data.baseSuccessRate)}%
           </p>
         </div>
         <div className={taskDetailMetricAccent}>
-          <p className="text-[10px] text-cyan-400/55">参与进度</p>
-          <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-cyan-100">
+          <p className="text-xs text-cyan-400/55">参与进度</p>
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-cyan-100">
             {data.participantCount}/{data.requiredCount}
           </p>
         </div>
         <div className={taskDetailMetricAccent}>
-          <p className="text-[10px] text-cyan-400/55">提交进度</p>
-          <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-cyan-100">
+          <p className="text-xs text-cyan-400/55">提交进度</p>
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-cyan-100">
             {data.submittedCount}/{data.minResolveCount}
           </p>
         </div>

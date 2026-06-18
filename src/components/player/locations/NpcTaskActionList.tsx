@@ -99,7 +99,7 @@ export function NpcTaskActionList({
             key={group.taskSlug}
             className="border border-cyan-400/10 bg-slate-950/50 p-2.5"
           >
-            <p className="mb-2 text-[12px] font-medium text-cyan-50">{group.taskTitle}</p>
+            <p className="mb-2 text-sm font-medium text-cyan-50">{group.taskTitle}</p>
             <div className="flex flex-wrap gap-1.5">
               {group.actions.map((action) => {
                 const isPending = pendingActionId === action.id;
@@ -171,7 +171,7 @@ export function NpcTaskActionList({
 
       <Link
         href="/tasks"
-        className="mt-3 inline-flex text-[11px] text-cyan-300/80 hover:text-cyan-200"
+        className="mt-3 inline-flex text-xs text-cyan-300/80 hover:text-cyan-200"
       >
         前往任务页继续推进 →
       </Link>

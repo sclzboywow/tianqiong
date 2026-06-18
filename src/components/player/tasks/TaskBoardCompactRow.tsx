@@ -42,7 +42,7 @@ export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-cyan-50">{item.title}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
             <span className="truncate">
               地点：{item.sourceLocationName ?? "协同地图"}
             </span>
@@ -60,7 +60,7 @@ export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[11px] lg:shrink-0">
+        <div className="flex flex-wrap items-center gap-2 text-xs lg:shrink-0">
           <span className={cn(taskHudTag, "border-slate-700/40 text-slate-400")}>
             {Math.round(item.baseSuccessRate)}%
           </span>

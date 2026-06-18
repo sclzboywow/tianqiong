@@ -75,7 +75,7 @@ function TaskCompactRow({ task }: { task: DisplayTask }) {
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="min-w-0 flex-1">
-          <div className="mb-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
+          <div className="mb-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
             <span
               className={
                 task.tagTone === "mainline" ? "text-cyan-400/75" : "text-amber-200/80"
@@ -88,7 +88,7 @@ function TaskCompactRow({ task }: { task: DisplayTask }) {
             ) : null}
             <span className="truncate text-slate-600">{task.area}</span>
           </div>
-          <p className="truncate text-[12px] font-medium text-cyan-50">{task.title}</p>
+          <p className="truncate text-sm font-medium text-cyan-50">{task.title}</p>
         </div>
 
         <div className="flex shrink-0 gap-1.5">
@@ -119,13 +119,13 @@ export function PendingTasksSummary({
   return (
     <section className={taskDetailPanel}>
       <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
-        <h3 className="text-[12px] font-medium text-cyan-100">待处理卡点</h3>
-        {total > 0 ? <span className="text-[10px] text-slate-600">{total} 项</span> : null}
+        <h3 className="text-sm font-medium text-cyan-100">待处理卡点</h3>
+        {total > 0 ? <span className="text-[11px] text-slate-500">{total} 项</span> : null}
       </div>
 
       <div className="p-3">
         {total === 0 ? (
-          <p className="text-[11px] text-slate-600">
+          <p className="text-xs text-slate-500">
             暂无待处理卡点，可跟随当前指令前往地点触发新任务。
           </p>
         ) : (
@@ -137,7 +137,7 @@ export function PendingTasksSummary({
         )}
 
         {total > 0 ? (
-          <Link href="/tasks" className="mt-3 inline-block text-[11px] text-cyan-400/80 hover:text-cyan-300">
+          <Link href="/tasks" className="mt-3 inline-block text-xs text-cyan-400/80 hover:text-cyan-300">
             查看全部任务 ({total}) →
           </Link>
         ) : null}

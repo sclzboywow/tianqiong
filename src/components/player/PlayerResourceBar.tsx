@@ -32,7 +32,7 @@ function CompactMeter({
   const percent = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
     <div className="min-w-[88px] flex-1">
-      <div className="flex items-center justify-between text-[10px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-slate-600">{label}</span>
         <span className="tabular-nums text-slate-400">
           {value}/{max}
@@ -62,8 +62,8 @@ function CompactStat({
   return (
     <div className="flex items-center gap-1.5 px-1">
       {Icon ? <Icon className={cn("size-3 shrink-0", iconClass)} /> : null}
-      <span className="text-[10px] text-slate-600">{label}</span>
-      <span className="text-[11px] font-semibold tabular-nums text-slate-300">{value}</span>
+      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-[13px] font-semibold tabular-nums text-slate-300">{value}</span>
     </div>
   );
 }
@@ -97,7 +97,7 @@ function DefaultResourceBar({
         <CompactStat label="Lv" value={level} />
         <CompactStat label="声望" value={reputation} icon={Star} iconClass="text-amber-300/80" />
         <CompactStat label="金币" value={gold} icon={Coins} iconClass="text-amber-300/80" />
-        <span className="hidden text-[10px] text-slate-700 xl:inline">
+        <span className="hidden text-xs text-slate-500 xl:inline">
           EXP {exp}/{expRequired}
         </span>
       </div>

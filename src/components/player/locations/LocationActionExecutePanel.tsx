@@ -136,7 +136,7 @@ export function LocationActionExecutePanel({
   if (visibleActions.length === 0) {
     if (isHero) {
       return (
-        <p className="border border-cyan-400/10 bg-slate-950/40 p-3 text-[11px] text-slate-500">
+        <p className="border border-cyan-400/10 bg-slate-950/40 p-3 text-xs text-slate-500">
           当前暂无推荐行动。
         </p>
       );
@@ -205,7 +205,7 @@ export function LocationActionExecutePanel({
             {isHero ? "当前推荐动作" : "地点行动"}
           </h3>
           {!isHero ? (
-            <p className={isSandtable ? "mt-1 text-[10px] text-slate-500" : "mt-1 text-xs text-[#8EA3B8]"}>
+            <p className={isSandtable ? "mt-1 text-[11px] text-slate-500" : "mt-1 text-xs text-[#8EA3B8]"}>
               在此地点发起行动，可能生成任务、推进事件或记录动态。
             </p>
           ) : null}
@@ -214,7 +214,7 @@ export function LocationActionExecutePanel({
 
       <div className={cn(isHero ? "space-y-3 px-4 pb-4" : isCompact ? "space-y-1.5" : isSandtable ? "space-y-2 p-3" : `${playerCardBodyClass} space-y-3`)}>
         {visibleActions.length === 0 ? (
-          <p className={isSandtable ? "text-[11px] text-slate-600" : "text-sm text-[#8EA3B8]"}>
+          <p className={isSandtable ? "text-xs text-slate-500" : "text-sm text-[#8EA3B8]"}>
             当前暂无可用行动。
           </p>
         ) : (
@@ -232,7 +232,7 @@ export function LocationActionExecutePanel({
                   className="flex items-center justify-between gap-2 border border-cyan-400/10 bg-slate-950/40 px-2.5 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-[11px] font-medium text-slate-200">{action.label}</p>
+                    <p className="truncate text-xs font-medium text-slate-200">{action.label}</p>
                     {blockReason ? (
                       <p className="truncate text-[10px] text-rose-300/90">{blockReason}</p>
                     ) : null}
@@ -247,7 +247,7 @@ export function LocationActionExecutePanel({
                       {isPending ? "执行中" : "执行"}
                     </button>
                   ) : (
-                    <span className="shrink-0 text-[10px] text-slate-500">已生成</span>
+                    <span className="shrink-0 text-[11px] text-slate-500">已生成</span>
                   )}
                 </article>
               );
@@ -330,7 +330,7 @@ export function LocationActionExecutePanel({
                         )}
                       </>
                     ) : (
-                      <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-500">
+                      <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500">
                         {action.staminaCost > 0 ? <span>体力 {action.staminaCost}</span> : null}
                         {action.spiritCost > 0 ? <span>精神 {action.spiritCost}</span> : null}
                         {action.relatedNpcNames.length > 0 ? (
@@ -420,7 +420,7 @@ export function LocationActionExecutePanel({
                       >
                         <span>· {task.title}</span>
                         {isSandtable ? (
-                          <span className="text-[10px] text-slate-500">次级入口</span>
+                          <span className="text-[11px] text-slate-500">次级入口</span>
                         ) : (
                           <span className="text-[#2EA8FF]">前往处理</span>
                         )}

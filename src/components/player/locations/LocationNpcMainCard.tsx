@@ -52,10 +52,10 @@ export function LocationNpcMainCard({ npc }: LocationNpcMainCardProps) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-cyan-50">{name}</p>
-          <p className="truncate text-[11px] text-slate-400">{title}</p>
+          <p className="truncate text-xs text-slate-400">{title}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <span className={cn("border px-1.5 py-0.5 text-[10px] font-medium", LEVEL_STYLES[level])}>
+          <span className={cn("border px-1.5 py-0.5 text-xs font-medium", LEVEL_STYLES[level])}>
             {level}·{NPC_ROLE_LABELS[npc.role]}
           </span>
           {presence ? (
@@ -67,11 +67,11 @@ export function LocationNpcMainCard({ npc }: LocationNpcMainCardProps) {
       </div>
 
       {agenda ? (
-        <p className="mt-2 text-[11px] leading-5 text-slate-300">{agenda}</p>
+        <p className="mt-2 text-[13px] leading-5 text-slate-300">{agenda}</p>
       ) : null}
 
       {presence === "away" || presence === "reachable" ? (
-        <div className="mt-2 space-y-0.5 text-[11px] leading-5 text-slate-500">
+        <div className="mt-2 space-y-0.5 text-[13px] leading-5 text-slate-500">
           {presence === "away" ? <p className="text-slate-400">当前不在此处</p> : null}
           {presence === "reachable" && currentLabel ? <p>当前在：{currentLabel}</p> : null}
           {presence === "away" && homeLabel ? <p>通常在：{homeLabel}</p> : null}
@@ -81,10 +81,10 @@ export function LocationNpcMainCard({ npc }: LocationNpcMainCardProps) {
       ) : null}
 
       {presence === "present" && npc.presenceReason ? (
-        <p className="mt-2 text-[11px] leading-5 text-emerald-200/80">事由：{npc.presenceReason}</p>
+        <p className="mt-2 text-[13px] leading-5 text-emerald-200/80">事由：{npc.presenceReason}</p>
       ) : null}
       {presence === "locked" && npc.presenceHint ? (
-        <p className="mt-2 text-[11px] leading-5 text-slate-500">{npc.presenceHint}</p>
+        <p className="mt-2 text-[13px] leading-5 text-slate-500">{npc.presenceHint}</p>
       ) : null}
     </article>
   );

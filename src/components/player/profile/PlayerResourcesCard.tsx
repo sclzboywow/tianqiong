@@ -59,7 +59,7 @@ function InlineResourceBar({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="w-7 shrink-0 text-[10px] text-slate-600">{label}</span>
+      <span className="w-7 shrink-0 text-[11px] text-slate-500">{label}</span>
       <div className="h-1 min-w-0 flex-1 overflow-hidden bg-slate-950/40">
         <div className="h-full bg-cyan-400/45" style={{ width: `${percent}%` }} />
       </div>
@@ -76,11 +76,11 @@ export function PlayerResourcesCard({ profile }: PlayerResourcesCardProps) {
   return (
     <section className={taskDetailPanel}>
       <div className={`${taskDetailPanelHeader} py-2`}>
-        <h3 className="text-[12px] font-medium text-cyan-100">行动状态</h3>
+        <h3 className="text-sm font-medium text-cyan-100">行动状态</h3>
       </div>
 
       <div className="space-y-1.5 px-3 pb-2.5 pt-1">
-        <p className={cn("text-[11px] font-medium", status.className)}>{status.label}</p>
+        <p className={cn("text-xs font-medium", status.className)}>{status.label}</p>
 
         <div className="space-y-1">
           <InlineResourceBar label="体力" value={profile.stamina} max={PLAYER_STAMINA_MAX} />

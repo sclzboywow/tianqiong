@@ -87,7 +87,7 @@ export function ChapterMilestoneCard({ goals, variant = "default" }: ChapterMile
             >
               <div className="flex min-w-0 items-center gap-2">
                 <GoalIcon status={item.status} />
-                <span className={cn("truncate text-cyan-50", isHud ? "text-[12px]" : "text-[13px] lg:text-sm")}>
+                <span className={cn("truncate text-cyan-50", isHud ? "text-[13px]" : "text-[13px] lg:text-sm")}>
                   {item.label}
                 </span>
               </div>

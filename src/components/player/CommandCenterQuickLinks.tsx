@@ -14,7 +14,7 @@ export function CommandCenterQuickLinks() {
   return (
     <section className={taskDetailPanel}>
       <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
-        <h3 className="text-[12px] font-medium text-slate-400">快捷入口</h3>
+        <h3 className="text-sm font-medium text-slate-400">快捷入口</h3>
         <CommandCenterGuideButton />
       </div>
       <ul className={`${taskDetailDivider} px-3 py-1`}>
@@ -22,7 +22,7 @@ export function CommandCenterQuickLinks() {
           <li key={href}>
             <Link
               href={href}
-              className="group flex items-center gap-2 py-2 text-[11px] text-slate-500 transition hover:text-cyan-300/90"
+              className="group flex items-center gap-2 py-2 text-xs text-slate-500 transition hover:text-cyan-300/90"
             >
               <Icon className="size-3 shrink-0 text-slate-600 group-hover:text-cyan-400/70" />
               <span className="min-w-0 flex-1 truncate">{label}</span>

@@ -23,7 +23,7 @@ function metricTone(value: number, invert = false) {
 function CompactProgress({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-[10px]">
+      <div className="mb-1 flex items-center justify-between text-xs">
         <span className="text-slate-600">{label}</span>
         <span className="tabular-nums text-cyan-100/90">{value}%</span>
       </div>
@@ -42,7 +42,7 @@ function MetricRow({
   toneClass?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 text-[11px]">
+    <div className="flex items-center justify-between gap-2 text-xs">
       <span className="text-slate-600">{label}</span>
       <span className={`font-medium tabular-nums ${toneClass ?? "text-slate-300"}`}>{value}</span>
     </div>
@@ -55,7 +55,7 @@ export function ProjectStatusCard({ project }: ProjectStatusCardProps) {
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="text-[12px] font-medium text-cyan-100">项目态势</h3>
+        <h3 className="text-sm font-medium text-cyan-100">项目态势</h3>
       </div>
 
       <div className="space-y-3 p-3">
@@ -64,7 +64,7 @@ export function ProjectStatusCard({ project }: ProjectStatusCardProps) {
           <CompactProgress label="总体工程" value={project.overallProgress} />
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <MetricRow label="安全" value={`${project.safety}%`} toneClass={metricTone(project.safety)} />
           <MetricRow
             label="消防风险"
@@ -84,11 +84,11 @@ export function ProjectStatusCard({ project }: ProjectStatusCardProps) {
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-300/80" />
               <div className="min-w-0">
-                <p className="text-[11px] font-medium text-amber-200/85">风险提示</p>
-                <p className="mt-0.5 text-[10px] leading-relaxed text-amber-100/65">
+                <p className="text-xs font-medium text-amber-200/85">风险提示</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-amber-100/65">
                   {summary.riskHint}
                 </p>
-                <Link href="/tasks" className="mt-1.5 inline-block text-[10px] text-cyan-400/75 hover:text-cyan-300">
+                <Link href="/tasks" className="mt-1.5 inline-block text-xs text-cyan-400/75 hover:text-cyan-300">
                   查看任务处理 →
                 </Link>
               </div>

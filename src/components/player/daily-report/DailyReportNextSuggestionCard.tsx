@@ -21,16 +21,16 @@ export function DailyReportNextSuggestionCard({ suggestion }: DailyReportNextSug
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <Crosshair className="size-3.5 text-cyan-400/80" />
           {suggestion.headline}
         </h3>
       </div>
 
       <div className="space-y-2 p-3">
-        <p className="text-[12px] font-medium leading-[1.45] text-slate-200">{suggestion.title}</p>
+        <p className="text-sm font-medium leading-[1.45] text-slate-200">{suggestion.title}</p>
         {suggestion.description ? (
-          <p className="text-[11px] leading-[1.45] text-slate-500">{suggestion.description}</p>
+          <p className="text-[13px] leading-[1.45] text-slate-400">{suggestion.description}</p>
         ) : null}
         <Link href={suggestion.href} className={`${taskHudButtonDetailPrimary} w-full`}>
           {resolveButtonLabel(suggestion)}

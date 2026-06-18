@@ -31,10 +31,10 @@ export function PlayerIdentityCard({ profile }: PlayerIdentityCardProps) {
         <div className="min-w-0">
           <div className="mb-1 flex items-center gap-2 text-cyan-400/80">
             <UserCircle className="size-4" />
-            <p className="text-[11px] font-medium">成员状态 / 角色状态台</p>
+            <p className="text-xs font-medium">成员状态 / 角色状态台</p>
           </div>
-          <h1 className="text-lg font-semibold tracking-wide text-cyan-50">{profile.nickname}</h1>
-          <p className="mt-0.5 max-w-2xl text-[11px] leading-relaxed text-slate-500">
+          <h1 className="text-xl font-semibold tracking-wide text-cyan-50 lg:text-2xl">{profile.nickname}</h1>
+          <p className="mt-0.5 max-w-2xl text-[13px] leading-relaxed text-slate-500">
             查看你的岗位能力、行动资源、成长进度与项目贡献。
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -66,7 +66,7 @@ export function PlayerIdentityCard({ profile }: PlayerIdentityCardProps) {
           ) : null}
         </div>
 
-        <p className="line-clamp-1 text-[10px] text-slate-700">
+        <p className="line-clamp-1 text-xs text-slate-500">
           加入项目 {formatJoinDate(profile.joinedAt)}
         </p>
       </div>

@@ -10,7 +10,7 @@ export function DailyReportQuickLinks() {
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="text-[12px] font-medium text-cyan-100">快捷入口</h3>
+        <h3 className="text-sm font-medium text-cyan-100">快捷入口</h3>
       </div>
       <div className="flex flex-col gap-1.5 p-3">
         <Link href="/tasks" className={`${taskHudButtonDetailSecondary} w-full`}>

@@ -148,7 +148,7 @@ function ChapterOneOnboardingModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-cyan-400/10 bg-slate-950/40 px-4 py-3">
           <div>
-            <p className="text-[10px] font-medium text-cyan-400/75">新手指令</p>
+            <p className="text-xs font-medium text-cyan-400/75">新手指令</p>
             <h2 id={titleId} className="mt-0.5 text-[15px] font-semibold text-cyan-50">
               欢迎来到异界项目部
             </h2>
@@ -168,11 +168,11 @@ function ChapterOneOnboardingModal({
             当前页面是<span className="text-cyan-100/90">项目指挥台</span>
             ，用于查看项目态势和下一步推荐行动。
           </p>
-          <ul className="space-y-1.5 text-[11px] leading-relaxed text-slate-500">
+          <ul className="space-y-1.5 text-[13px] leading-relaxed text-slate-500">
             <li>· 协同地图是主要处理场，负责地点内行动与任务触发。</li>
             <li>· 任务调度台用于查看待办和进入任务结算。</li>
           </ul>
-          <p className="border border-cyan-400/10 bg-slate-950/35 px-3 py-2.5 text-[11px] leading-relaxed text-slate-400">
+          <p className="border border-cyan-400/10 bg-slate-950/35 px-3 py-2.5 text-[13px] leading-relaxed text-slate-400">
             {firstStepHint}
           </p>
         </div>
@@ -246,7 +246,7 @@ export function CommandCenterGuideButton() {
     <button
       type="button"
       onClick={context.openGuide}
-      className="text-[10px] text-slate-600 transition hover:text-cyan-400/80"
+      className="text-[11px] text-slate-500 transition hover:text-cyan-400/80"
     >
       新手指令
     </button>

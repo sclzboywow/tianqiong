@@ -85,7 +85,7 @@ function StatusMetric({
         tone === "default" && "border-cyan-400/15 bg-slate-950/50",
       )}
     >
-      <p className="text-[10px] text-slate-500">{label}</p>
+      <p className="text-[11px] text-slate-500">{label}</p>
       <p className="mt-0.5 text-sm font-semibold text-cyan-50">{value}</p>
     </div>
   );
@@ -306,7 +306,7 @@ export function LocationSceneOverlay({
                 返回地图
               </button>
               <div className="min-w-0">
-                <p className="truncate text-[10px] text-slate-500">
+                <p className="truncate text-[11px] text-slate-500">
                   {regionName} / {zoneName} · 地点工作台
                 </p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2">
@@ -316,7 +316,7 @@ export function LocationSceneOverlay({
                   </span>
                 </div>
                 {node.description ? (
-                  <p className="mt-1 line-clamp-1 text-[12px] text-slate-400">{node.description}</p>
+                  <p className="mt-1 line-clamp-1 text-[13px] text-slate-400">{node.description}</p>
                 ) : null}
               </div>
             </div>
@@ -371,7 +371,7 @@ export function LocationSceneOverlay({
 
               {otherNpcCount > 0 ? (
                 <div className="shrink-0 border-t border-cyan-400/10 pt-3">
-                  <p className="mb-2 text-[10px] font-medium text-slate-500">
+                  <p className="mb-2 text-xs font-medium text-slate-500">
                     其他 NPC（{otherNpcCount}）
                   </p>
                   <SandtableNpcList
@@ -404,7 +404,7 @@ export function LocationSceneOverlay({
                   onExecuted={() => void refreshWorkspace({ silent: true })}
                 />
               ) : (
-                <p className="mb-3 border border-cyan-400/10 bg-slate-950/40 p-3 text-[11px] text-slate-500">
+                <p className="mb-3 border border-cyan-400/10 bg-slate-950/40 p-3 text-xs text-slate-500">
                   {node.locked ? "地点尚未解锁，暂不可执行行动。" : "暂无可执行地点行动。"}
                 </p>
               )}
@@ -420,7 +420,7 @@ export function LocationSceneOverlay({
                 />
 
                 <div>
-                  <h4 className="mb-1.5 flex items-center gap-2 text-[10px] font-medium text-slate-500">
+                  <h4 className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-500">
                     <ClipboardList className="size-3 text-cyan-400" />
                     当前相关任务
                   </h4>
@@ -429,7 +429,7 @@ export function LocationSceneOverlay({
 
                 {workspace && workspace.unlocked && otherActionsCount > 0 ? (
                   <div>
-                    <h4 className="mb-1.5 text-[10px] font-medium text-slate-500">
+                    <h4 className="mb-1.5 text-xs font-medium text-slate-500">
                       其他地点行动（{otherActionsCount}）
                     </h4>
                     <LocationActionExecutePanel
@@ -455,21 +455,21 @@ export function LocationSceneOverlay({
             >
               <div className="space-y-4">
                 <div>
-                  <h4 className="mb-2 flex items-center gap-2 text-[11px] font-medium text-cyan-100">
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-cyan-100">
                     <ShieldAlert className="size-3.5 text-rose-400" />
                     活跃事件
                   </h4>
                   {node.relatedEventCount > 0 ? (
-                    <p className="border border-rose-400/20 bg-rose-950/20 p-2.5 text-[11px] leading-5 text-rose-100/90">
+                    <p className="border border-rose-400/20 bg-rose-950/20 p-2.5 text-[13px] leading-5 text-rose-100/90">
                       当前有 {node.relatedEventCount} 个关联事件待关注，可通过中栏地点行动触发或推进。
                     </p>
                   ) : (
-                    <p className="text-[11px] text-slate-600">暂无活跃事件。</p>
+                    <p className="text-xs text-slate-500">暂无活跃事件。</p>
                   )}
                 </div>
 
                 <div>
-                  <h4 className="mb-2 flex items-center gap-2 text-[11px] font-medium text-cyan-100">
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-cyan-100">
                     <AlertTriangle className="size-3.5 text-amber-400" />
                     风险与影响
                   </h4>
@@ -477,7 +477,7 @@ export function LocationSceneOverlay({
                 </div>
 
                 <div>
-                  <h4 className="mb-2 flex items-center gap-2 text-[11px] font-medium text-cyan-100">
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-cyan-100">
                     <ScrollText className="size-3.5 text-cyan-400" />
                     地点日志
                   </h4>
@@ -486,15 +486,15 @@ export function LocationSceneOverlay({
                       {workspace.logs.map((log) => (
                         <li
                           key={log.id}
-                          className="border border-cyan-400/10 bg-slate-950/50 p-2.5 text-[11px] leading-5 text-slate-400"
+                          className="border border-cyan-400/10 bg-slate-950/50 p-2.5 text-[13px] leading-5 text-slate-400"
                         >
                           <p className="text-slate-300">{log.content}</p>
-                          <p className="mt-1 text-[10px] text-slate-600">{formatLogTime(log.createdAt)}</p>
+                          <p className="mt-1 text-[11px] text-slate-500">{formatLogTime(log.createdAt)}</p>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-[11px] text-slate-600">当前地点暂无行动记录。</p>
+                    <p className="text-xs text-slate-500">当前地点暂无行动记录。</p>
                   )}
                 </div>
               </div>
@@ -513,7 +513,7 @@ export function LocationSceneOverlay({
           </button>
           <Link
             href="/tasks"
-            className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-cyan-200/90"
+            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-cyan-200/90"
           >
             前往任务页
             <ExternalLink className="size-3" />

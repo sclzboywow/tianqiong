@@ -85,10 +85,10 @@ function LocationTopHud({ data }: { data: LocationSandtableViewData }) {
     <header className="shrink-0 border-b border-cyan-400/15 px-4 py-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-wide text-cyan-50">协同地图</h1>
-          <p className="mt-0.5 text-[11px] text-slate-500">项目全景沙盘 · 六区协同视图</p>
+          <h1 className="text-xl font-semibold tracking-wide text-cyan-50 lg:text-2xl">协同地图</h1>
+          <p className="mt-0.5 text-xs text-slate-500">项目全景沙盘 · 六区协同视图</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="inline-flex items-center gap-1.5 border border-cyan-400/25 bg-cyan-950/30 px-2.5 py-1 text-cyan-100">
             <CircleDot className="size-3 text-cyan-300" />
             当前阶段：{data.currentStageName}
@@ -191,7 +191,7 @@ function MapZoneGroup({
 
   return (
     <div>
-      <p className="mb-1 truncate whitespace-nowrap text-[10px] text-slate-500">{label}</p>
+      <p className="mb-1 truncate whitespace-nowrap text-[11px] text-slate-500">{label}</p>
       <div className={cn("gap-1", layout === "stack" ? "flex flex-col" : "flex flex-wrap")}>
         {nodes.map((node) => (
           <MapNodePill
@@ -311,7 +311,7 @@ function ConstructionSiteMap({ region, selectedId, filter, onSelect }: RegionMap
 
         <div className="relative min-w-0 border border-cyan-400/30 bg-[linear-gradient(180deg,rgba(8,47,73,0.35),rgba(2,6,23,0.8))] px-2 py-2">
           <div className="pointer-events-none absolute inset-x-4 top-3 bottom-3 border border-dashed border-cyan-400/20" />
-          <p className="relative mb-2 text-center text-[10px] font-medium text-cyan-200">楼栋垂直空间</p>
+          <p className="relative mb-2 text-center text-xs font-medium text-cyan-200">楼栋垂直空间</p>
           <div className="relative flex w-full flex-col gap-0.5">
             {stackNodes.map((node) => (
               <MapNodePill
@@ -467,7 +467,7 @@ function ZoomableMapViewport({
           <MapBlueprint data={data} selectedId={selectedId} filter={filter} onSelect={onSelect} />
         </div>
       </div>
-      <p className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-slate-600">
+      <p className="pointer-events-none absolute bottom-2 left-3 text-[11px] text-slate-500">
         拖动画布平移 · Ctrl+滚轮缩放
       </p>
     </div>
@@ -515,7 +515,7 @@ function MapControlBar({
         })}
       </div>
 
-      <div className="flex items-center gap-2 text-[11px] text-slate-400">
+      <div className="flex items-center gap-2 text-xs text-slate-400">
         <ZoomIn className="size-3.5 text-cyan-400" />
         <button
           type="button"

@@ -36,14 +36,14 @@ function ProjectLocationNodeComponent({ data }: NodeProps<ProjectLocationFlowNod
         )}
       >
         {data.isRecommended && data.unlocked ? (
-          <span className="absolute -left-1 -top-2 inline-flex items-center gap-0.5 rounded-md border border-[rgba(250,204,21,0.45)] bg-[rgba(250,204,21,0.18)] px-1.5 py-0.5 text-[10px] font-medium text-[#FACC15] shadow-[0_0_8px_rgba(250,204,21,0.2)]">
+          <span className="absolute -left-1 -top-2 inline-flex items-center gap-0.5 rounded-md border border-[rgba(250,204,21,0.45)] bg-[rgba(250,204,21,0.18)] px-1.5 py-0.5 text-xs font-medium text-[#FACC15] shadow-[0_0_8px_rgba(250,204,21,0.2)]">
             <Sparkles className="size-3" />
             推荐
           </span>
         ) : null}
 
         {showPendingBadge ? (
-          <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[11px] font-semibold text-white shadow-md">
+          <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[13px] font-semibold text-white shadow-md">
             {formatPendingCount(data.pendingTaskCount)}
           </span>
         ) : null}
@@ -83,7 +83,7 @@ function ProjectLocationNodeComponent({ data }: NodeProps<ProjectLocationFlowNod
         <p className="line-clamp-2 pr-6 text-[13px] font-semibold leading-snug text-[#EAF3FF]">
           {data.name}
         </p>
-        <p className="mt-0.5 text-[11px] text-[#8EA3B8]">
+        <p className="mt-0.5 text-[13px] text-[#8EA3B8]">
           {data.typeLabel} · {data.group}
         </p>
       </div>

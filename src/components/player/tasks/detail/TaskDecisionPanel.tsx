@@ -65,7 +65,7 @@ function EffectList({ lines }: { lines: PlayerEffectLine[] }) {
         <li
           key={line.text}
           className={cn(
-            "text-[11px] leading-5",
+            "text-[13px] leading-5",
             line.tone === "positive" && "text-emerald-400",
             line.tone === "negative" && "text-red-400",
             line.tone === "neutral" && "text-slate-500",
@@ -90,7 +90,7 @@ function ParticipantProgress({ data }: { data: TaskDetailViewData }) {
 
   return (
     <div className="pt-2">
-      <p className="mb-1.5 text-[10px] text-slate-600">参与进度</p>
+      <p className="mb-1.5 text-[11px] text-slate-500">参与进度</p>
       <ul className={`${taskDetailDivider} bg-slate-950/15`}>
         {visibleParticipants.map((participant) => (
           <li
@@ -137,7 +137,7 @@ function ChoiceOptionRow({
       <span className="w-4 shrink-0 pt-0.5 text-center text-[10px] tabular-nums text-cyan-400/50">
         {choice.index + 1}
       </span>
-      <p className="min-w-0 flex-1 text-[12px] leading-[1.45] text-slate-200">{choice.text}</p>
+      <p className="min-w-0 flex-1 text-[13px] leading-[1.45] text-slate-200">{choice.text}</p>
       <button
         type="button"
         disabled={loading}
@@ -190,7 +190,7 @@ export function TaskDecisionPanel({
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="text-[12px] font-medium text-cyan-100">
+        <h3 className="text-sm font-medium text-cyan-100">
           {showResult ? "结算结果" : pending ? "等待协作" : showChoices ? "处理方案" : "任务处理"}
         </h3>
       </div>
@@ -218,7 +218,7 @@ export function TaskDecisionPanel({
             </p>
 
             {selectedChoiceText && (
-              <p className="text-[11px] text-slate-500">你的方案：{selectedChoiceText}</p>
+              <p className="text-xs text-slate-500">你的方案：{selectedChoiceText}</p>
             )}
 
             {result?.rewards && (
@@ -230,17 +230,17 @@ export function TaskDecisionPanel({
 
             {effectLines.length > 0 && (
               <div>
-                <p className="mb-1 text-[10px] text-slate-500">项目指标变化</p>
+                <p className="mb-1 text-[11px] text-slate-500">项目指标变化</p>
                 <EffectList lines={effectLines} />
               </div>
             )}
 
             {data.milestoneLabels.length > 0 && success && (
               <div>
-                <p className="mb-1 text-[10px] text-slate-500">完成关键节点</p>
+                <p className="mb-1 text-[11px] text-slate-500">完成关键节点</p>
                 <ul className="space-y-1">
                   {data.milestoneLabels.map((label) => (
-                    <li key={label} className="text-[11px] text-cyan-300">
+                    <li key={label} className="text-xs text-cyan-300">
                       · {label}
                     </li>
                   ))}
@@ -249,7 +249,7 @@ export function TaskDecisionPanel({
             )}
 
             {showFirstResultHint && (
-              <p className="text-[11px] leading-5 text-cyan-300/80">
+              <p className="text-[13px] leading-5 text-cyan-300/80">
                 项目指标和章节目标已更新，可返回指挥中心查看下一步行动。
               </p>
             )}
@@ -278,7 +278,7 @@ export function TaskDecisionPanel({
           </div>
         ) : pending ? (
           <div className="space-y-3">
-            <p className="text-[12px] text-cyan-100">{pending.message}</p>
+            <p className="text-[13px] text-cyan-100">{pending.message}</p>
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-slate-500">提交进度</span>
               <span className="tabular-nums text-cyan-200">
@@ -286,14 +286,14 @@ export function TaskDecisionPanel({
               </span>
             </div>
             {selectedChoiceText && (
-              <p className="text-[11px] text-slate-500">已选方案：{selectedChoiceText}</p>
+              <p className="text-xs text-slate-500">已选方案：{selectedChoiceText}</p>
             )}
             <ParticipantProgress data={data} />
           </div>
         ) : !data.isJoined && data.isActive && data.inkAvailable ? (
           <div className="space-y-3">
-            <p className="text-[12px] text-cyan-50">加入任务并开始处理</p>
-            <p className="text-[11px] leading-5 text-slate-500">
+            <p className="text-[13px] text-cyan-50">加入任务并开始处理</p>
+            <p className="text-[13px] leading-5 text-slate-500">
               加入后可代表项目组选择处理方案并提交结算。
             </p>
             <button type="button" disabled={loading} onClick={onJoin} className={taskHudButtonAction}>
@@ -309,7 +309,7 @@ export function TaskDecisionPanel({
           </div>
         ) : showChoices && choices.length > 0 ? (
           <div className="space-y-2">
-            <p className="text-[11px] text-slate-500">选择方案并提交</p>
+            <p className="text-xs text-slate-500">选择方案并提交</p>
             <div className={`${taskDetailDivider} bg-slate-950/15`}>
               {(choicesExpanded ? choices : choices.slice(0, CHOICE_PREVIEW_LIMIT)).map((choice) => (
                 <ChoiceOptionRow
@@ -332,18 +332,18 @@ export function TaskDecisionPanel({
           </div>
         ) : data.isJoined && data.isActive && data.hasSubmitted ? (
           <div className="space-y-3">
-            <p className="text-[12px] text-cyan-100">你已提交方案，等待协作结算。</p>
+            <p className="text-[13px] text-cyan-100">你已提交方案，等待协作结算。</p>
             <ParticipantProgress data={data} />
           </div>
         ) : data.isJoined && data.isActive && !data.inkAvailable ? (
-          <p className="text-[11px] text-slate-500">任务进行中，暂无可用处理方案。</p>
+          <p className="text-xs text-slate-500">任务进行中，暂无可用处理方案。</p>
         ) : !data.isActive ? (
-          <p className="text-[11px] text-slate-500">任务已结束，可在上方查看结算结果。</p>
+          <p className="text-xs text-slate-500">任务已结束，可在上方查看结算结果。</p>
         ) : null}
 
         {shouldShowChoiceReplay && !showResult && (
           <div className="space-y-1 pt-2">
-            <p className="text-[10px] text-slate-600">
+            <p className="text-[11px] text-slate-500">
               {data.isActive ? "方案回看" : "当时可选方案"}
             </p>
             <div className={`${taskDetailDivider} bg-slate-950/10`}>
@@ -352,7 +352,7 @@ export function TaskDecisionPanel({
                   <span className="w-4 shrink-0 text-center text-[10px] tabular-nums text-slate-600">
                     {choice.index + 1}
                   </span>
-                  <p className="min-w-0 flex-1 text-[11px] leading-[1.45] text-slate-500">
+                  <p className="min-w-0 flex-1 text-[13px] leading-[1.45] text-slate-400">
                     {choice.text}
                   </p>
                 </div>

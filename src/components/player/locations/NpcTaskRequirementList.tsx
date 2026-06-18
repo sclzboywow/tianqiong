@@ -42,10 +42,10 @@ export function NpcTaskRequirementList({ node, project, tasks }: NpcTaskRequirem
         {requirements.map((item) => (
           <li
             key={item.taskSlug}
-            className="border border-cyan-400/10 bg-slate-950/50 p-2.5 text-[11px] leading-5 text-slate-400"
+            className="border border-cyan-400/10 bg-slate-950/50 p-2.5 text-[13px] leading-5 text-slate-400"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-[12px] font-medium text-cyan-50">{item.taskTitle}</p>
+              <p className="text-sm font-medium text-cyan-50">{item.taskTitle}</p>
               <span
                 className={cn(
                   "shrink-0 border px-1.5 py-0.5 text-[10px]",

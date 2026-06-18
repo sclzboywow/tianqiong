@@ -54,15 +54,15 @@ export function LocationNpcDialoguePanel({
       )}
     >
       <header className="shrink-0 border-b border-cyan-400/10 px-3 py-2">
-        <div className="flex items-center gap-2 text-[11px] font-medium text-cyan-100">
+        <div className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <MessageSquare className="size-3.5 text-cyan-400" />
           对话
           {npcName ? <span className="font-normal text-slate-400">· {npcName}</span> : null}
         </div>
         {!selectedNpc ? (
-          <p className="mt-1 text-[10px] text-slate-500">请从下方选择 NPC 开始互动</p>
+          <p className="mt-1 text-xs text-slate-500">请从下方选择 NPC 开始互动</p>
         ) : (
-          <p className="mt-1 text-[10px] text-slate-500">点击下方动作发起互动，回复会即时显示在这里</p>
+          <p className="mt-1 text-xs text-slate-500">点击下方动作发起互动，回复会即时显示在这里</p>
         )}
       </header>
 
@@ -71,7 +71,7 @@ export function LocationNpcDialoguePanel({
         className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {entries.length === 0 ? (
-          <p className="text-[11px] leading-5 text-slate-500">
+          <p className="text-[13px] leading-5 text-slate-500">
             {selectedNpc
               ? "当前尚无对话记录。你可以先交谈了解情况，或发起请示、协调、催办。"
               : "选择 NPC 后，可使用底部动作开始对话。"}
@@ -81,16 +81,16 @@ export function LocationNpcDialoguePanel({
             <div
               key={entry.id}
               className={cn(
-                "max-w-[95%] border px-2.5 py-2 text-[11px] leading-5",
+                "max-w-[95%] border px-2.5 py-2 text-[13px] leading-5",
                 entry.role === "player" && "ml-auto border-cyan-400/25 bg-cyan-950/30 text-cyan-50",
                 entry.role === "npc" && "border-slate-600/30 bg-slate-900/60 text-slate-200",
                 entry.role === "system" && "border-amber-400/20 bg-amber-950/20 text-amber-100",
               )}
             >
-              <p className="mb-0.5 text-[10px] text-slate-500">
+              <p className="mb-0.5 text-xs text-slate-500">
                 {entry.speaker}
                 {entry.interaction ? ` · ${NPC_INTERACTION_LABELS[entry.interaction]}` : ""}
-                <span className="ml-2 text-slate-600">{formatTime(entry.createdAt)}</span>
+                <span className="ml-2 text-[11px] text-slate-500">{formatTime(entry.createdAt)}</span>
               </p>
               <p>{entry.text}</p>
             </div>
@@ -111,7 +111,7 @@ export function LocationNpcDialoguePanel({
                   disabled={!enabled || Boolean(pendingInteraction)}
                   onClick={() => onInteract(type)}
                   className={cn(
-                    "border px-2 py-1 text-[10px] transition",
+                    "border px-2 py-1 text-xs transition",
                     enabled
                       ? "border-cyan-400/25 text-cyan-100 hover:border-cyan-400/50 hover:bg-cyan-950/30"
                       : "cursor-not-allowed border-slate-700/40 text-slate-600",

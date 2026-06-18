@@ -43,7 +43,7 @@ export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <Award className="size-3.5 text-violet-400/80" />
           职业晋升
         </h3>
@@ -72,10 +72,10 @@ export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
           <>
             {pendingRequirements.length > 0 ? (
               <div className="bg-cyan-950/10 px-2.5 py-2">
-                <p className="text-[11px] font-medium text-cyan-100">
+                <p className="text-sm font-medium text-cyan-100">
                   下一阶还差 {pendingRequirements.length} 项
                 </p>
-                <p className="mt-0.5 text-[10px] text-slate-500">
+                <p className="mt-0.5 text-[13px] text-slate-500">
                   优先完成未达成条件即可推进晋升
                 </p>
               </div>
@@ -84,7 +84,7 @@ export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
             )}
 
             <div>
-              <div className="mb-1 flex items-center justify-between text-[10px]">
+              <div className="mb-1 flex items-center justify-between text-xs">
                 <span className="text-slate-600">晋升进度</span>
                 <span className="tabular-nums text-cyan-200/90">{progressPercent}%</span>
               </div>
@@ -95,7 +95,7 @@ export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
 
             {sortedRequirements.length > 0 ? (
               <div>
-                <p className="mb-1 text-[10px] font-medium text-slate-600">晋升条件</p>
+                <p className="mb-1 text-xs font-medium text-slate-600">晋升条件</p>
                 <ul className={`${taskDetailDivider} bg-slate-950/10`}>
                   {visibleRequirements.map((req) => (
                     <li
@@ -153,7 +153,7 @@ export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
                 {unlocks.length > 0 ? (
                   <ul className="space-y-0.5">
                     {unlocks.map((item) => (
-                      <li key={item} className="text-[11px] leading-[1.4] text-slate-400">
+                      <li key={item} className="text-[13px] leading-[1.4] text-slate-400">
                         · {item}
                       </li>
                     ))}

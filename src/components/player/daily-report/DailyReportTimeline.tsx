@@ -31,8 +31,8 @@ export function DailyReportTimeline({
       <div className={`${taskDetailPanelHeader} space-y-2`}>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-[12px] font-medium text-cyan-100">今日时间线</h2>
-            <p className="mt-0.5 text-[10px] text-slate-600">
+            <h2 className="text-sm font-medium text-cyan-100">今日时间线</h2>
+            <p className="mt-0.5 text-[13px] text-slate-500">
               {isArchiveEmpty ? "完成行动后将自动归档至此" : "按发生顺序归档项目变化"}
             </p>
           </div>
@@ -45,8 +45,8 @@ export function DailyReportTimeline({
 
       {isArchiveEmpty ? (
         <div className="px-3 py-4">
-          <p className="text-[11px] text-slate-500">今日暂无新归档。</p>
-          <p className="mt-0.5 text-[10px] text-slate-600">
+          <p className="text-xs text-slate-500">今日暂无新归档。</p>
+          <p className="mt-0.5 text-[13px] text-slate-500">
             处理任务或在协同地图行动后，动态会出现在这里。
           </p>
           {primaryAction ? (
@@ -62,8 +62,8 @@ export function DailyReportTimeline({
         </div>
       ) : isFilteredEmpty ? (
         <div className="px-3 py-4">
-          <p className="text-[11px] text-slate-500">该分类下暂无记录。</p>
-          <p className="mt-0.5 text-[10px] text-slate-600">切换其他分类或查看全部日志。</p>
+          <p className="text-xs text-slate-500">该分类下暂无记录。</p>
+          <p className="mt-0.5 text-[13px] text-slate-500">切换其他分类或查看全部日志。</p>
         </div>
       ) : (
         <div className="relative px-3 pb-2">

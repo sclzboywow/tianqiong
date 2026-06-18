@@ -21,21 +21,21 @@ export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
   return (
     <section className={taskHudPanel}>
       <div className={taskHudPanelHeader}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <ScrollText className="size-3.5 text-cyan-400" />
           近期结算
         </h3>
       </div>
       <div className="px-3 py-2.5">
         {visibleLogs.length === 0 ? (
-          <p className="text-[11px] text-slate-600">暂无任务结算记录</p>
+          <p className="text-xs text-slate-500">暂无任务结算记录</p>
         ) : (
           <ul className="relative border-l border-cyan-400/15 pl-3">
             {visibleLogs.map((log) => (
               <li key={log.id} className="relative pb-3 last:pb-0">
                 <span className="absolute -left-[13px] top-1.5 size-1.5 bg-cyan-400/60" />
                 <p className="text-[10px] tabular-nums text-slate-600">{formatLogTime(log.createdAt)}</p>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-5 text-slate-400">
+                <p className="mt-0.5 line-clamp-2 text-[13px] leading-5 text-slate-400">
                   {sanitizePlayerLogContent(log.content)}
                 </p>
               </li>
@@ -55,7 +55,7 @@ function TaskBoardRiskPanel({ hud, summary }: { hud: TaskBoardHud; summary: Task
   return (
     <section className={taskHudPanel}>
       <div className={taskHudPanelHeader}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <AlertTriangle className="size-3.5 text-amber-400" />
           风险提示
           <span className="ml-auto text-[10px] tabular-nums text-amber-200">{summary.emergencyCount} 项</span>
@@ -63,11 +63,11 @@ function TaskBoardRiskPanel({ hud, summary }: { hud: TaskBoardHud; summary: Task
       </div>
       <div className="p-3">
         {hud.riskAlert ? (
-          <p className="border border-amber-400/20 bg-amber-950/20 p-2.5 text-[11px] leading-5 text-amber-100/90">
+          <p className="border border-amber-400/20 bg-amber-950/20 p-2.5 text-[13px] leading-5 text-amber-100/90">
             {hud.riskAlert}
           </p>
         ) : (
-          <p className="text-[11px] text-slate-500">有 {summary.emergencyCount} 项突发风险待处理。</p>
+          <p className="text-xs text-slate-500">有 {summary.emergencyCount} 项突发风险待处理。</p>
         )}
       </div>
     </section>

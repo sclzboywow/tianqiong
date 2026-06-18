@@ -26,7 +26,7 @@ export function TaskRecentLogsPanel({ logs }: TaskRecentLogsPanelProps) {
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <ScrollText className="size-3.5 text-cyan-400/80" />
           相关记录
         </h3>
@@ -37,7 +37,7 @@ export function TaskRecentLogsPanel({ logs }: TaskRecentLogsPanelProps) {
             <li key={log.id} className="relative pb-2.5 last:pb-0">
               <span className="absolute -left-[13px] top-1 size-1 bg-cyan-400/40" />
               <p className="text-[10px] tabular-nums text-slate-700">{formatLogTime(log.createdAt)}</p>
-              <p className="mt-0.5 line-clamp-2 text-[11px] leading-[1.45] text-slate-400">
+              <p className="mt-0.5 line-clamp-2 text-[13px] leading-[1.45] text-slate-400">
                 {sanitizePlayerLogContent(log.content)}
               </p>
             </li>

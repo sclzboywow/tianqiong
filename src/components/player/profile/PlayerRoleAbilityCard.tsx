@@ -41,7 +41,7 @@ export function PlayerRoleAbilityCard({ jobAbility, track }: PlayerRoleAbilityCa
   return (
     <section className={`${taskDetailPanel} h-full`}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <Briefcase className="size-3.5 text-cyan-400/80" />
           岗位能力与专业方向
         </h3>
@@ -49,23 +49,23 @@ export function PlayerRoleAbilityCard({ jobAbility, track }: PlayerRoleAbilityCa
 
       <div className="space-y-2 p-3">
         <div className="bg-cyan-950/10 px-2.5 py-2">
-          <p className="text-[10px] font-medium text-cyan-400/70">能力画像</p>
-          <p className="mt-0.5 text-[11px] text-slate-400">
+          <p className="text-xs font-medium text-cyan-400/70">能力画像</p>
+          <p className="mt-0.5 text-xs text-slate-400">
             {jobAbility.jobLabel} · {jobAbility.roleTagline}
           </p>
-          <p className="mt-1 text-[12px] font-medium leading-[1.45] text-cyan-50/95">
+          <p className="mt-1 text-sm font-medium leading-[1.45] text-cyan-50/95">
             擅长处理：{buildStrengthSummary(track)}
           </p>
         </div>
 
         <div>
-          <p className="mb-0.5 text-[10px] font-medium text-slate-600">核心能力</p>
+          <p className="mb-0.5 text-xs font-medium text-slate-600">核心能力</p>
           {visibleAbilities.length === 0 ? (
-            <p className="text-[11px] text-slate-600">暂无能力说明</p>
+            <p className="text-xs text-slate-500">暂无能力说明</p>
           ) : (
             <ul className={`${taskDetailDivider} bg-slate-950/10`}>
               {visibleAbilities.map((ability) => (
-                <li key={ability} className="px-1 py-1 text-[11px] leading-[1.4] text-slate-300">
+                <li key={ability} className="px-1 py-1 text-[13px] leading-[1.4] text-slate-300">
                   · {ability}
                 </li>
               ))}
@@ -82,7 +82,7 @@ export function PlayerRoleAbilityCard({ jobAbility, track }: PlayerRoleAbilityCa
         </div>
 
         <div>
-          <p className="mb-1 text-[10px] font-medium text-slate-600">适配任务</p>
+          <p className="mb-1 text-xs font-medium text-slate-600">适配任务</p>
           <div className="flex flex-wrap gap-1">
             {visibleTasks.map((task) => (
               <span key={task} className={cn(taskDetailTag, "text-cyan-200/80")}>

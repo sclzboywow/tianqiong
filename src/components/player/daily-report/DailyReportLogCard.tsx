@@ -43,8 +43,8 @@ export function DailyReportLogCard({ item }: DailyReportLogCardProps) {
           <span className={cn(taskDetailTag, "text-slate-400")}>{item.typeLabel}</span>
         </div>
 
-        <h4 className="mt-0.5 truncate text-[12px] font-medium text-slate-200">{item.title}</h4>
-        <p className="line-clamp-2 text-[11px] leading-[1.4] text-slate-500">{item.content}</p>
+        <h4 className="mt-0.5 truncate text-sm font-medium text-slate-200">{item.title}</h4>
+        <p className="line-clamp-2 text-[13px] leading-[1.4] text-slate-500">{item.content}</p>
 
         {visibleEffects.length > 0 ? (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
@@ -54,7 +54,7 @@ export function DailyReportLogCard({ item }: DailyReportLogCardProps) {
               </span>
             ))}
             {hiddenEffectCount > 0 ? (
-              <span className="text-[10px] text-slate-600">+{hiddenEffectCount}</span>
+              <span className="text-[11px] text-slate-500">+{hiddenEffectCount}</span>
             ) : null}
           </div>
         ) : null}

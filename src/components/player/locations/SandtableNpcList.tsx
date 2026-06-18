@@ -74,7 +74,7 @@ function NpcPickerCard({
         onClick={() => onSelect?.(npc)}
       >
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-[12px] text-cyan-50">{display.name}</p>
+          <p className="truncate text-[13px] text-cyan-50">{display.name}</p>
           {presence ? (
             <span className={cn("shrink-0 border px-1 py-0.5 text-[9px]", PRESENCE_STYLES[presence])}>
               {PRESENCE_LABELS[presence]}
@@ -95,11 +95,11 @@ function NpcPickerCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-medium text-cyan-50">{display.name}</p>
-          <p className="truncate text-[11px] text-slate-400">{display.title}</p>
+          <p className="truncate text-sm font-medium text-cyan-50">{display.name}</p>
+          <p className="truncate text-xs text-slate-400">{display.title}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <span className={cn("border px-1.5 py-0.5 text-[10px] font-medium", LEVEL_STYLES[display.level])}>
+          <span className={cn("border px-1.5 py-0.5 text-xs font-medium", LEVEL_STYLES[display.level])}>
             {display.level}·{formatNpcRole(npc.role)}
           </span>
           {presence ? (
@@ -157,7 +157,7 @@ export function SandtableNpcList({
   const visibleNpcs = npcs.filter((npc) => npc.npcId !== excludeNpcId);
 
   if (visibleNpcs.length === 0) {
-    return <p className="text-[11px] text-slate-600">{empty}</p>;
+    return <p className="text-xs text-slate-500">{empty}</p>;
   }
 
   const sections = groupNpcs(visibleNpcs);
@@ -180,7 +180,7 @@ export function SandtableNpcList({
       {visibleSections.map((section) => (
         <div key={section.id}>
           {isGrouped && section.title ? (
-            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
               {section.title}
             </p>
           ) : null}

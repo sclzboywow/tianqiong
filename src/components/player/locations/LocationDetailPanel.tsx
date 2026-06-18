@@ -62,7 +62,7 @@ export function LocationDetailPanel({
     <aside className="flex h-full w-full flex-col border-l border-cyan-400/20 bg-[#060d18]/95 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[11px] text-slate-500">
+          <p className="truncate text-xs text-slate-500">
             {regionName} / {zoneName}
           </p>
           <h2 className="mt-1 truncate text-base font-semibold text-cyan-50">{node.name}</h2>
@@ -90,7 +90,7 @@ export function LocationDetailPanel({
 
       {node.impactLabels && node.impactLabels.length > 0 ? (
         <div className="mt-4">
-          <p className="mb-1.5 text-[10px] text-slate-500">影响指标</p>
+          <p className="mb-1.5 text-[11px] text-slate-500">影响指标</p>
           <div className="flex flex-wrap gap-1">
             {node.impactLabels.slice(0, 3).map((item) => (
               <span
@@ -119,7 +119,7 @@ export function LocationDetailPanel({
           {canEnter ? <DoorOpen className="size-4" /> : <Lock className="size-4" />}
           进入地点
         </button>
-        <p className="text-center text-[10px] text-slate-600">
+        <p className="text-center text-[11px] text-slate-500">
           在地点工作台内处理 NPC、任务与事件
         </p>
       </div>

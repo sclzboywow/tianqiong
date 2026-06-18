@@ -26,7 +26,7 @@ function StorySegmentRow({ segment }: { segment: StorySegment }) {
     return (
       <div className="px-3 py-2.5">
         <span className="text-[9px] text-slate-600">{segment.speaker}</span>
-        <p className="mt-0.5 text-[12px] leading-[1.5] text-slate-200">{segment.text}</p>
+        <p className="mt-0.5 text-[13px] leading-[1.5] text-slate-200">{segment.text}</p>
       </div>
     );
   }
@@ -34,7 +34,7 @@ function StorySegmentRow({ segment }: { segment: StorySegment }) {
   return (
     <div className="px-3 py-2.5">
       <span className="text-[9px] text-slate-700">旁白</span>
-      <p className="mt-0.5 whitespace-pre-wrap text-[12px] leading-[1.5] text-slate-300">
+      <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-[1.5] text-slate-300">
         {segment.text}
       </p>
     </div>
@@ -48,13 +48,13 @@ export function TaskStoryPanel({ story, inkAvailable }: TaskStoryPanelProps) {
     return (
       <section className={taskDetailPanel}>
         <div className={taskDetailPanelHeader}>
-          <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+          <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
             <ScrollText className="size-3.5 text-cyan-400/80" />
             现场记录
           </h3>
         </div>
         <div className="px-3 py-2.5">
-          <p className="text-[11px] text-slate-600">暂无现场记录。</p>
+          <p className="text-xs text-slate-500">暂无现场记录。</p>
         </div>
       </section>
     );
@@ -69,7 +69,7 @@ export function TaskStoryPanel({ story, inkAvailable }: TaskStoryPanelProps) {
   return (
     <section className={taskDetailPanel}>
       <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
-        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <ScrollText className="size-3.5 text-cyan-400/80" />
           现场记录
         </h3>
@@ -78,13 +78,13 @@ export function TaskStoryPanel({ story, inkAvailable }: TaskStoryPanelProps) {
 
       <div className="space-y-2 px-3 py-2.5">
         <div>
-          <p className="mb-0.5 text-[10px] font-medium text-slate-600">现场摘要</p>
-          <p className="text-[11px] leading-[1.5] text-slate-400">{buildFieldSummary(storySegments)}</p>
+          <p className="mb-0.5 text-xs font-medium text-slate-600">现场摘要</p>
+          <p className="text-[13px] leading-[1.5] text-slate-400">{buildFieldSummary(storySegments)}</p>
         </div>
 
         {!expanded && keySegments.length > 0 ? (
           <div>
-            <p className="mb-1 text-[10px] font-medium text-slate-600">关键记录</p>
+            <p className="mb-1 text-xs font-medium text-slate-600">关键记录</p>
             <div className={`${taskDetailDivider} bg-slate-950/10`}>
               {keySegments.map((segment) => (
                 <StorySegmentRow key={segment.key} segment={segment} />

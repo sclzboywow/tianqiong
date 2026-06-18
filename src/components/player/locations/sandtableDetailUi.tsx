@@ -34,7 +34,7 @@ export function SandtableDetailSection({
 export function SandtableTokenList({ items, empty }: { items?: string[]; empty: string }) {
   const normalized = (items || []).filter(Boolean);
   if (normalized.length === 0) {
-    return <p className="text-[11px] text-slate-600">{empty}</p>;
+    return <p className="text-xs text-slate-500">{empty}</p>;
   }
 
   return (
@@ -42,7 +42,7 @@ export function SandtableTokenList({ items, empty }: { items?: string[]; empty: 
       {normalized.map((item) => (
         <span
           key={item}
-          className="max-w-full truncate whitespace-nowrap border border-cyan-400/15 bg-slate-950/60 px-2 py-0.5 text-[11px] text-slate-400"
+          className="max-w-full truncate whitespace-nowrap border border-cyan-400/15 bg-slate-950/60 px-2 py-0.5 text-xs text-slate-400"
           title={item}
         >
           {item}
@@ -77,11 +77,11 @@ export function WorkspaceColumn({
       )}
     >
       <header className="shrink-0 border-b border-cyan-400/10 bg-slate-950/40 px-3 py-2.5">
-        <h3 className="flex items-center gap-2 text-xs font-medium text-cyan-100">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <Icon className="size-3.5 shrink-0 text-cyan-400" />
           {title}
         </h3>
-        {subtitle ? <p className="mt-1 pl-5 text-[10px] text-slate-500">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 pl-5 text-xs text-slate-500">{subtitle}</p> : null}
       </header>
       <div
         className={cn(

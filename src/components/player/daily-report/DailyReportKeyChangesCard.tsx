@@ -26,7 +26,7 @@ export function DailyReportKeyChangesCard({ changes }: DailyReportKeyChangesCard
   return (
     <section className={taskDetailPanel}>
       <div className={taskDetailPanelHeader}>
-        <h3 className="text-[12px] font-medium text-cyan-100">关键变化</h3>
+        <h3 className="text-sm font-medium text-cyan-100">关键变化</h3>
       </div>
 
       <div className="p-3">
@@ -34,7 +34,7 @@ export function DailyReportKeyChangesCard({ changes }: DailyReportKeyChangesCard
           {visibleChanges.map((change) => (
             <li
               key={change.text}
-              className={cn("px-1 py-1.5 text-[11px] leading-[1.4]", toneClass(change.tone))}
+              className={cn("px-1 py-1.5 text-[13px] leading-[1.4]", toneClass(change.tone))}
             >
               · {change.text}
             </li>
