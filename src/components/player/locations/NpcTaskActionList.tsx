@@ -151,7 +151,7 @@ export function NpcTaskActionList({
               })}
             </div>
             {group.actions.some((action) => action.reason && !action.completed) ? (
-              <p className="mt-2 text-[10px] leading-5 text-slate-500">
+              <p className="mt-2 text-xs leading-5 text-slate-500">
                 {group.actions.find((action) => action.reason && !action.completed)?.reason}
               </p>
             ) : null}
@@ -162,7 +162,7 @@ export function NpcTaskActionList({
       {logs.length > 0 ? (
         <ul className="mt-3 space-y-1 border-t border-cyan-400/10 pt-2">
           {logs.map((entry) => (
-            <li key={entry.id} className="text-[10px] leading-5 text-slate-500">
+            <li key={entry.id} className="text-xs leading-5 text-slate-500">
               · {entry.message}
             </li>
           ))}

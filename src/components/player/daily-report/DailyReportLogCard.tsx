@@ -39,7 +39,7 @@ export function DailyReportLogCard({ item }: DailyReportLogCardProps) {
 
       <div className="min-w-0 flex-1 overflow-hidden">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="text-[10px] tabular-nums text-slate-600">{item.timeLabel}</span>
+          <span className="text-[11px] tabular-nums text-slate-500">{item.timeLabel}</span>
           <span className={cn(taskDetailTag, "text-slate-400")}>{item.typeLabel}</span>
         </div>
 
@@ -49,7 +49,7 @@ export function DailyReportLogCard({ item }: DailyReportLogCardProps) {
         {visibleEffects.length > 0 ? (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
             {visibleEffects.map((line) => (
-              <span key={line.text} className={cn("text-[10px]", effectToneClass(line.tone))}>
+              <span key={line.text} className={cn("text-[11px]", effectToneClass(line.tone))}>
                 {line.text}
               </span>
             ))}

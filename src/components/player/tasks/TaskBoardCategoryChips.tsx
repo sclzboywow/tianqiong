@@ -37,7 +37,7 @@ export function TaskBoardCategoryChips({
               className={cn(taskHudChip, active ? taskHudChipActive : taskHudChipIdle)}
             >
               <span>{category.label}</span>
-              <span className="border border-current/20 px-1 py-0 text-[9px] tabular-nums opacity-80">
+              <span className="border border-current/20 px-1 py-0 text-[11px] tabular-nums opacity-80">
                 {category.count}
               </span>
             </button>

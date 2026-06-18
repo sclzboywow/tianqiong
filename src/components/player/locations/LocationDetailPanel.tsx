@@ -26,7 +26,7 @@ function StatChip({
   return (
     <div
       className={cn(
-        "border px-2 py-1.5 text-[10px]",
+        "border px-2 py-1.5 text-xs",
         highlight
           ? "border-emerald-400/30 bg-emerald-950/20 text-emerald-100"
           : "border-cyan-400/10 bg-slate-950/50 text-slate-400",

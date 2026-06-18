@@ -25,7 +25,7 @@ function StorySegmentRow({ segment }: { segment: StorySegment }) {
   if (segment.type === "dialogue") {
     return (
       <div className="px-3 py-2.5">
-        <span className="text-[9px] text-slate-600">{segment.speaker}</span>
+        <span className="text-[11px] text-slate-500">{segment.speaker}</span>
         <p className="mt-0.5 text-[13px] leading-[1.5] text-slate-200">{segment.text}</p>
       </div>
     );
@@ -33,7 +33,7 @@ function StorySegmentRow({ segment }: { segment: StorySegment }) {
 
   return (
     <div className="px-3 py-2.5">
-      <span className="text-[9px] text-slate-700">旁白</span>
+      <span className="text-[11px] text-slate-500">旁白</span>
       <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-[1.5] text-slate-300">
         {segment.text}
       </p>

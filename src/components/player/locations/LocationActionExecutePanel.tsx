@@ -234,7 +234,7 @@ export function LocationActionExecutePanel({
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium text-slate-200">{action.label}</p>
                     {blockReason ? (
-                      <p className="truncate text-[10px] text-rose-300/90">{blockReason}</p>
+                      <p className="truncate text-xs text-rose-300/90">{blockReason}</p>
                     ) : null}
                   </div>
                   {!hideExecute ? (
@@ -242,7 +242,7 @@ export function LocationActionExecutePanel({
                       type="button"
                       disabled={isPending || !!blockReason}
                       onClick={() => handleExecute(action.id)}
-                      className="shrink-0 border border-cyan-400/25 px-2.5 py-1 text-[10px] text-cyan-100 hover:border-cyan-400/45 disabled:opacity-50"
+                      className="shrink-0 border border-cyan-400/25 px-2.5 py-1 text-xs text-cyan-100 hover:border-cyan-400/45 disabled:opacity-50"
                     >
                       {isPending ? "执行中" : "执行"}
                     </button>

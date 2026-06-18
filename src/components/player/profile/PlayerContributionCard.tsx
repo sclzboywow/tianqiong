@@ -12,7 +12,7 @@ type PlayerContributionCardProps = {
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="bg-slate-950/15 px-2 py-1.5">
-      <p className="text-[9px] text-slate-600">{label}</p>
+      <p className="text-xs text-slate-500">{label}</p>
       <p className="text-sm font-semibold tabular-nums text-slate-300">{value}</p>
     </div>
   );

@@ -76,7 +76,7 @@ function NpcPickerCard({
         <div className="flex items-center justify-between gap-2">
           <p className="truncate text-[13px] text-cyan-50">{display.name}</p>
           {presence ? (
-            <span className={cn("shrink-0 border px-1 py-0.5 text-[9px]", PRESENCE_STYLES[presence])}>
+            <span className={cn("shrink-0 border px-1 py-0.5 text-[11px]", PRESENCE_STYLES[presence])}>
               {PRESENCE_LABELS[presence]}
             </span>
           ) : null}

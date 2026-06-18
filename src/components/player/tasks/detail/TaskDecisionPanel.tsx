@@ -95,7 +95,7 @@ function ParticipantProgress({ data }: { data: TaskDetailViewData }) {
         {visibleParticipants.map((participant) => (
           <li
             key={participant.id}
-            className="flex items-center justify-between px-1 py-1.5 text-[11px]"
+            className="flex items-center justify-between px-1 py-1.5 text-xs"
           >
             <span className="text-slate-400">
               {participant.nickname} · {participant.jobLabel}
@@ -134,7 +134,7 @@ function ChoiceOptionRow({
 }) {
   return (
     <div className="flex items-start gap-2 px-1 py-2">
-      <span className="w-4 shrink-0 pt-0.5 text-center text-[10px] tabular-nums text-cyan-400/50">
+      <span className="w-4 shrink-0 pt-0.5 text-center text-[11px] tabular-nums text-cyan-400/50">
         {choice.index + 1}
       </span>
       <p className="min-w-0 flex-1 text-[13px] leading-[1.45] text-slate-200">{choice.text}</p>
@@ -197,11 +197,11 @@ export function TaskDecisionPanel({
 
       <div className="space-y-3 p-3">
         {error && (
-          <p className="bg-red-950/25 px-3 py-2 text-[11px] text-red-300">{error}</p>
+          <p className="bg-red-950/25 px-3 py-2 text-xs text-red-300">{error}</p>
         )}
 
         {!data.inkAvailable && data.isActive && (
-          <p className="bg-amber-950/20 px-3 py-2 text-[11px] text-amber-100/85">
+          <p className="bg-amber-950/20 px-3 py-2 text-xs text-amber-100/85">
             该任务尚未配置剧情，无法进入处理。
           </p>
         )}
@@ -222,7 +222,7 @@ export function TaskDecisionPanel({
             )}
 
             {result?.rewards && (
-              <div className="bg-emerald-950/15 px-3 py-2 text-[11px] text-emerald-300/90">
+              <div className="bg-emerald-950/15 px-3 py-2 text-xs text-emerald-300/90">
                 经验 +{result.rewards.exp} · 金币 +{result.rewards.gold} · 声望 +
                 {result.rewards.reputation} · 贡献 +{result.rewards.contribution}
               </div>
@@ -279,7 +279,7 @@ export function TaskDecisionPanel({
         ) : pending ? (
           <div className="space-y-3">
             <p className="text-[13px] text-cyan-100">{pending.message}</p>
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">提交进度</span>
               <span className="tabular-nums text-cyan-200">
                 {pending.submittedCount}/{pending.requiredCount}
@@ -349,7 +349,7 @@ export function TaskDecisionPanel({
             <div className={`${taskDetailDivider} bg-slate-950/10`}>
               {(replayExpanded ? choices : choices.slice(0, CHOICE_PREVIEW_LIMIT)).map((choice) => (
                 <div key={choice.choiceId} className="flex gap-2 px-1 py-2">
-                  <span className="w-4 shrink-0 text-center text-[10px] tabular-nums text-slate-600">
+                  <span className="w-4 shrink-0 text-center text-[11px] tabular-nums text-slate-500">
                     {choice.index + 1}
                   </span>
                   <p className="min-w-0 flex-1 text-[13px] leading-[1.45] text-slate-400">

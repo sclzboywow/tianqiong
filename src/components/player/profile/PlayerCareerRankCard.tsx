@@ -160,7 +160,7 @@ export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
                   </ul>
                 ) : null}
                 {bonusDescription ? (
-                  <p className="text-[10px] leading-[1.4] text-slate-600">{bonusDescription}</p>
+                  <p className="text-xs leading-[1.4] text-slate-500">{bonusDescription}</p>
                 ) : null}
                 <ProfileExpandButton
                   expanded
