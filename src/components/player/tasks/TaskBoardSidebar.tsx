@@ -1,61 +1,31 @@
-import type { TaskBoardSummary } from "@/game/taskPresentationEngine";
+import { AlertTriangle, ScrollText } from "lucide-react";
+import type { TaskBoardHud, TaskBoardSummary } from "@/game/taskPresentationEngine";
 import type { GameLogSummary } from "@/game/logEngine";
 import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
 import { ChapterMilestoneCard } from "../ChapterMilestoneCard";
 import type { ChapterGoalItem } from "@/game/playerGuidanceEngine";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
-
-function TaskBoardStatsCard({ summary }: { summary: TaskBoardSummary }) {
-  const rows = [
-    { label: "主线", value: summary.mainlineCount },
-    { label: "突发", value: summary.emergencyCount },
-    { label: "协作", value: summary.collaborationCount },
-    { label: "已完成", value: summary.completedCount },
-  ];
-
-  return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">任务概览</h3>
-      </div>
-      <div className={`${playerCardBodyClass} space-y-4`}>
-        <div className="rounded-xl border border-[rgba(30,136,255,0.16)] bg-[rgba(30,136,255,0.08)] px-4 py-3">
-          <p className="text-xs text-[#8EA3B8]">当前待处理</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-[#2EA8FF]">
-            {summary.totalActive}
-          </p>
-        </div>
-
-        <ul className="space-y-2">
-          {rows.map((row) => (
-            <li key={row.label} className="flex items-center justify-between text-sm">
-              <span className="text-[#8EA3B8]">{row.label}</span>
-              <span className="font-medium tabular-nums text-[#EAF3FF]">{row.value}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
+import { taskHudPanel, taskHudPanelHeader } from "./taskBoardUi";
 
 export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">最近结算</h3>
+    <section className={taskHudPanel}>
+      <div className={taskHudPanelHeader}>
+        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+          <ScrollText className="size-3.5 text-cyan-400" />
+          近期结算 / 任务日志
+        </h3>
       </div>
-      <div className={playerCardBodyClass}>
+      <div className="p-3">
         {logs.length === 0 ? (
-          <p className="text-sm text-[#8EA3B8]">暂无任务结算记录</p>
+          <p className="text-[11px] text-slate-600">暂无任务结算记录</p>
         ) : (
-          <ul className="space-y-2.5">
+          <ul className="space-y-2">
             {logs.map((log) => (
               <li
                 key={log.id}
-                className="rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.35)] px-3 py-2 text-[13px] leading-relaxed text-[#EAF3FF]/90"
+                className="border border-cyan-400/10 bg-slate-950/50 p-2.5 text-[11px] leading-5 text-slate-400"
               >
-                {sanitizePlayerLogContent(log.content)}
+                <p className="text-slate-300">{sanitizePlayerLogContent(log.content)}</p>
               </li>
             ))}
           </ul>
@@ -65,22 +35,63 @@ export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
   );
 }
 
+function TaskBoardRiskPanel({ hud, summary }: { hud: TaskBoardHud; summary: TaskBoardSummary }) {
+  if (summary.emergencyCount === 0 && !hud.riskAlert) {
+    return (
+      <section className={taskHudPanel}>
+        <div className={taskHudPanelHeader}>
+          <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+            <AlertTriangle className="size-3.5 text-amber-400" />
+            风险提示
+          </h3>
+        </div>
+        <div className="p-3">
+          <p className="text-[11px] text-slate-600">当前无突发风险待处理。</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className={taskHudPanel}>
+      <div className={taskHudPanelHeader}>
+        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+          <AlertTriangle className="size-3.5 text-amber-400" />
+          风险提示
+          <span className="ml-auto text-[10px] tabular-nums text-amber-200">{summary.emergencyCount} 项</span>
+        </h3>
+      </div>
+      <div className="space-y-2 p-3">
+        {hud.riskAlert ? (
+          <p className="border border-amber-400/20 bg-amber-950/20 p-2.5 text-[11px] leading-5 text-amber-100/90">
+            {hud.riskAlert}
+          </p>
+        ) : (
+          <p className="text-[11px] text-slate-500">有 {summary.emergencyCount} 项突发风险待处理，请优先在协同地图跟进。</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 type TaskBoardSidebarProps = {
+  hud: TaskBoardHud;
   summary: TaskBoardSummary;
   chapterGoals: ChapterGoalItem[];
   recentTaskLogs: GameLogSummary[];
 };
 
 export function TaskBoardSidebar({
+  hud,
   summary,
   chapterGoals,
   recentTaskLogs,
 }: TaskBoardSidebarProps) {
   return (
-    <aside className="hidden w-[320px] shrink-0 space-y-4 xl:block xl:sticky xl:top-4 xl:self-start">
-      <TaskBoardStatsCard summary={summary} />
-      <ChapterMilestoneCard goals={chapterGoals} />
+    <aside className="hidden min-h-0 space-y-3 p-3 xl:block xl:sticky xl:top-4 xl:self-start">
+      <ChapterMilestoneCard goals={chapterGoals} variant="hud" />
       <TaskBoardRecentLogs logs={recentTaskLogs} />
+      <TaskBoardRiskPanel hud={hud} summary={summary} />
     </aside>
   );
 }

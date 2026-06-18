@@ -2,6 +2,7 @@
 
 import type { ProjectState, Task } from "@prisma/client";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { NpcProfile } from "@/data/npcProfiles";
 import {
   CheckCircle2,
@@ -572,9 +573,15 @@ export function LocationSandTablePage({
 }: LocationSandTablePageProps) {
   useLiveNpcProfiles(npcProfiles ?? {}, npcProfileRevision);
 
+  const searchParams = useSearchParams();
+  const focusLocationId = searchParams.get("focus");
+
   const shellRef = useRef<HTMLElement>(null);
   const nodes = useMemo(() => flattenNodes(data), [data]);
-  const defaultNodeId = data.recommendedNode?.id || nodes.find((node) => !node.locked)?.id;
+  const defaultNodeId =
+    (focusLocationId && nodes.some((node) => node.id === focusLocationId) ? focusLocationId : null) ||
+    data.recommendedNode?.id ||
+    nodes.find((node) => !node.locked)?.id;
   const [selectedId, setSelectedId] = useState(defaultNodeId);
   const [sceneNodeId, setSceneNodeId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterId>("all");

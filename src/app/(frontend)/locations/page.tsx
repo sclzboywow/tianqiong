@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { LocationSandTablePage } from "@/components/player/locations/LocationSandTablePage";
 import { getCurrentUserId } from "@/lib/session";
@@ -61,14 +62,16 @@ export default async function LocationsPage() {
       userNickname={user.nickname}
       pendingTaskCount={pendingCount}
     >
-      <LocationSandTablePage
-        data={sandtableData}
-        project={project}
-        tasks={tasks}
-        completedNpcTaskActionIds={completedNpcTaskActionIds}
-        npcProfiles={npcProfiles}
-        npcProfileRevision={npcProfileRevision}
-      />
+      <Suspense fallback={<div className="border border-cyan-400/20 bg-[#050B14] p-8 text-sm text-slate-500">加载协同地图…</div>}>
+        <LocationSandTablePage
+          data={sandtableData}
+          project={project}
+          tasks={tasks}
+          completedNpcTaskActionIds={completedNpcTaskActionIds}
+          npcProfiles={npcProfiles}
+          npcProfileRevision={npcProfileRevision}
+        />
+      </Suspense>
     </PlayerShell>
   );
 }

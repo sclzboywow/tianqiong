@@ -45,6 +45,8 @@ export type TaskItem = {
   area: string;
   sourceName: string;
   sourceLocationName: string | null;
+  sourceLocationId: string | null;
+  locationHref: string | null;
   rarity: string;
   resolutionMode: string;
   baseSuccessRate: number;
@@ -77,9 +79,15 @@ export type RecommendedTaskBoardItem = {
   reason: string;
 };
 
+export type TaskBoardHud = {
+  mainlineBlocker: string | null;
+  riskAlert: string | null;
+};
+
 export type TaskBoardData = {
   stageName: string;
   summary: TaskBoardSummary;
+  hud: TaskBoardHud;
   recommendedTask: RecommendedTaskBoardItem | null;
   categories: TaskBoardCategory[];
   taskItems: TaskItem[];
@@ -106,6 +114,24 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export { STATUS_LABELS as TASK_STATUS_LABELS };
+
+export function buildTemplateToLocationIdMap(
+  locations: MapLocation[],
+  actions: LocationAction[],
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const location of locations) {
+    for (const slug of location.relatedTaskSlugs || []) {
+      if (!map.has(slug)) map.set(slug, location.id);
+    }
+  }
+  for (const action of actions) {
+    for (const slug of action.triggerTaskSlugs || []) {
+      if (!map.has(slug)) map.set(slug, action.locationId);
+    }
+  }
+  return map;
+}
 
 export function buildTemplateToLocationNameMap(
   locations: MapLocation[],
@@ -202,7 +228,11 @@ const TYPE_LABELS: Record<TaskItemType, string> = {
 export function buildTaskItem(
   task: TaskWithParticipants,
   project: ProjectState,
-  options?: { isRecommended?: boolean; sourceLocationName?: string | null },
+  options?: {
+    isRecommended?: boolean;
+    sourceLocationName?: string | null;
+    sourceLocationId?: string | null;
+  },
 ): TaskItem {
   const jobList = parseJsonArray(task.requiredJobs);
   const successEffects = parseJsonObject<MetricEffects>(task.successEffects);
@@ -210,6 +240,7 @@ export function buildTaskItem(
   const milestoneEffects = parseJsonObject<Record<string, boolean>>(task.milestoneEffects);
   const milestoneLabels = formatPlayerMilestoneLabels(milestoneEffects, 2);
   const type = resolvePrimaryType(task, project);
+  const sourceLocationId = options?.sourceLocationId ?? null;
 
   return {
     id: task.id,
@@ -223,6 +254,8 @@ export function buildTaskItem(
     area: task.area,
     sourceName: task.sourceName || task.area,
     sourceLocationName: options?.sourceLocationName ?? null,
+    sourceLocationId,
+    locationHref: sourceLocationId ? `/locations?focus=${sourceLocationId}` : "/locations",
     rarity: task.rarity,
     resolutionMode: RESOLUTION_MODE_LABELS[task.resolutionMode] || "单人任务",
     baseSuccessRate: task.baseSuccessRate,
@@ -259,22 +292,22 @@ export function buildTaskBoardCategories(items: TaskItem[]): TaskBoardCategory[]
     { id: "all", label: "全部待处理", count: active.length },
     {
       id: "mainline",
-      label: "主线任务",
+      label: "主线推进",
       count: active.filter((item) => item.isMainline).length,
     },
     {
       id: "emergency",
-      label: "突发事件",
+      label: "突发风险",
       count: active.filter((item) => item.isEmergency).length,
     },
     {
       id: "collaboration",
-      label: "协作任务",
+      label: "协作待办",
       count: active.filter((item) => item.isCollaboration).length,
     },
     {
       id: "completed",
-      label: "已完成",
+      label: "已完成归档",
       count: items.filter((item) => item.isCompleted).length,
     },
   ];
@@ -366,11 +399,14 @@ export function buildTaskBoardData(params: {
   const { project, tasks, chapterGoals, recentTaskLogs, locations, locationActions } = params;
 
   const templateLocationMap = buildTemplateToLocationNameMap(locations, locationActions);
-  const baseItems = tasks.map((task) =>
-    buildTaskItem(task, project, {
+  const templateLocationIdMap = buildTemplateToLocationIdMap(locations, locationActions);
+  const baseItems = tasks.map((task) => {
+    const sourceLocationId = templateLocationIdMap.get(task.templateId) ?? null;
+    return buildTaskItem(task, project, {
       sourceLocationName: templateLocationMap.get(task.templateId) ?? null,
-    }),
-  );
+      sourceLocationId,
+    });
+  });
   const recommended = getRecommendedTaskForBoard(baseItems, project, chapterGoals);
   const recommendedId = recommended?.task.id;
 
@@ -388,6 +424,8 @@ export function buildTaskBoardData(params: {
   const activeCollaboration = active.filter(
     (item) => !item.isMainline && !item.isEmergency && item.isCollaboration,
   );
+  const firstMainline = activeMainline[0];
+  const firstEmergency = activeEmergency[0];
 
   return {
     stageName: getStageDisplayName(project.currentStage),
@@ -397,6 +435,12 @@ export function buildTaskBoardData(params: {
       emergencyCount: activeEmergency.length,
       collaborationCount: activeCollaboration.length,
       completedCount: taskItems.filter((item) => item.isCompleted).length,
+    },
+    hud: {
+      mainlineBlocker: firstMainline?.title ?? null,
+      riskAlert:
+        firstEmergency?.failEffectsSummary[0]?.text ??
+        (firstEmergency ? firstEmergency.title : null),
     },
     recommendedTask: recommended,
     categories: buildTaskBoardCategories(taskItems),

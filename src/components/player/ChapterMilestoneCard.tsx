@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Circle, Lock, LoaderCircle } from "lucide-react";
+import { CheckCircle2, ChevronRight, Circle, Lock, LoaderCircle, Target } from "lucide-react";
 import type { ChapterGoalItem } from "@/game/playerGuidanceEngine";
+import { cn } from "@/lib/utils";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "./playerTheme";
+import { taskHudPanel, taskHudPanelHeader } from "./tasks/taskBoardUi";
 
 type ChapterMilestoneCardProps = {
   goals: ChapterGoalItem[];
+  variant?: "default" | "hud";
 };
 
 function GoalIcon({ status }: { status: ChapterGoalItem["status"] }) {
@@ -33,43 +36,60 @@ function statusTextClass(status: ChapterGoalItem["status"]) {
   }
 }
 
-export function ChapterMilestoneCard({ goals }: ChapterMilestoneCardProps) {
+export function ChapterMilestoneCard({ goals, variant = "default" }: ChapterMilestoneCardProps) {
   const doneCount = goals.filter((g) => g.status === "completed").length;
+  const isHud = variant === "hud";
 
   return (
-    <section className={playerCardClass}>
-      <div className={`${playerCardHeaderClass} flex items-center justify-between`}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">
-          <span className="lg:hidden">关键节点</span>
-          <span className="hidden lg:inline">章节目标</span>
+    <section className={cn(isHud ? taskHudPanel : playerCardClass)}>
+      <div
+        className={cn(
+          isHud
+            ? `${taskHudPanelHeader} flex items-center justify-between`
+            : `${playerCardHeaderClass} flex items-center justify-between`,
+        )}
+      >
+        <h3 className={cn("font-semibold text-cyan-50", isHud ? "flex items-center gap-2 text-[12px]" : "text-base")}>
+          {isHud ? <Target className="size-3.5 text-cyan-400" /> : null}
+          <span className={isHud ? "" : "lg:hidden"}>{isHud ? "阶段目标" : "关键节点"}</span>
+          {!isHud ? <span className="hidden lg:inline">章节目标</span> : null}
         </h3>
-        <span className="text-xs text-[#8EA3B8] lg:hidden">
+        <span className={cn("text-xs", isHud ? "text-slate-500" : "text-[#8EA3B8] lg:hidden")}>
           {doneCount}/{goals.length}
         </span>
-        <Link href="/project" className="text-xs text-[#2EA8FF] lg:hidden">
-          查看全部
-        </Link>
-        <span className="hidden text-xs text-[#8EA3B8] lg:inline">
-          完成进度 {doneCount}/{goals.length}
-        </span>
+        {!isHud ? (
+          <Link href="/project" className="text-xs text-[#2EA8FF] lg:hidden">
+            查看全部
+          </Link>
+        ) : null}
+        {!isHud ? (
+          <span className="hidden text-xs text-[#8EA3B8] lg:inline">
+            完成进度 {doneCount}/{goals.length}
+          </span>
+        ) : null}
       </div>
 
-      <div className={playerCardBodyClass}>
-        <ul className="divide-y divide-[rgba(60,160,255,0.08)]">
+      <div className={isHud ? "p-3" : playerCardBodyClass}>
+        <ul className={cn(isHud ? "space-y-2" : "divide-y divide-[rgba(60,160,255,0.08)]")}>
           {goals.map((item) => (
             <li
               key={item.key}
-              className="flex min-h-[52px] items-center justify-between py-3 lg:min-h-0 lg:rounded-lg lg:px-2 lg:py-2.5 lg:hover:bg-[rgba(255,255,255,0.02)]"
+              className={cn(
+                "flex min-h-[44px] items-center justify-between",
+                isHud
+                  ? "border border-cyan-400/10 bg-slate-950/40 px-2.5 py-2"
+                  : "min-h-[52px] py-3 lg:min-h-0 lg:rounded-lg lg:px-2 lg:py-2.5 lg:hover:bg-[rgba(255,255,255,0.02)]",
+              )}
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <GoalIcon status={item.status} />
-                <span className="truncate text-[13px] text-[#EAF3FF] lg:text-sm">{item.label}</span>
+                <span className={cn("truncate text-cyan-50", isHud ? "text-[12px]" : "text-[13px] lg:text-sm")}>
+                  {item.label}
+                </span>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <span className={`text-xs ${statusTextClass(item.status)}`}>
-                  {item.statusLabel}
-                </span>
-                {item.status === "pending" ? (
+                <span className={`text-xs ${statusTextClass(item.status)}`}>{item.statusLabel}</span>
+                {item.status === "pending" && !isHud ? (
                   <ChevronRight className="size-4 text-[#8EA3B8] lg:hidden" />
                 ) : null}
               </div>
@@ -79,7 +99,10 @@ export function ChapterMilestoneCard({ goals }: ChapterMilestoneCardProps) {
 
         <Link
           href="/project"
-          className="mt-3 hidden text-xs text-[#2EA8FF] hover:underline lg:inline-block"
+          className={cn(
+            "mt-3 text-xs text-cyan-400 hover:text-cyan-300",
+            isHud ? "inline-block" : "hidden lg:inline-block hover:underline",
+          )}
         >
           查看全部目标 →
         </Link>
