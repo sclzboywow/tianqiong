@@ -51,7 +51,7 @@ export default async function LocationsPage() {
       userNickname={user.nickname}
       pendingTaskCount={pendingCount}
     >
-      <LocationSandTablePage data={sandtableData} />
+      <LocationSandTablePage data={sandtableData} project={project} tasks={tasks} />
     </PlayerShell>
   );
 }

@@ -1,7 +1,5 @@
 import type { ProjectStageId } from "@/game/projectStages";
 
-export type NpcReachability = "always" | "stage_only" | "task_only" | "never";
-
 export type NpcTemporaryPresenceRule = {
   locationId: string;
   reason: string;
@@ -16,7 +14,6 @@ export type NpcPresenceRule = {
   homeLocationId: string;
   appearStage?: ProjectStageId;
   reachableWhenAway?: boolean;
-  reachability?: NpcReachability;
   temporaryLocations?: NpcTemporaryPresenceRule[];
   awayHint?: string;
 };

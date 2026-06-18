@@ -10,8 +10,7 @@ import {
   type LocationNpcRole,
 } from "@/data/locationNpcAssignments";
 import { getDefaultNpcIdsByRegion } from "@/data/regionNpcDefaults";
-import { getNpcPresenceRule } from "@/data/npcPresenceRules";
-import { resolveNpcPresence, type NpcPresenceStatus } from "./npcPresenceResolver";
+import { tryResolveNpcPresence, type NpcPresenceStatus } from "./npcPresenceResolver";
 
 export type { LocationNpcRole, NpcPresenceStatus };
 
@@ -111,15 +110,15 @@ function applyPresence(
     activeEventSlugs?: string[];
   },
 ): SandtableNpcRef {
-  if (!getNpcPresenceRule(ref.npcId)) return ref;
-
-  const presence = resolveNpcPresence({
+  const presence = tryResolveNpcPresence({
     npcId: ref.npcId,
     currentLocationId: params.locationId,
     project: params.project,
     tasks: params.tasks,
     activeEventSlugs: params.activeEventSlugs,
   });
+
+  if (!presence) return ref;
 
   return {
     ...ref,

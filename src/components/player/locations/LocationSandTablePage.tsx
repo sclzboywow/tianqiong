@@ -1,5 +1,6 @@
 "use client";
 
+import type { ProjectState, Task } from "@prisma/client";
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -29,11 +30,14 @@ import type {
   SandtableRegion,
 } from "@/game/locationSandtablePresentationEngine";
 import { SandtableNpcList } from "./SandtableNpcList";
+import { NpcTaskRequirementList } from "./NpcTaskRequirementList";
 
 type FilterId = "all" | LocationNodeStatus;
 
 type LocationSandTablePageProps = {
   data: LocationSandtableViewData;
+  project: ProjectState;
+  tasks: Task[];
 };
 
 const FILTERS: { id: FilterId; label: string; icon: typeof CircleDot }[] = [
@@ -571,10 +575,14 @@ function LocationDetailPanel({
   node,
   regionName,
   zoneName,
+  project,
+  tasks,
 }: {
   node?: SandtableLocationNode;
   regionName?: string;
   zoneName?: string;
+  project: ProjectState;
+  tasks: Task[];
 }) {
   if (!node) {
     return (
@@ -585,7 +593,7 @@ function LocationDetailPanel({
   }
 
   return (
-    <aside className="flex h-full w-full flex-col overflow-y-auto border-l border-cyan-400/20 bg-[#060d18]/95 p-4">
+    <aside className="flex h-full w-full flex-col overflow-y-auto border-l border-cyan-400/20 bg-[#060d18]/95 p-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate whitespace-nowrap text-[11px] text-slate-500">
@@ -619,6 +627,8 @@ function LocationDetailPanel({
       <DetailSection icon={Users} title="相关 NPC">
         <SandtableNpcList npcs={node.relatedNpcs} />
       </DetailSection>
+
+      <NpcTaskRequirementList node={node} project={project} tasks={tasks} />
 
       <DetailSection icon={DoorOpen} title="可执行行动">
         <TokenList
@@ -723,7 +733,7 @@ function TokenList({ items, empty }: { items?: string[]; empty: string }) {
   );
 }
 
-export function LocationSandTablePage({ data }: LocationSandTablePageProps) {
+export function LocationSandTablePage({ data, project, tasks }: LocationSandTablePageProps) {
   const shellRef = useRef<HTMLElement>(null);
   const nodes = useMemo(() => flattenNodes(data), [data]);
   const defaultNodeId = data.recommendedNode?.id || nodes.find((node) => !node.locked)?.id;
@@ -805,6 +815,8 @@ export function LocationSandTablePage({ data }: LocationSandTablePageProps) {
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
+            project={project}
+            tasks={tasks}
           />
         </div>
       </div>
@@ -815,6 +827,8 @@ export function LocationSandTablePage({ data }: LocationSandTablePageProps) {
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
+            project={project}
+            tasks={tasks}
           />
         </div>
       ) : null}

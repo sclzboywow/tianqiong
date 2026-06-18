@@ -64,6 +64,18 @@ function resolveTemporaryLocation(params: {
   return { locationId: winner.locationId, reason: winner.reason };
 }
 
+export function tryResolveNpcPresence(params: {
+  npcId: string;
+  currentLocationId: string;
+  project: ProjectState;
+  tasks: Task[];
+  activeEventSlugs?: string[];
+}): ResolvedNpcPresence | undefined {
+  const rule = getNpcPresenceRule(params.npcId);
+  if (!rule) return undefined;
+  return resolveNpcPresence(params);
+}
+
 export function resolveNpcPresence(params: {
   npcId: string;
   currentLocationId: string;
@@ -73,7 +85,7 @@ export function resolveNpcPresence(params: {
 }): ResolvedNpcPresence {
   const rule = getNpcPresenceRule(params.npcId);
   if (!rule) {
-    return { npcId: params.npcId, status: "present" };
+    throw new Error(`Missing NPC presence rule: ${params.npcId}`);
   }
 
   const currentStage = normalizeStageId(params.project.currentStage);
