@@ -227,6 +227,17 @@ export function buildLocationDisplayItem(
 export function buildExploreCategories(
   locations: LocationDisplayItem[],
 ): ExploreCategory[] {
+  const actionNeededItems = locations.filter(
+    (item) => item.status === "recommended" || item.relatedTaskCount > 0,
+  );
+
+  const actionNeeded: ExploreCategory = {
+    id: "action_needed",
+    label: "推荐/待办",
+    count: actionNeededItems.length,
+    unlockedCount: actionNeededItems.filter((item) => item.unlocked).length,
+  };
+
   const all: ExploreCategory = {
     id: "all",
     label: "全部地点",
@@ -244,7 +255,21 @@ export function buildExploreCategories(
     };
   });
 
-  return [all, ...groups];
+  return [actionNeeded, all, ...groups];
+}
+
+function compareLocationIndexItems(a: LocationDisplayItem, b: LocationDisplayItem): number {
+  const rank = (item: LocationDisplayItem) => {
+    if (item.status === "recommended") return 0;
+    if (item.relatedTaskCount > 0) return 1;
+    if (item.highRisk) return 2;
+    if (item.unlocked) return 3;
+    return 4;
+  };
+
+  const diff = rank(a) - rank(b);
+  if (diff !== 0) return diff;
+  return a.name.localeCompare(b.name, "zh-CN");
 }
 
 export async function buildExplorePageData(params: {
@@ -272,12 +297,7 @@ export async function buildExplorePageData(params: {
     });
   });
 
-  displayItems.sort((a, b) => {
-    const statusOrder = { recommended: 0, unlocked: 1, locked: 2 };
-    const diff = statusOrder[a.status] - statusOrder[b.status];
-    if (diff !== 0) return diff;
-    return a.name.localeCompare(b.name, "zh-CN");
-  });
+  displayItems.sort(compareLocationIndexItems);
 
   const recommendedLocation =
     displayItems.find((item) => item.id === recommendedLocationId && item.unlocked) ||

@@ -11,6 +11,7 @@ import {
   type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { cn } from "@/lib/utils";
 import type { ProjectMapNodeData, ProjectMapViewData } from "@/game/projectMapPresentationEngine";
 import { MAP_GROUP_HEADER_DEFS } from "@/game/projectMapLayout";
 import { ProjectLocationNode } from "./ProjectLocationNode";
@@ -20,7 +21,6 @@ import type {
   ProjectMapFlowNode,
   ProjectMapGroupHeaderFlowNode,
 } from "./projectMapFlowTypes";
-import { playerCardClass } from "../playerTheme";
 
 export type { ProjectLocationFlowNode } from "./projectMapFlowTypes";
 
@@ -31,9 +31,10 @@ const nodeTypes = {
 
 type ProjectMapFlowProps = {
   mapData: ProjectMapViewData;
+  className?: string;
 };
 
-export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
+export function ProjectMapFlow({ mapData, className }: ProjectMapFlowProps) {
   const router = useRouter();
 
   const nodes: ProjectMapFlowNode[] = useMemo(() => {
@@ -86,7 +87,12 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
   );
 
   return (
-    <div className={`${playerCardClass} h-[680px] overflow-hidden touch-pan-x touch-pan-y`}>
+    <div
+      className={cn(
+        "min-w-0 w-full overflow-hidden touch-pan-x touch-pan-y",
+        className,
+      )}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -104,6 +110,7 @@ export function ProjectMapFlow({ mapData }: ProjectMapFlowProps) {
         fitView
         fitViewOptions={{ padding: 0.12 }}
         proOptions={{ hideAttribution: true }}
+        style={{ width: "100%", height: "100%" }}
       >
         <Background color="rgba(60,160,255,0.08)" gap={20} />
         <Controls

@@ -14,8 +14,8 @@ export function ExploreCategorySidebar({
   onSelect,
 }: ExploreCategorySidebarProps) {
   return (
-    <aside className={cn(playerCardClass, "w-[200px] shrink-0 self-start p-3")}>
-      <p className="mb-2 px-2 text-xs font-medium text-[#8EA3B8]">地点分类</p>
+    <aside className={cn(playerCardClass, "w-[180px] shrink-0 self-start p-2.5")}>
+      <p className="mb-2 px-2 text-xs font-medium text-[#8EA3B8]">筛选</p>
       <ul className="space-y-1">
         {categories.map((category) => {
           const active = category.id === activeId;
