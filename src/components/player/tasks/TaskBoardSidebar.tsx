@@ -35,7 +35,7 @@ export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
               <li key={log.id} className="relative pb-3 last:pb-0">
                 <span className="absolute -left-[13px] top-1.5 size-1.5 bg-cyan-400/60" />
                 <p className="text-[10px] tabular-nums text-slate-600">{formatLogTime(log.createdAt)}</p>
-                <p className="mt-0.5 text-[11px] leading-5 text-slate-400">
+                <p className="mt-0.5 line-clamp-2 text-[11px] leading-5 text-slate-400">
                   {sanitizePlayerLogContent(log.content)}
                 </p>
               </li>

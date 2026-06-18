@@ -34,15 +34,15 @@ export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
   return (
     <article
       className={cn(
-        "border border-cyan-400/10 border-l-2 bg-slate-950/40 px-2.5 py-2",
+        "border border-cyan-400/10 border-l-2 bg-slate-950/40 px-3 py-2.5",
         typeAccentClass(item.type),
         isCompleted && "opacity-65",
       )}
     >
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium text-cyan-50">{item.title}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-500">
+          <p className="truncate text-sm font-medium text-cyan-50">{item.title}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
             <span className="truncate">
               地点：{item.sourceLocationName ?? "协同地图"}
             </span>
@@ -60,7 +60,7 @@ export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[10px] lg:shrink-0">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] lg:shrink-0">
           <span className={cn(taskHudTag, "border-slate-700/40 text-slate-400")}>
             {Math.round(item.baseSuccessRate)}%
           </span>
@@ -69,7 +69,7 @@ export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
           <div className="flex gap-1.5">
             {!isCompleted && item.locationHref ? (
               <Link href={item.locationHref} className={taskHudButtonCompactPrimary}>
-                <MapPin className="size-3 shrink-0" />
+                <MapPin className="size-3.5 shrink-0" />
                 前往地点
               </Link>
             ) : null}
@@ -82,7 +82,7 @@ export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
               )}
             >
               {detailLabel}
-              <ArrowRight className="size-3 shrink-0" />
+              <ArrowRight className="size-3.5 shrink-0" />
             </Link>
           </div>
         </div>
