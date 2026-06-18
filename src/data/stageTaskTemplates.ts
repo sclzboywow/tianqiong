@@ -21,7 +21,7 @@ function stageTask(
     stage,
     rarity: "R",
     sourceType: "system",
-    area: "项目总控",
+    area: "项目管理部",
     requiredJobs: ["DOCUMENT_ASSISTANT", "CONSTRUCTION_ASSISTANT"],
     inkFile: slug,
     choiceEffects: genericChoiceEffects,

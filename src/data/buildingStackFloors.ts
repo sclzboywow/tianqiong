@@ -1,5 +1,12 @@
 /** 楼栋垂直空间：从下到上的物理楼层顺序 */
-export const BUILDING_STACK_FLOORS = [
+type BuildingStackFloorDef = {
+  id: string;
+  name: string;
+  shortName: string;
+  relatedLocationSlugs?: readonly string[];
+};
+
+export const BUILDING_STACK_FLOORS: readonly BuildingStackFloorDef[] = [
   { id: "area_site_b2", name: "B2 · 地下二层", shortName: "B2" },
   {
     id: "area_site_b1",
@@ -23,7 +30,7 @@ export const BUILDING_STACK_FLOORS = [
   { id: "area_site_9f", name: "9F · 九层", shortName: "9F" },
   { id: "area_site_10f", name: "10F · 十层", shortName: "10F" },
   { id: "area_site_roof_floor", name: "屋面 · RF", shortName: "RF" },
-] as const;
+];
 
 /** 中间栏 UI 渲染顺序：从上到下（屋面向下至 B2） */
 export const BUILDING_STACK_UI_ORDER: string[] = [...BUILDING_STACK_FLOORS]

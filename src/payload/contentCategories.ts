@@ -1,4 +1,10 @@
 import type { ProjectStageId } from "@/game/projectStages";
+import {
+  SANDTABLE_REGION_OPTIONS,
+  SANDTABLE_ZONE_OPTIONS,
+} from "@/data/sandtableRegions";
+
+export { SANDTABLE_REGION_OPTIONS, SANDTABLE_ZONE_OPTIONS };
 
 export type CategoryOption = { label: string; value: string };
 
@@ -108,6 +114,42 @@ export function inferNpcCategory(type: string, category?: string) {
   return NPC_TYPE_CATEGORY[type] || "construction";
 }
 
+const NPC_FACTION_CATEGORY: Record<string, string> = {
+  owner: "owner_regulator",
+  government: "owner_regulator",
+  public: "owner_regulator",
+  supervisor: "owner_regulator",
+  contractor: "construction",
+  labor: "construction",
+  consultant: "design_supply",
+  supplier: "design_supply",
+  merchant: "operation",
+  property: "operation",
+  other: "construction",
+};
+
+const NPC_FACTION_TYPE: Record<string, string> = {
+  owner: "owner",
+  contractor: "contractor",
+  supervisor: "supervisor",
+  government: "regulator",
+  consultant: "design",
+  supplier: "supplier",
+  merchant: "merchant",
+  property: "property",
+  labor: "subcontractor",
+  public: "regulator",
+  other: "contractor",
+};
+
+export function inferNpcTypeFromFaction(faction: string): string {
+  return NPC_FACTION_TYPE[faction] || "contractor";
+}
+
+export function inferNpcCategoryFromFaction(faction: string): string {
+  return NPC_FACTION_CATEGORY[faction] || "construction";
+}
+
 export function inferAreaCategory(name: string, stage?: string, category?: string) {
   if (category) return category;
   if (name.includes("总控") || name.includes("项目管理")) return "project_management";
@@ -168,14 +210,15 @@ const NPC_TYPE_UNLOCK_STAGE: Record<string, ProjectStageId> = {
 };
 
 const AREA_NAME_UNLOCK_STAGE: Record<string, ProjectStageId> = {
-  项目总控: "INITIATION",
-  项目资料室: "INITIATION",
-  物业交接区: "ACCEPTANCE",
-  L1商业街: "CONSTRUCTION",
+  项目管理部: "INITIATION",
+  档案资料室: "INITIATION",
+  资料室: "INITIATION",
+  "L1 · 首层": "CONSTRUCTION",
   商业中庭: "CONSTRUCTION",
-  B1设备走廊: "CONSTRUCTION",
+  "B1 · 地下一层": "CONSTRUCTION",
   消防泵房: "CONSTRUCTION",
   材料堆场: "CONSTRUCTION",
+  物业工程部: "ACCEPTANCE",
 };
 
 const AREA_STAGE_UNLOCK_STAGE: Record<string, ProjectStageId> = {
@@ -194,7 +237,6 @@ export function inferAreaUnlockStage(
   unlockStage?: ProjectStageId,
 ): ProjectStageId {
   if (unlockStage) return unlockStage;
-  if (name === "项目总控") return "INITIATION";
   if (AREA_NAME_UNLOCK_STAGE[name]) return AREA_NAME_UNLOCK_STAGE[name];
   if (stage && AREA_STAGE_UNLOCK_STAGE[stage]) return AREA_STAGE_UNLOCK_STAGE[stage];
   return "CONSTRUCTION";

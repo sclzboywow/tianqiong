@@ -8,6 +8,8 @@ import {
   ITEM_CATEGORIES,
   MAP_LOCATION_CATEGORIES,
   NPC_CATEGORIES,
+  SANDTABLE_REGION_OPTIONS,
+  SANDTABLE_ZONE_OPTIONS,
   TASK_CATEGORIES,
 } from "@/payload/contentCategories";
 
@@ -22,6 +24,27 @@ const NPC_TYPE_OPTIONS = [
   { label: "供应商", value: "supplier" },
   { label: "商户", value: "merchant" },
   { label: "物业", value: "property" },
+];
+
+const NPC_LEVEL_OPTIONS = [
+  { label: "S 决策层", value: "S" },
+  { label: "A 关键执行", value: "A" },
+  { label: "B 专业支撑", value: "B" },
+  { label: "C 现场/临时", value: "C" },
+];
+
+const NPC_FACTION_OPTIONS = [
+  { label: "业主", value: "owner" },
+  { label: "总包", value: "contractor" },
+  { label: "监理", value: "supervisor" },
+  { label: "政府", value: "government" },
+  { label: "咨询/设计", value: "consultant" },
+  { label: "供应商", value: "supplier" },
+  { label: "商户", value: "merchant" },
+  { label: "物业", value: "property" },
+  { label: "劳务", value: "labor" },
+  { label: "公众", value: "public" },
+  { label: "其他", value: "other" },
 ];
 
 const AREA_STAGE_OPTIONS = [
@@ -161,12 +184,34 @@ export const Npcs: CollectionConfig = {
   admin: {
     useAsTitle: "name",
     group: "世界设定",
-    defaultColumns: ["name", "category", "type", "unlockStage", "enabled"],
-    listSearchableFields: ["name", "category", "type", "description"],
+    defaultColumns: ["name", "slug", "title", "level", "category", "type", "enabled"],
+    listSearchableFields: ["name", "slug", "title", "level", "faction", "category", "type", "description"],
+    description: "协同地图角色库：与前端 npcProfiles.ts 同步，含分级与职衔。",
   },
   fields: [
     categoryField(NPC_CATEGORIES, "按组织角色归类，方便批量查找和维护。"),
+    {
+      name: "slug",
+      type: "text",
+      label: "标识",
+      unique: true,
+      admin: { description: "Profile ID，如 owner_project_director；旧版泛称 NPC 可留空。" },
+    },
     { name: "name", type: "text", label: "名称", required: true },
+    { name: "title", type: "text", label: "职衔" },
+    {
+      name: "level",
+      type: "select",
+      label: "分级",
+      options: NPC_LEVEL_OPTIONS,
+      admin: { description: "S/A/B/C，与协同地图 NPC 卡片一致。" },
+    },
+    {
+      name: "faction",
+      type: "select",
+      label: "阵营",
+      options: NPC_FACTION_OPTIONS,
+    },
     {
       name: "type",
       type: "select",
@@ -175,6 +220,26 @@ export const Npcs: CollectionConfig = {
       options: NPC_TYPE_OPTIONS,
     },
     { name: "description", type: "textarea", label: "描述" },
+    { name: "personality", type: "text", label: "性格" },
+    { name: "agenda", type: "textarea", label: "诉求/议程" },
+    {
+      name: "helpsWith",
+      type: "array",
+      label: "可协助事项",
+      fields: [{ name: "item", type: "text", label: "事项" }],
+    },
+    {
+      name: "blocksWhen",
+      type: "array",
+      label: "阻碍条件",
+      fields: [{ name: "item", type: "text", label: "条件" }],
+    },
+    {
+      name: "riskTags",
+      type: "array",
+      label: "风险标签",
+      fields: [{ name: "tag", type: "text", label: "标签" }],
+    },
     { name: "defaultRelation", type: "number", label: "默认关系值", defaultValue: 50 },
     {
       name: "quotes",
@@ -195,16 +260,42 @@ export const Npcs: CollectionConfig = {
 
 export const Areas: CollectionConfig = {
   slug: "areas",
-  labels: { singular: "区域", plural: "区域" },
+  labels: { singular: "沙盘区域", plural: "沙盘区域" },
   admin: {
     useAsTitle: "name",
     group: "世界设定",
-    defaultColumns: ["name", "category", "stage", "unlockStage", "enabled"],
-    listSearchableFields: ["name", "category", "stage", "description"],
+    defaultColumns: ["name", "sandtableRegionId", "sandtableZoneId", "category", "unlockStage", "enabled"],
+    listSearchableFields: ["name", "slug", "shortName", "sandtableRegionId", "sandtableZoneId", "category", "description"],
+    description: "协同地图沙盘节点：与前端六区布局一致，供任务/事件 triggerAreaNames 引用。",
   },
   fields: [
     categoryField(AREA_CATEGORIES, "按功能分区归类，方便按场景批量调整。"),
+    {
+      name: "slug",
+      type: "text",
+      label: "标识",
+      required: true,
+      unique: true,
+      admin: { description: "沙盘节点 ID，如 area_site_1f" },
+    },
     { name: "name", type: "text", label: "名称", required: true },
+    { name: "shortName", type: "text", label: "简称" },
+    {
+      name: "sandtableRegionId",
+      type: "select",
+      label: "沙盘大区",
+      required: true,
+      options: SANDTABLE_REGION_OPTIONS,
+      admin: { description: "对应协同地图六大区域。" },
+    },
+    {
+      name: "sandtableZoneId",
+      type: "select",
+      label: "沙盘分区",
+      required: true,
+      options: SANDTABLE_ZONE_OPTIONS,
+      admin: { description: "大区内的功能分区。" },
+    },
     { name: "description", type: "textarea", label: "描述" },
     {
       name: "stage",
@@ -219,6 +310,13 @@ export const Areas: CollectionConfig = {
       fields: [{ name: "tag", type: "text", label: "标签" }],
     },
     ...unlockContentFields(),
+    {
+      name: "sortOrder",
+      type: "number",
+      label: "排序",
+      defaultValue: 0,
+      admin: { description: "同分区内排序，数字越小越靠前。" },
+    },
     { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
   ],
 };
@@ -229,9 +327,9 @@ export const MapLocations: CollectionConfig = {
   admin: {
     useAsTitle: "name",
     group: "世界设定",
-    defaultColumns: ["name", "category", "group", "unlockStage", "enabled"],
-    listSearchableFields: ["name", "slug", "category", "group", "description"],
-    description: "协同地图地点：配置解锁阶段、关联任务与 NPC。保存后前端 /locations 实时读取。",
+    defaultColumns: ["name", "sandtableRegionId", "sandtableZoneId", "group", "unlockStage", "enabled"],
+    listSearchableFields: ["name", "slug", "sandtableRegionId", "sandtableZoneId", "category", "group", "description"],
+    description: "协同地图可进入地点：配置沙盘位置、解锁阶段、关联任务与 NPC。保存后前端 /locations 实时读取。",
   },
   fields: [
     categoryField(MAP_LOCATION_CATEGORIES, "按地图分组归类，与协同地图页面分组一致。"),
@@ -244,6 +342,20 @@ export const MapLocations: CollectionConfig = {
       admin: { description: "唯一 ID，用于 URL，如 owner_project_management_dept" },
     },
     { name: "name", type: "text", label: "名称", required: true },
+    {
+      name: "sandtableRegionId",
+      type: "select",
+      label: "沙盘大区",
+      required: true,
+      options: SANDTABLE_REGION_OPTIONS,
+    },
+    {
+      name: "sandtableZoneId",
+      type: "select",
+      label: "沙盘分区",
+      required: true,
+      options: SANDTABLE_ZONE_OPTIONS,
+    },
     {
       name: "type",
       type: "select",

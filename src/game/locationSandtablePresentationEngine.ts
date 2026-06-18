@@ -1,8 +1,10 @@
 ﻿import type { ProjectState, Task } from "@prisma/client";
 import type { LocationAction } from "@/data/locationActions";
 import { BUILDING_STACK_DISPLAY_NAMES } from "@/data/buildingStackFloors";
+import { MAP_LOCATION_SANDTABLE_PLACEMENT } from "@/data/mapLocationSandtable";
 import type { MapLocation } from "@/data/locations";
 import { LOCATION_SANDTABLE_AREAS } from "@/data/locationSandtableAreas";
+import { SANDTABLE_REGION_DEFS } from "@/data/sandtableRegions";
 import { getRiskTagLabel } from "@/data/riskTagLabels";
 import { getEventTemplates } from "./eventTemplateLoader";
 import {
@@ -13,6 +15,9 @@ import {
 import { getStageDisplayName, normalizeStageId, type ProjectStageId } from "./projectStages";
 import type { EventTemplateData } from "./types";
 import type { RecommendedAction } from "./playerGuidanceEngine";
+import { buildSandtableNpcRefs, type SandtableNpcRef } from "./sandtableNpcResolver";
+
+export type { SandtableNpcRef };
 
 export type LocationRegionId =
   | "owner_hub"
@@ -43,6 +48,7 @@ export type SandtableLocationNode = {
   relatedTaskCount: number;
   relatedEventCount: number;
   relatedNpcNames: string[];
+  relatedNpcs: SandtableNpcRef[];
   relatedTaskSlugs: string[];
   riskTags: string[];
   description?: string;
@@ -73,195 +79,10 @@ export type LocationSandtableViewData = {
   regions: SandtableRegion[];
 };
 
-type RegionZoneDef = {
-  id: string;
-  name: string;
-};
-
-type RegionDef = {
-  id: LocationRegionId;
-  name: string;
-  description: string;
-  zones: RegionZoneDef[];
-};
+const REGION_DEFS = SANDTABLE_REGION_DEFS;
+const LOCATION_PLACEMENT = MAP_LOCATION_SANDTABLE_PLACEMENT;
 
 const COMPLETED_TASK_STATUSES = new Set(["COMPLETED"]);
-
-const REGION_DEFS: RegionDef[] = [
-  {
-    id: "owner_hub",
-    name: "业主中枢",
-    description: "业主决策、计划总控、资金合同与资料统筹。",
-    zones: [
-      { id: "owner_decision", name: "决策办公室" },
-      { id: "owner_control", name: "项目管理" },
-      { id: "owner_commercial", name: "成本招采" },
-      { id: "owner_records", name: "资料归档" },
-    ],
-  },
-  {
-    id: "command_center",
-    name: "现场指挥区",
-    description: "项目部会议、资料、安全质量和现场调度。",
-    zones: [
-      { id: "command_meeting", name: "会议调度" },
-      { id: "command_document", name: "资料与图纸" },
-      { id: "command_quality", name: "安全质量" },
-    ],
-  },
-  {
-    id: "approval_regulatory",
-    name: "审批监管区",
-    description: "政务审批、规划住建、消防质监等外部监管窗口。",
-    zones: [
-      { id: "approval_window", name: "审批窗口" },
-      { id: "approval_supervision", name: "监管专项" },
-    ],
-  },
-  {
-    id: "professional_service",
-    name: "专业服务区",
-    description: "设计、造价、检测、咨询等专业支撑单位。",
-    zones: [
-      { id: "professional_design", name: "设计与造价" },
-      { id: "professional_testing", name: "检测咨询" },
-      { id: "professional_special", name: "专项顾问" },
-    ],
-  },
-  {
-    id: "construction_site",
-    name: "施工现场",
-    description: "项目推进的最大核心区域，聚合现场入口、楼栋、机电和室外配套。",
-    zones: [
-      { id: "site_entry_temp", name: "场区入口与临建区" },
-      { id: "site_office_living", name: "办公生活区" },
-      { id: "site_material_yard", name: "材料加工与堆场区" },
-      { id: "site_building_stack", name: "楼栋垂直空间" },
-      { id: "site_systems", name: "专业系统区" },
-      { id: "site_outdoor_municipal", name: "室外与市政配套区" },
-    ],
-  },
-  {
-    id: "opening_prep",
-    name: "开业筹备区",
-    description: "物业移交、商户进场、联检整改与开业保障。",
-    zones: [
-      { id: "opening_operation", name: "运营筹备" },
-      { id: "opening_property", name: "物业移交" },
-      { id: "opening_joint_check", name: "开业联检" },
-    ],
-  },
-];
-
-const LOCATION_PLACEMENT: Record<
-  string,
-  { regionId: LocationRegionId; zoneId: string; shortName?: string }
-> = {
-  owner_gm_office: { regionId: "owner_hub", zoneId: "owner_decision", shortName: "总办" },
-  owner_leader_office: { regionId: "owner_hub", zoneId: "owner_decision", shortName: "分管" },
-  owner_project_management_dept: {
-    regionId: "owner_hub",
-    zoneId: "owner_control",
-    shortName: "项目部",
-  },
-  owner_pre_approval_office: {
-    regionId: "owner_hub",
-    zoneId: "owner_control",
-    shortName: "前期",
-  },
-  owner_cost_contract_dept: {
-    regionId: "owner_hub",
-    zoneId: "owner_commercial",
-    shortName: "成本",
-  },
-  owner_procurement_office: {
-    regionId: "owner_hub",
-    zoneId: "owner_commercial",
-    shortName: "招采",
-  },
-  owner_finance_dept: { regionId: "owner_hub", zoneId: "owner_commercial", shortName: "财务" },
-  owner_legal_audit_dept: {
-    regionId: "owner_hub",
-    zoneId: "owner_commercial",
-    shortName: "法审",
-  },
-  owner_archive_room: { regionId: "owner_hub", zoneId: "owner_records", shortName: "档案" },
-  owner_operation_prep_office: {
-    regionId: "opening_prep",
-    zoneId: "opening_operation",
-    shortName: "运营",
-  },
-  project_meeting_room: {
-    regionId: "command_center",
-    zoneId: "command_meeting",
-    shortName: "会议",
-  },
-  project_document_room: {
-    regionId: "command_center",
-    zoneId: "command_document",
-    shortName: "资料",
-  },
-  gov_service_center: {
-    regionId: "approval_regulatory",
-    zoneId: "approval_window",
-    shortName: "政务",
-  },
-  gov_natural_resources: {
-    regionId: "approval_regulatory",
-    zoneId: "approval_window",
-    shortName: "资规",
-  },
-  gov_housing_construction: {
-    regionId: "approval_regulatory",
-    zoneId: "approval_supervision",
-    shortName: "住建",
-  },
-  third_design_institute: {
-    regionId: "professional_service",
-    zoneId: "professional_design",
-    shortName: "设计",
-  },
-  third_cost_consultant: {
-    regionId: "professional_service",
-    zoneId: "professional_design",
-    shortName: "造价",
-  },
-  third_testing_center: {
-    regionId: "professional_service",
-    zoneId: "professional_testing",
-    shortName: "检测",
-  },
-  site_l1_commercial_street: {
-    regionId: "construction_site",
-    zoneId: "site_building_stack",
-    shortName: "1F",
-  },
-  site_atrium: {
-    regionId: "construction_site",
-    zoneId: "site_outdoor_municipal",
-    shortName: "中庭",
-  },
-  site_b1_mep_corridor: {
-    regionId: "construction_site",
-    zoneId: "site_building_stack",
-    shortName: "B1",
-  },
-  site_fire_pump_room: {
-    regionId: "construction_site",
-    zoneId: "site_systems",
-    shortName: "消防",
-  },
-  site_material_yard: {
-    regionId: "construction_site",
-    zoneId: "site_material_yard",
-    shortName: "堆场",
-  },
-  site_property_handover: {
-    regionId: "opening_prep",
-    zoneId: "opening_property",
-    shortName: "物业",
-  },
-};
 
 type SyntheticNodeSeed = {
   id: string;
@@ -425,6 +246,13 @@ function buildRealNode(params: {
     completedTaskCount,
   });
 
+  const npcRefs = buildSandtableNpcRefs({
+    locationId: location.id,
+    regionId: placement.regionId,
+    zoneId: placement.zoneId,
+    fallbackNpcNames: location.relatedNpcNames,
+  });
+
   return {
     id: location.id,
     name: getSandtableNodeName(location.name, placement.regionId, location.id),
@@ -437,7 +265,8 @@ function buildRealNode(params: {
     recommended,
     relatedTaskCount: relatedTasks.length,
     relatedEventCount: unlocked ? eventCount : 0,
-    relatedNpcNames: location.relatedNpcNames || [],
+    relatedNpcNames: npcRefs.relatedNpcNames,
+    relatedNpcs: npcRefs.relatedNpcs,
     relatedTaskSlugs,
     riskTags: location.riskTags || [],
     description: location.description,
@@ -491,6 +320,13 @@ function buildSyntheticNode(
     seed.id,
   );
 
+  const npcRefs = buildSandtableNpcRefs({
+    locationId: seed.id,
+    regionId: seed.regionId,
+    zoneId: seed.zoneId,
+    fallbackNpcNames: seed.relatedNpcNames,
+  });
+
   return {
     id: seed.id,
     name: displayName,
@@ -503,7 +339,8 @@ function buildSyntheticNode(
     recommended: false,
     relatedTaskCount: 0,
     relatedEventCount: 0,
-    relatedNpcNames: seed.relatedNpcNames || [],
+    relatedNpcNames: npcRefs.relatedNpcNames,
+    relatedNpcs: npcRefs.relatedNpcs,
     relatedTaskSlugs: [],
     riskTags: seed.riskTags || [],
     description: seed.description,

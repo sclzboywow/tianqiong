@@ -28,9 +28,14 @@ function mapPayloadArea(doc: Record<string, unknown>): AreaData {
   const name = doc.name as string;
   const stage = (doc.stage as string) || "";
   return {
+    slug: (doc.slug as string) || name,
     name,
+    shortName: (doc.shortName as string) || name,
+    sandtableRegionId: (doc.sandtableRegionId as string) || "",
+    sandtableZoneId: (doc.sandtableZoneId as string) || "",
     description: (doc.description as string) || "",
     stage,
+    category: doc.category as string | undefined,
     riskTags: ((doc.riskTags as { tag: string }[] | null) || []).map((item) => item.tag).filter(Boolean),
     unlockStage: inferAreaUnlockStage(name, stage, doc.unlockStage as ProjectStageId | undefined),
     unlockMilestones: ((doc.unlockMilestones as { milestone: string }[] | null) || [])
@@ -40,6 +45,7 @@ function mapPayloadArea(doc: Record<string, unknown>): AreaData {
       .map((item) => item.slug)
       .filter(Boolean),
     visibleWhenLocked: Boolean(doc.visibleWhenLocked),
+    sortOrder: (doc.sortOrder as number) ?? 0,
   };
 }
 
@@ -51,7 +57,7 @@ export async function getNpcs(): Promise<NpcData[]> {
     const result = await payload.find({
       collection: "npcs",
       where: { enabled: { equals: true } },
-      limit: 100,
+      limit: 200,
     });
 
     if (result.docs.length === 0) return NPCS;

@@ -28,6 +28,7 @@ import type {
   SandtableLocationNode,
   SandtableRegion,
 } from "@/game/locationSandtablePresentationEngine";
+import { SandtableNpcList } from "./SandtableNpcList";
 
 type FilterId = "all" | LocationNodeStatus;
 
@@ -611,7 +612,7 @@ function LocationDetailPanel({
       ) : null}
 
       <DetailSection icon={Users} title="相关 NPC">
-        <TokenList items={node.relatedNpcNames} empty="暂无明确 NPC" />
+        <SandtableNpcList npcs={node.relatedNpcs} />
       </DetailSection>
 
       <DetailSection icon={DoorOpen} title="可执行行动">

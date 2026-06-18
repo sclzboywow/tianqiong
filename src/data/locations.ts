@@ -1,4 +1,5 @@
 import type { ProjectStageId } from "@/game/projectStages";
+import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 
 export type LocationType =
   | "owner_office"
@@ -12,6 +13,8 @@ export type MapLocation = {
   name: string;
   type: LocationType;
   group: string;
+  sandtableRegionId: string;
+  sandtableZoneId: string;
   description: string;
   unlockStage: ProjectStageId;
   unlockMilestones?: string[];
@@ -38,7 +41,7 @@ export const LOCATION_GROUP_ORDER = [
   "施工现场",
 ] as const;
 
-export const MAP_LOCATIONS: MapLocation[] = [
+export const MAP_LOCATION_SEED: Omit<MapLocation, "sandtableRegionId" | "sandtableZoneId">[] = [
   // —— 建设主体（10） ——
   {
     id: "owner_gm_office",
@@ -65,7 +68,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
       "create_risk_register",
       "coordinate_first_meeting",
     ],
-    relatedAreaNames: ["项目总控"],
+    relatedAreaNames: ["项目管理部"],
     relatedNpcNames: ["甲方代表", "总承包单位"],
     riskTags: ["progress", "coordination"],
     achievementHooks: ["first_owner_office_visit"],
@@ -78,7 +81,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     description: "建设主体侧资料归档、台账管理与验收资料统筹区域。",
     unlockStage: "INITIATION",
     relatedTaskSlugs: ["create_document_ledger", "complete_archive"],
-    relatedAreaNames: ["项目资料室"],
+    relatedAreaNames: ["档案资料室"],
     riskTags: ["document", "acceptance"],
     achievementHooks: ["first_archive_visit"],
   },
@@ -200,7 +203,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
       "hidden_acceptance_missing",
       "complete_archive",
     ],
-    relatedAreaNames: ["项目资料室"],
+    relatedAreaNames: ["资料室"],
     relatedNpcNames: ["监理单位"],
     riskTags: ["document", "acceptance"],
     achievementHooks: ["first_document_room"],
@@ -298,7 +301,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "施工现场",
     description: "商户进场、消防通道、夜间施工投诉等事件高发区域。",
     unlockStage: "CONSTRUCTION",
-    relatedAreaNames: ["L1商业街"],
+    relatedAreaNames: ["L1 · 首层"],
     relatedTaskSlugs: [
       "fire_corridor_blocked",
       "merchant_early_entry",
@@ -359,7 +362,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "施工现场",
     description: "机电设备通道，涉及管线碰撞、调试和检修通道。",
     unlockStage: "CONSTRUCTION",
-    relatedAreaNames: ["B1设备走廊"],
+    relatedAreaNames: ["B1 · 地下一层"],
     relatedTaskSlugs: [
       "mep_collision",
       "equipment_debug_unready",
@@ -377,13 +380,22 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "施工现场",
     description: "物业钥匙移交、接管协调和缺陷消项办理区域。",
     unlockStage: "ACCEPTANCE",
-    relatedAreaNames: ["物业交接区"],
+    relatedAreaNames: ["物业工程部"],
     relatedTaskSlugs: ["property_key_handover", "complete_property_handover"],
     relatedNpcNames: ["物业公司"],
     riskTags: ["handover", "document"],
     achievementHooks: ["first_handover_zone_visit"],
   },
 ];
+
+export const MAP_LOCATIONS: MapLocation[] = MAP_LOCATION_SEED.map((location) => {
+  const placement = getMapLocationSandtablePlacement(location.id);
+  return {
+    ...location,
+    sandtableRegionId: placement.regionId,
+    sandtableZoneId: placement.zoneId,
+  };
+});
 
 export function getMapLocationById(id: string): MapLocation | undefined {
   return MAP_LOCATIONS.find((loc) => loc.id === id);

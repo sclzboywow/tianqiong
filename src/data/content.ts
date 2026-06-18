@@ -18,11 +18,16 @@ export type NpcData = {
 } & UnlockableWorldContent;
 
 export type AreaData = {
+  slug: string;
   name: string;
+  shortName: string;
+  sandtableRegionId: string;
+  sandtableZoneId: string;
   description: string;
   stage: string;
   category?: string;
   riskTags: string[];
+  sortOrder: number;
 } & UnlockableWorldContent;
 
 export const NPCS: NpcData[] = [
@@ -118,82 +123,21 @@ export const NPCS: NpcData[] = [
   },
 ];
 
-const BASE_AREAS: AreaData[] = [
-  {
-    name: "项目总控",
-    description: "项目级主线任务、阶段门推进、综合协调与运营调度的虚拟管理场景。",
-    stage: "管理",
-    riskTags: ["coordination", "management", "mainline"],
-    unlockStage: "INITIATION",
-    relatedLocationSlugs: ["owner_project_management_dept"],
-    visibleWhenLocked: false,
-  },
-  {
-    name: "L1商业街",
-    description: "商户集中区域",
-    stage: "精装修",
-    riskTags: ["消防", "商户"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "商业中庭",
-    description: "开业形象核心区",
-    stage: "精装修",
-    riskTags: ["质量", "效果"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "B1设备走廊",
-    description: "机电设备通道",
-    stage: "机电",
-    riskTags: ["机电", "安全"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "消防泵房",
-    description: "消防核心设施",
-    stage: "消防",
-    riskTags: ["消防"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "项目资料室",
-    description: "竣工资料归档",
-    stage: "资料",
-    riskTags: ["资料"],
-    unlockStage: "INITIATION",
-  },
-  {
-    name: "物业交接区",
-    description: "物业移交办理",
-    stage: "移交",
-    riskTags: ["移交"],
-    unlockStage: "ACCEPTANCE",
-  },
-  {
-    name: "材料堆场",
-    description: "材料进场堆放",
-    stage: "材料",
-    riskTags: ["材料", "安全"],
-    unlockStage: "CONSTRUCTION",
-  },
-];
-
-const BASE_AREA_NAMES = new Set(BASE_AREAS.map((area) => area.name));
-
-export const AREAS: AreaData[] = [
-  ...BASE_AREAS,
-  ...LOCATION_SANDTABLE_AREAS.filter((area) => !BASE_AREA_NAMES.has(area.name)).map((area) => ({
-    name: area.name,
-    category: area.category,
-    description: area.description,
-    stage: area.stage,
-    riskTags: area.riskTags,
-    unlockStage: area.unlockStage,
-    relatedLocationSlugs: area.relatedLocationSlugs,
-    visibleWhenLocked: area.visibleWhenLocked,
-  })),
-];
+export const AREAS: AreaData[] = LOCATION_SANDTABLE_AREAS.map((area, index) => ({
+  slug: area.id,
+  name: area.name,
+  shortName: area.shortName,
+  sandtableRegionId: area.regionId,
+  sandtableZoneId: area.zoneId,
+  category: area.category,
+  description: area.description,
+  stage: area.stage,
+  riskTags: area.riskTags,
+  unlockStage: area.unlockStage,
+  relatedLocationSlugs: area.relatedLocationSlugs,
+  visibleWhenLocked: area.visibleWhenLocked,
+  sortOrder: index,
+}));
 
 export const ITEMS = [
   { slug: "safety_helmet", name: "安全帽", rarity: "R", description: "基础安全防护", effectType: "safety", effectValue: 2, usable: true },

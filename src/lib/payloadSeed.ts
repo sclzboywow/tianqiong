@@ -1,8 +1,11 @@
 import type { Payload } from "payload";
 import { TASK_TEMPLATES } from "@/data/taskTemplates";
 import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
+import { NPC_PROFILES } from "@/data/npcProfiles";
+import { buildNpcProfilePayloadData } from "@/lib/npcProfilePayload";
 import { ACHIEVEMENTS } from "@/data/achievements";
 import { MAP_LOCATIONS } from "@/data/locations";
+import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import { CHAPTER1_EVENTS } from "@/data/chapter1Content";
 import type { TaskTemplateData, EventTemplateData } from "@/game/types";
@@ -244,6 +247,23 @@ export async function seedPayloadCollections(
   const overwrite = options.overwrite ?? false;
   const stats = emptySeedStats();
 
+  for (const profile of NPC_PROFILES) {
+    const data = buildNpcProfilePayloadData(profile);
+    const existing = await payload.find({
+      collection: "npcs",
+      where: { slug: { equals: profile.id } },
+      limit: 1,
+    });
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.npcs,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "npcs", data }),
+      () => payload.update({ collection: "npcs", id: doc.id, data }),
+    );
+  }
+
   for (const npc of NPCS) {
     const category = inferNpcCategory(npc.type, (npc as { category?: string }).category);
     const data = {
@@ -274,13 +294,18 @@ export async function seedPayloadCollections(
   }
 
   for (const area of AREAS) {
-    const category = inferAreaCategory(area.name, area.stage, (area as { category?: string }).category);
+    const category = inferAreaCategory(area.name, area.stage, area.category);
     const data = {
+      slug: area.slug,
       name: area.name,
+      shortName: area.shortName,
+      sandtableRegionId: area.sandtableRegionId,
+      sandtableZoneId: area.sandtableZoneId,
       category,
       description: area.description,
       stage: area.stage,
       riskTags: area.riskTags.map((t) => ({ tag: t })),
+      sortOrder: area.sortOrder,
       ...buildUnlockPayloadData({
         unlockStage: area.unlockStage || inferAreaUnlockStage(area.name, area.stage),
         unlockMilestones: area.unlockMilestones,
@@ -289,7 +314,7 @@ export async function seedPayloadCollections(
       }),
       enabled: true,
     };
-    const existing = await payload.find({ collection: "areas", where: { name: { equals: area.name } } });
+    const existing = await payload.find({ collection: "areas", where: { slug: { equals: area.slug } } });
     const doc = existing.docs[0];
     await applySeedRecord(
       stats.areas,
@@ -432,9 +457,12 @@ export async function seedPayloadCollections(
 
   for (const [index, loc] of MAP_LOCATIONS.entries()) {
     const category = inferMapLocationCategory(loc.group);
+    const placement = getMapLocationSandtablePlacement(loc.id);
     const data = {
       slug: loc.id,
       name: loc.name,
+      sandtableRegionId: placement.regionId,
+      sandtableZoneId: placement.zoneId,
       type: loc.type,
       group: loc.group,
       category,

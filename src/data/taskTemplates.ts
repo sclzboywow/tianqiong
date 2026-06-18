@@ -9,7 +9,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "SR",
     sourceType: "npc",
     sourceName: "消防专家",
-    area: "L1商业街",
+    area: "L1 · 首层",
     requiredJobs: ["SAFETY_ASSISTANT", "CONSTRUCTION_ASSISTANT", "DOCUMENT_ASSISTANT"],
     requiredCount: 1,
     deadlineHours: 24,
@@ -62,7 +62,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "SR",
     sourceType: "npc",
     sourceName: "商户/运营团队",
-    area: "L1商业街",
+    area: "L1 · 首层",
     requiredJobs: ["CONSTRUCTION_ASSISTANT", "SAFETY_ASSISTANT"],
     inkFile: "merchant_early_entry",
     triggerBroadcast: true,
@@ -94,7 +94,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "R",
     sourceType: "npc",
     sourceName: "物业公司",
-    area: "物业交接区",
+    area: "物业工程部",
     requiredJobs: ["DOCUMENT_ASSISTANT"],
     inkFile: "property_key_handover",
     choiceEffects: {
@@ -110,7 +110,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "SR",
     sourceType: "npc",
     sourceName: "设计院",
-    area: "项目资料室",
+    area: "资料室",
     requiredJobs: ["DOCUMENT_ASSISTANT", "QUALITY_ASSISTANT"],
     inkFile: "drawing_mismatch",
     choiceEffects: {
@@ -126,7 +126,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "R",
     sourceType: "npc",
     sourceName: "监理单位",
-    area: "项目资料室",
+    area: "资料室",
     requiredJobs: ["DOCUMENT_ASSISTANT"],
     inkFile: "hidden_acceptance_missing",
     choiceEffects: {
@@ -175,7 +175,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "SR",
     sourceType: "npc",
     sourceName: "监理单位",
-    area: "项目资料室",
+    area: "资料室",
     requiredJobs: ["QUALITY_ASSISTANT", "DOCUMENT_ASSISTANT"],
     inkFile: "supervisor_reject_close",
     choiceEffects: {
@@ -190,7 +190,7 @@ const baseTemplates: TaskTemplateData[] = [
     title: "设备调试条件不具备",
     rarity: "R",
     sourceType: "system",
-    area: "B1设备走廊",
+    area: "B1 · 地下一层",
     requiredJobs: ["MECHANICAL_ASSISTANT"],
     inkFile: "equipment_debug_unready",
     choiceEffects: {
@@ -205,7 +205,7 @@ const baseTemplates: TaskTemplateData[] = [
     title: "机电管线碰撞",
     rarity: "SR",
     sourceType: "system",
-    area: "B1设备走廊",
+    area: "B1 · 地下一层",
     requiredJobs: ["MECHANICAL_ASSISTANT", "CONSTRUCTION_ASSISTANT"],
     inkFile: "mep_collision",
     choiceEffects: {
@@ -221,7 +221,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "R",
     sourceType: "npc",
     sourceName: "设计院",
-    area: "项目资料室",
+    area: "资料室",
     requiredJobs: ["DOCUMENT_ASSISTANT"],
     inkFile: "design_reply_delayed",
     choiceEffects: {
@@ -253,7 +253,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "SR",
     sourceType: "npc",
     sourceName: "商户/运营团队",
-    area: "L1商业街",
+    area: "L1 · 首层",
     requiredJobs: ["MECHANICAL_ASSISTANT", "SAFETY_ASSISTANT"],
     inkFile: "merchant_power_request",
     choiceEffects: {
@@ -268,7 +268,7 @@ const baseTemplates: TaskTemplateData[] = [
     title: "夜间施工投诉",
     rarity: "R",
     sourceType: "system",
-    area: "L1商业街",
+    area: "L1 · 首层",
     requiredJobs: ["CONSTRUCTION_ASSISTANT", "SAFETY_ASSISTANT"],
     inkFile: "night_construction_complaint",
     choiceEffects: {
@@ -284,7 +284,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "SR",
     sourceType: "npc",
     sourceName: "质监站",
-    area: "项目资料室",
+    area: "资料室",
     requiredJobs: ["DOCUMENT_ASSISTANT", "QUALITY_ASSISTANT"],
     inkFile: "quality_station_report",
     choiceEffects: {
@@ -300,7 +300,7 @@ const baseTemplates: TaskTemplateData[] = [
     rarity: "R",
     sourceType: "npc",
     sourceName: "物业公司",
-    area: "B1设备走廊",
+    area: "B1 · 地下一层",
     requiredJobs: ["MECHANICAL_ASSISTANT", "CONSTRUCTION_ASSISTANT"],
     inkFile: "property_maintenance_access",
     choiceEffects: {

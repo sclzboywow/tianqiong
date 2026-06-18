@@ -22,6 +22,8 @@
     "test:chapter1-flow": "tsx --env-file=.env scripts/testChapter1Flow.ts",
     "test:career": "tsx scripts/career-rank-smoke-test.ts",
     "content:check": "tsx --env-file=.env scripts/content-check.ts",
+    "sync:sandtable": "tsx --env-file=.env scripts/sync-sandtable-payload.ts",
+    "sync:npcs": "tsx --env-file=.env scripts/sync-npc-profiles-payload.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
