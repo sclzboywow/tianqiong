@@ -55,6 +55,15 @@ type ChapterOneOnboardingModalProps = OnboardingProps & {
   onOpenChange: (open: boolean) => void;
 };
 
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => !element.hasAttribute("disabled") && element.offsetParent !== null,
+  );
+}
+
 function ChapterOneOnboardingModal({
   open,
   onOpenChange,
@@ -77,11 +86,37 @@ function ChapterOneOnboardingModal({
     document.body.style.overflow = "hidden";
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") dismiss();
+      if (event.key === "Escape") {
+        dismiss();
+        return;
+      }
+
+      if (event.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = getFocusableElements(panelRef.current);
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (active === first || !panelRef.current.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
+      if (active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     window.addEventListener("keydown", onKeyDown);
-    panelRef.current?.focus();
+    const focusable = panelRef.current ? getFocusableElements(panelRef.current) : [];
+    (focusable[0] ?? panelRef.current)?.focus();
 
     return () => {
       document.body.style.overflow = previousOverflow;
@@ -217,6 +252,3 @@ export function CommandCenterGuideButton() {
     </button>
   );
 }
-
-/** @deprecated 使用 CommandCenterOnboardingProvider */
-export const ChapterOneOnboardingCard = CommandCenterOnboardingProvider;

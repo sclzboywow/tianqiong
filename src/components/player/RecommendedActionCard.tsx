@@ -4,7 +4,6 @@ import type { RecommendedAction } from "@/game/playerGuidanceEngine";
 import {
   taskDetailPanel,
   taskDetailPanelHeader,
-  taskDetailTag,
   taskHudButtonDetailPrimary,
 } from "./tasks/taskBoardUi";
 
@@ -29,22 +28,24 @@ export function RecommendedActionCard({ action }: RecommendedActionCardProps) {
             <Crosshair className="size-3.5 text-cyan-400/80" />
             {action.headline || "当前指令"}
           </h2>
-          <span className={`${taskDetailTag} text-cyan-300/80`}>优先行动</span>
+          <span className="text-[10px] text-slate-600">优先行动</span>
         </div>
       </div>
 
-      <div className="flex min-h-[180px] max-h-[240px] flex-col justify-between gap-3 p-3">
-        <div className="min-w-0 space-y-2">
+      <div className="flex flex-col justify-between gap-3 p-3">
+        <div className="min-w-0 space-y-1.5">
           <p className="text-[13px] font-medium leading-snug text-cyan-50">{action.title}</p>
           <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-500">
             {action.description || "这是推进当前章节目标的最短路径。"}
           </p>
           {action.reason ? (
-            <p className="line-clamp-1 text-[10px] text-slate-600">原因：{action.reason}</p>
+            <p className="line-clamp-2 text-[10px] leading-relaxed text-slate-600">
+              原因：{action.reason}
+            </p>
           ) : null}
           {locationName ? (
-            <p className="inline-flex items-center gap-1 text-[10px] text-slate-500">
-              <MapPin className="size-3 text-cyan-400/60" />
+            <p className="inline-flex items-center gap-1 text-[10px] text-slate-600">
+              <MapPin className="size-3 text-cyan-400/50" />
               {locationName}
               {action.actionLabel ? ` · ${action.actionLabel}` : null}
             </p>
@@ -56,7 +57,7 @@ export function RecommendedActionCard({ action }: RecommendedActionCardProps) {
             {resolvePrimaryLabel(action.href)}
             <ArrowRight className="size-4 shrink-0" />
           </Link>
-          <p className="hidden text-[10px] text-slate-600 sm:block">先完成主线节点，再处理扩散风险。</p>
+          <p className="hidden text-[10px] text-slate-700 sm:block">先完成主线节点，再处理扩散风险。</p>
         </div>
       </div>
     </section>

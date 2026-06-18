@@ -1,15 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { PendingTaskGroup } from "@/game/playerGuidanceEngine";
 import {
   taskDetailDivider,
   taskDetailPanel,
   taskDetailPanelHeader,
-  taskDetailTagMuted,
   taskHudButtonCompactPrimary,
   taskHudButtonCompactSecondary,
-  taskHudTag,
 } from "./tasks/taskBoardUi";
 
 type PendingTasksSummaryProps = {
@@ -70,26 +67,28 @@ function TaskCompactRow({ task }: { task: DisplayTask }) {
   const hasLocationHref = Boolean(task.locationHref);
 
   return (
-    <li className="border border-cyan-400/10 border-l-2 border-l-cyan-400/50 bg-slate-950/40 px-2.5 py-2">
+    <li className="relative py-2.5 pl-2.5 transition hover:bg-slate-950/20">
+      <span
+        className={`absolute bottom-2 left-0 top-2 w-px ${
+          task.tagTone === "mainline" ? "bg-cyan-400/35" : "bg-amber-400/35"
+        }`}
+      />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+          <div className="mb-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
             <span
-              className={cn(
-                taskHudTag,
-                task.tagTone === "mainline"
-                  ? "border-cyan-400/25 text-cyan-300/80"
-                  : "border-amber-400/25 text-amber-200/90",
-              )}
+              className={
+                task.tagTone === "mainline" ? "text-cyan-400/75" : "text-amber-200/80"
+              }
             >
               {task.tag}
             </span>
             {task.urgency ? (
-              <span className="text-[10px] text-rose-300/80">紧急度 {task.urgency}</span>
+              <span className="text-rose-300/75">紧急度 {task.urgency}</span>
             ) : null}
+            <span className="truncate text-slate-600">{task.area}</span>
           </div>
           <p className="truncate text-[12px] font-medium text-cyan-50">{task.title}</p>
-          <p className="mt-0.5 truncate text-[10px] text-slate-600">{task.area}</p>
         </div>
 
         <div className="flex shrink-0 gap-1.5">
@@ -121,7 +120,7 @@ export function PendingTasksSummary({
     <section className={taskDetailPanel}>
       <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
         <h3 className="text-[12px] font-medium text-cyan-100">待处理卡点</h3>
-        {total > 0 ? <span className={taskDetailTagMuted}>{total} 项</span> : null}
+        {total > 0 ? <span className="text-[10px] text-slate-600">{total} 项</span> : null}
       </div>
 
       <div className="p-3">
@@ -130,7 +129,7 @@ export function PendingTasksSummary({
             暂无待处理卡点，可跟随当前指令前往地点触发新任务。
           </p>
         ) : (
-          <ul className={`${taskDetailDivider} space-y-1.5`}>
+          <ul className={taskDetailDivider}>
             {displayTasks.map((task) => (
               <TaskCompactRow key={task.id} task={task} />
             ))}

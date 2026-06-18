@@ -3,12 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import type { ProjectState } from "@prisma/client";
 import { getProjectRiskSummary } from "@/game/playerGuidanceEngine";
-import {
-  taskDetailMetric,
-  taskDetailMetricAccent,
-  taskDetailPanel,
-  taskDetailPanelHeader,
-} from "./tasks/taskBoardUi";
+import { taskDetailPanel, taskDetailPanelHeader } from "./tasks/taskBoardUi";
 
 type ProjectStatusCardProps = {
   project: ProjectState;
@@ -37,6 +32,23 @@ function CompactProgress({ label, value }: { label: string; value: number }) {
   );
 }
 
+function MetricRow({
+  label,
+  value,
+  toneClass,
+}: {
+  label: string;
+  value: string;
+  toneClass?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 text-[11px]">
+      <span className="text-slate-600">{label}</span>
+      <span className={`font-medium tabular-nums ${toneClass ?? "text-slate-300"}`}>{value}</span>
+    </div>
+  );
+}
+
 export function ProjectStatusCard({ project }: ProjectStatusCardProps) {
   const summary = getProjectRiskSummary(project);
 
@@ -52,47 +64,31 @@ export function ProjectStatusCard({ project }: ProjectStatusCardProps) {
           <CompactProgress label="总体工程" value={project.overallProgress} />
         </div>
 
-        <div className="grid grid-cols-2 gap-1.5">
-          <div className={taskDetailMetricAccent}>
-            <p className="text-[10px] text-slate-600">安全</p>
-            <p className={`mt-0.5 text-[11px] font-semibold tabular-nums ${metricTone(project.safety)}`}>
-              {project.safety}%
-            </p>
-          </div>
-          <div className={taskDetailMetric}>
-            <p className="text-[10px] text-slate-600">消防风险</p>
-            <p
-              className={`mt-0.5 text-[11px] font-semibold tabular-nums ${metricTone(project.fireRisk, true)}`}
-            >
-              {project.fireRisk}%
-            </p>
-          </div>
-          <div className={taskDetailMetricAccent}>
-            <p className="text-[10px] text-slate-600">资料完整度</p>
-            <p
-              className={`mt-0.5 text-[11px] font-semibold tabular-nums ${metricTone(project.dataIntegrity)}`}
-            >
-              {project.dataIntegrity}%
-            </p>
-          </div>
-          <div className={taskDetailMetric}>
-            <p className="text-[10px] text-slate-600">甲方信任</p>
-            <p className="mt-0.5 text-[11px] font-semibold text-cyan-200/90">
-              {summary.ownerTrustLabel}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+          <MetricRow label="安全" value={`${project.safety}%`} toneClass={metricTone(project.safety)} />
+          <MetricRow
+            label="消防风险"
+            value={`${project.fireRisk}%`}
+            toneClass={metricTone(project.fireRisk, true)}
+          />
+          <MetricRow
+            label="资料完整度"
+            value={`${project.dataIntegrity}%`}
+            toneClass={metricTone(project.dataIntegrity)}
+          />
+          <MetricRow label="甲方信任" value={summary.ownerTrustLabel} toneClass="text-cyan-200/90" />
         </div>
 
         {summary.riskCount > 0 ? (
-          <div className="border border-amber-400/15 bg-amber-950/15 px-2.5 py-2">
+          <div className="bg-amber-950/20 px-2 py-2">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-300/90" />
+              <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-300/80" />
               <div className="min-w-0">
-                <p className="text-[11px] font-medium text-amber-200/90">风险提示</p>
-                <p className="mt-0.5 text-[10px] leading-relaxed text-amber-100/70">
+                <p className="text-[11px] font-medium text-amber-200/85">风险提示</p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-amber-100/65">
                   {summary.riskHint}
                 </p>
-                <Link href="/tasks" className="mt-1.5 inline-block text-[10px] text-cyan-400/80 hover:text-cyan-300">
+                <Link href="/tasks" className="mt-1.5 inline-block text-[10px] text-cyan-400/75 hover:text-cyan-300">
                   查看任务处理 →
                 </Link>
               </div>

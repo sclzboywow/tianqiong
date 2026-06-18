@@ -1,38 +1,36 @@
 import Link from "next/link";
-import { ClipboardList, Compass, FileClock, UserCircle } from "lucide-react";
-import {
-  taskDetailPanel,
-  taskDetailPanelHeader,
-  taskHudButtonCompactSecondary,
-} from "./tasks/taskBoardUi";
+import { ChevronRight, ClipboardList, Compass, FileClock, UserCircle } from "lucide-react";
+import { taskDetailDivider, taskDetailPanel, taskDetailPanelHeader } from "./tasks/taskBoardUi";
 import { CommandCenterGuideButton } from "./ChapterOneOnboardingModal";
 
 const LINKS = [
   { href: "/locations", label: "协同地图", icon: Compass },
-  { href: "/tasks", label: "任务台", icon: ClipboardList },
-  { href: "/daily-report", label: "复盘台", icon: FileClock },
-  { href: "/profile", label: "角色台", icon: UserCircle },
+  { href: "/tasks", label: "任务调度台", icon: ClipboardList },
+  { href: "/daily-report", label: "项目复盘台", icon: FileClock },
+  { href: "/profile", label: "角色状态台", icon: UserCircle },
 ] as const;
 
 export function CommandCenterQuickLinks() {
   return (
     <section className={taskDetailPanel}>
       <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
-        <h3 className="text-[12px] font-medium text-cyan-100">快捷入口</h3>
+        <h3 className="text-[12px] font-medium text-slate-400">快捷入口</h3>
         <CommandCenterGuideButton />
       </div>
-      <div className="grid grid-cols-2 gap-1.5 p-3">
+      <ul className={`${taskDetailDivider} px-3 py-1`}>
         {LINKS.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`${taskHudButtonCompactSecondary} h-9 w-full min-w-0`}
-          >
-            <Icon className="size-3 shrink-0" />
-            {label}
-          </Link>
+          <li key={href}>
+            <Link
+              href={href}
+              className="group flex items-center gap-2 py-2 text-[11px] text-slate-500 transition hover:text-cyan-300/90"
+            >
+              <Icon className="size-3 shrink-0 text-slate-600 group-hover:text-cyan-400/70" />
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              <ChevronRight className="size-3 shrink-0 text-slate-700 group-hover:text-cyan-400/50" />
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

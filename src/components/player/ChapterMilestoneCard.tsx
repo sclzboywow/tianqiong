@@ -70,18 +70,22 @@ export function ChapterMilestoneCard({ goals, variant = "default" }: ChapterMile
       </div>
 
       <div className={isHud ? "p-3" : playerCardBodyClass}>
-        <ul className={cn(isHud ? "space-y-2" : "divide-y divide-[rgba(60,160,255,0.08)]")}>
+        <ul
+          className={cn(
+            isHud ? "divide-y divide-cyan-400/5" : "divide-y divide-[rgba(60,160,255,0.08)]",
+          )}
+        >
           {goals.map((item) => (
             <li
               key={item.key}
               className={cn(
-                "flex min-h-[44px] items-center justify-between",
+                "flex min-h-[40px] items-center justify-between",
                 isHud
-                  ? "border border-cyan-400/10 bg-slate-950/40 px-2.5 py-2"
+                  ? "px-0.5 py-2 transition hover:bg-slate-950/25"
                   : "min-h-[52px] py-3 lg:min-h-0 lg:rounded-lg lg:px-2 lg:py-2.5 lg:hover:bg-[rgba(255,255,255,0.02)]",
               )}
             >
-              <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex min-w-0 items-center gap-2">
                 <GoalIcon status={item.status} />
                 <span className={cn("truncate text-cyan-50", isHud ? "text-[12px]" : "text-[13px] lg:text-sm")}>
                   {item.label}

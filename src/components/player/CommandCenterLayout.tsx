@@ -9,6 +9,7 @@ type CommandCenterLayoutProps = {
   projectStatus: ReactNode;
   recentActivity: ReactNode;
   quickLinks: ReactNode;
+  /** 移动端资源摘要；桌面端由 CommandCenterHeader 内 compact 资源条承担 */
   resourceBar: ReactNode;
 };
 
@@ -40,6 +41,7 @@ export function CommandCenterLayout({
         </aside>
       </div>
 
+      {/* 移动端 (<xl)：主内容区末尾展示资源摘要；桌面端资源已在 Header 内 */}
       <div className="space-y-2.5 p-3 xl:hidden">
         {recommendedAction}
         {projectStatus}
