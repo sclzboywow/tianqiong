@@ -8,12 +8,15 @@ import { listTasks } from "@/game/taskEngine";
 import { getMapLocations } from "@/game/locationLoader";
 import { getLocationActions } from "@/game/locationActionLoader";
 import { buildLocationSandtableViewData } from "@/game/locationSandtablePresentationEngine";
+import { ensureMergedNpcProfiles, getNpcProfileRevision } from "@/game/npcProfileLoader";
 import { getNpcTaskActionProgress } from "@/game/npcTaskActionProgressEngine";
 import {
   getChapterInfo,
   getNextRecommendedAction,
   getPendingTaskGroups,
 } from "@/game/playerGuidanceEngine";
+
+export const dynamic = "force-dynamic";
 
 export default async function LocationsPage() {
   const userId = await getCurrentUserId();
@@ -46,6 +49,9 @@ export default async function LocationsPage() {
     recommendedAction,
   });
 
+  const npcProfiles = await ensureMergedNpcProfiles();
+  const npcProfileRevision = await getNpcProfileRevision();
+
   const completedNpcTaskActionIds = await getNpcTaskActionProgress({
     taskSlugs: tasks.map((task) => task.templateId),
   });
@@ -61,6 +67,8 @@ export default async function LocationsPage() {
         project={project}
         tasks={tasks}
         completedNpcTaskActionIds={completedNpcTaskActionIds}
+        npcProfiles={npcProfiles}
+        npcProfileRevision={npcProfileRevision}
       />
     </PlayerShell>
   );

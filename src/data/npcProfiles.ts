@@ -2332,11 +2332,22 @@ export const NPC_PROFILES: NpcProfile[] = [
   }
 ];
 
+let runtimeNpcProfileOverrides: Record<string, NpcProfile> | null = null;
+
 export function getNpcProfileById(id: string): NpcProfile | undefined {
+  const runtime = runtimeNpcProfileOverrides?.[id];
+  if (runtime) return runtime;
   return NPC_PROFILES.find((npc) => npc.id === id);
 }
 
+export function setRuntimeNpcProfileOverrides(profiles: Record<string, NpcProfile>) {
+  runtimeNpcProfileOverrides = profiles;
+}
+
+export function clearRuntimeNpcProfileOverrides() {
+  runtimeNpcProfileOverrides = null;
+}
+
 export function getNpcProfilesByIds(ids: string[]): NpcProfile[] {
-  const map = new Map(NPC_PROFILES.map((npc) => [npc.id, npc]));
-  return ids.map((id) => map.get(id)).filter(Boolean) as NpcProfile[];
+  return ids.map((id) => getNpcProfileById(id)).filter(Boolean) as NpcProfile[];
 }

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { getNpcProfileById } from "@/data/npcProfiles";
 import {
   NPC_ROLE_LABELS,
   type SandtableNpcRef,
@@ -45,7 +46,18 @@ function resolveLocationLabel(npc: SandtableNpcRef, preferCurrent = false): stri
   return getLocationDisplayNameById(locationId);
 }
 
+function resolveNpcDisplay(npc: SandtableNpcRef) {
+  const live = getNpcProfileById(npc.npcId);
+  return {
+    name: live?.name ?? npc.name,
+    title: live?.title ?? npc.title,
+    level: live?.level ?? npc.level,
+    agenda: live?.agenda ?? npc.agenda,
+  };
+}
+
 function NpcCard({ npc }: { npc: SandtableNpcRef }) {
+  const display = resolveNpcDisplay(npc);
   const presence = npc.presenceStatus;
   const homeLabel = resolveLocationLabel(npc);
   const currentLabel = resolveLocationLabel(npc, true);
@@ -54,17 +66,17 @@ function NpcCard({ npc }: { npc: SandtableNpcRef }) {
     <li className="border border-cyan-400/10 bg-slate-950/50 p-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-medium text-cyan-50">{npc.name}</p>
-          <p className="truncate text-[11px] text-slate-400">{npc.title}</p>
+          <p className="truncate text-[13px] font-medium text-cyan-50">{display.name}</p>
+          <p className="truncate text-[11px] text-slate-400">{display.title}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span
             className={cn(
               "border px-1.5 py-0.5 text-[10px] font-medium",
-              LEVEL_STYLES[npc.level],
+              LEVEL_STYLES[display.level],
             )}
           >
-            {npc.level}·{formatNpcRole(npc.role)}
+            {display.level}·{formatNpcRole(npc.role)}
           </span>
           {presence ? (
             <span
@@ -78,8 +90,8 @@ function NpcCard({ npc }: { npc: SandtableNpcRef }) {
           ) : null}
         </div>
       </div>
-      {npc.agenda && !presence ? (
-        <p className="mt-1.5 line-clamp-2 text-[11px] leading-5 text-slate-500">{npc.agenda}</p>
+      {display.agenda && !presence ? (
+        <p className="mt-1.5 line-clamp-2 text-[11px] leading-5 text-slate-500">{display.agenda}</p>
       ) : null}
       {presence === "away" || presence === "reachable" ? (
         <div className="mt-1.5 space-y-0.5 text-[11px] leading-5 text-slate-500">
@@ -100,8 +112,8 @@ function NpcCard({ npc }: { npc: SandtableNpcRef }) {
       {presence === "locked" && npc.presenceHint ? (
         <p className="mt-1.5 text-[11px] leading-5 text-slate-500">{npc.presenceHint}</p>
       ) : null}
-      {npc.agenda && presence && presence !== "locked" ? (
-        <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-600">{npc.agenda}</p>
+      {display.agenda && presence && presence !== "locked" ? (
+        <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-600">{display.agenda}</p>
       ) : null}
     </li>
   );

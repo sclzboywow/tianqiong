@@ -2,6 +2,7 @@
 
 import type { ProjectState, Task } from "@prisma/client";
 import { useCallback, useMemo, useRef, useState } from "react";
+import type { NpcProfile } from "@/data/npcProfiles";
 import {
   CheckCircle2,
   CircleDot,
@@ -24,8 +25,9 @@ import type {
   SandtableLocationNode,
   SandtableRegion,
 } from "@/game/locationSandtablePresentationEngine";
-import { LocationBriefPanel } from "./LocationBriefPanel";
+import { LocationDetailPanel } from "./LocationDetailPanel";
 import { LocationSceneOverlay } from "./LocationSceneOverlay";
+import { useLiveNpcProfiles } from "./useLiveNpcProfiles";
 
 type FilterId = "all" | LocationNodeStatus;
 
@@ -34,6 +36,8 @@ type LocationSandTablePageProps = {
   project: ProjectState;
   tasks: Task[];
   completedNpcTaskActionIds?: string[];
+  npcProfiles?: Record<string, NpcProfile>;
+  npcProfileRevision?: string;
 };
 
 const FILTERS: { id: FilterId; label: string; icon: typeof CircleDot }[] = [
@@ -563,7 +567,11 @@ export function LocationSandTablePage({
   project,
   tasks,
   completedNpcTaskActionIds,
+  npcProfiles,
+  npcProfileRevision = "static-0",
 }: LocationSandTablePageProps) {
+  useLiveNpcProfiles(npcProfiles ?? {}, npcProfileRevision);
+
   const shellRef = useRef<HTMLElement>(null);
   const nodes = useMemo(() => flattenNodes(data), [data]);
   const defaultNodeId = data.recommendedNode?.id || nodes.find((node) => !node.locked)?.id;
@@ -664,10 +672,13 @@ export function LocationSandTablePage({
         </div>
 
         <div className="hidden w-[340px] shrink-0 lg:block">
-          <LocationBriefPanel
+          <LocationDetailPanel
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
+            project={project}
+            tasks={tasks}
+            completedNpcTaskActionIds={completedNpcTaskActionIds}
             onEnter={handleEnterScene}
           />
         </div>
@@ -675,10 +686,13 @@ export function LocationSandTablePage({
 
       {selectedNode ? (
         <div className="border-t border-cyan-400/15 p-3 lg:hidden">
-          <LocationBriefPanel
+          <LocationDetailPanel
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
+            project={project}
+            tasks={tasks}
+            completedNpcTaskActionIds={completedNpcTaskActionIds}
             onEnter={handleEnterScene}
           />
         </div>

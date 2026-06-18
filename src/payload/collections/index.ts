@@ -198,7 +198,21 @@ export const Npcs: CollectionConfig = {
       "type",
       "description",
     ],
-    description: "协同地图角色库：与前端 npcProfiles.ts 同步，含分级与职衔。",
+    description: "协同地图角色库：保存后前端会自动同步；勿用 sync:npcs 覆盖后台改动。",
+  },
+  hooks: {
+    afterChange: [
+      async () => {
+        const { revalidateNpcContent } = await import("@/lib/revalidateNpcContent");
+        revalidateNpcContent();
+      },
+    ],
+    afterDelete: [
+      async () => {
+        const { revalidateNpcContent } = await import("@/lib/revalidateNpcContent");
+        revalidateNpcContent();
+      },
+    ],
   },
   fields: [
     categoryField(NPC_CATEGORIES, "按组织角色归类，方便批量查找和维护。"),

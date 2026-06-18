@@ -21,6 +21,7 @@ import {
   countNpcPresence,
   type SandtableNpcRef,
 } from "./sandtableNpcResolver";
+import { ensureMergedNpcProfiles } from "./npcProfileLoader";
 
 export type { SandtableNpcRef };
 
@@ -374,6 +375,8 @@ export async function buildLocationSandtableViewData(params: {
   actions: LocationAction[];
   recommendedAction: RecommendedAction;
 }): Promise<LocationSandtableViewData> {
+  await ensureMergedNpcProfiles();
+
   const { project, tasks, locations, actions, recommendedAction } = params;
   const events = await getEventTemplates();
   const recommendedLocationId = chooseRecommendedLocationId({
