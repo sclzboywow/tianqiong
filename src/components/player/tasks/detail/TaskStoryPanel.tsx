@@ -3,6 +3,7 @@
 import { LoaderCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TaskStoryChoice, TaskStoryState } from "@/game/taskDetailPresentationEngine";
+import { buildStorySegments } from "@/game/storySegmentParser";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../../playerTheme";
 
 type TaskStoryPanelProps = {
@@ -22,99 +23,6 @@ type TaskStoryPanelProps = {
   showChoices: boolean;
   error?: string | null;
 };
-
-type StorySegment =
-  | {
-      type: "narration";
-      key: string;
-      text: string;
-    }
-  | {
-      type: "dialogue";
-      key: string;
-      speaker: string;
-      text: string;
-    };
-
-function detectSpeaker(context: string, quote: string): string | null {
-  const text = `${context} ${quote}`;
-  const rules: Array<[string, string[]]> = [
-    ["甲方代表", ["甲方代表", "甲方", "领导", "汇报"]],
-    ["资料员", ["资料员", "资料室", "名单今晚", "台账", "原件"]],
-    ["监理", ["监理", "整改", "签字", "规范"]],
-    ["总包", ["总包", "班组", "现场负责人", "先动"]],
-    ["设计院", ["设计院", "设计", "出图", "图纸", "方案"]],
-    ["造价咨询", ["造价", "控制价", "成本"]],
-    ["物业", ["物业", "钥匙", "移交"]],
-    ["消防专家", ["消防", "通道", "泵房"]],
-  ];
-
-  for (const [speaker, keywords] of rules) {
-    if (keywords.some((keyword) => text.includes(keyword))) return speaker;
-  }
-
-  return null;
-}
-
-function buildStorySegments(lines: string[]): StorySegment[] {
-  const segments: StorySegment[] = [];
-  let lastSpeaker = "项目现场";
-
-  lines.forEach((rawLine, lineIndex) => {
-    const line = rawLine.trim();
-    if (!line) return;
-
-    const matches = [...line.matchAll(/「([^」]+)」/g)];
-    if (matches.length === 0) {
-      segments.push({
-        type: "narration",
-        key: `narration-${lineIndex}`,
-        text: line,
-      });
-      return;
-    }
-
-    let cursor = 0;
-    matches.forEach((match, matchIndex) => {
-      const quoteStart = match.index ?? 0;
-      const quoteText = match[1].trim();
-      const before = line.slice(cursor, quoteStart).trim();
-
-      if (before) {
-        segments.push({
-          type: "narration",
-          key: `narration-${lineIndex}-${matchIndex}`,
-          text: before,
-        });
-      }
-
-      const contextBefore = line.slice(Math.max(0, quoteStart - 36), quoteStart);
-      const contextAfter = line.slice(quoteStart + match[0].length, quoteStart + match[0].length + 36);
-      const speaker = detectSpeaker(`${contextBefore}${contextAfter}`, quoteText) || lastSpeaker;
-      lastSpeaker = speaker;
-
-      segments.push({
-        type: "dialogue",
-        key: `dialogue-${lineIndex}-${matchIndex}`,
-        speaker,
-        text: quoteText,
-      });
-
-      cursor = quoteStart + match[0].length;
-    });
-
-    const rest = line.slice(cursor).trim();
-    if (rest) {
-      segments.push({
-        type: "narration",
-        key: `narration-${lineIndex}-tail`,
-        text: rest,
-      });
-    }
-  });
-
-  return segments;
-}
 
 export function TaskStoryPanel({
   story,

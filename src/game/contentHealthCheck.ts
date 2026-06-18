@@ -11,6 +11,7 @@ import {
   type MilestoneEffectRow,
   type TaskTemplateEffectDoc,
 } from "./taskTemplateEffectMapper";
+import { inkSourceUsesLegacyDialogueWithoutSpeakerTags } from "./storySegmentParser";
 
 const STORIES_DIR = path.join(process.cwd(), "src/ink/stories");
 
@@ -22,6 +23,40 @@ function inkSourceExists(inkFile: string): boolean {
 function inkCompiledExists(inkFile: string): boolean {
   if (!inkFile.trim()) return false;
   return fs.existsSync(path.join(STORIES_DIR, `${inkFile}.json`));
+}
+
+function collectInkFilesForFormatCheck(data: ContentHealthCheckData): string[] {
+  const inkFiles = new Set<string>();
+  for (const row of data.taskTemplates) {
+    if (row.inkFile.trim()) inkFiles.add(row.inkFile.trim());
+  }
+  for (const row of data.eventTemplates) {
+    if (row.inkFile.trim()) inkFiles.add(row.inkFile.trim());
+  }
+  for (const row of data.storyEntries) {
+    if (row.inkFile.trim()) inkFiles.add(row.inkFile.trim());
+  }
+  return [...inkFiles];
+}
+
+function checkInkLegacyDialogueFormat(inkFiles: string[]): ContentHealthCheckItem {
+  const failures: string[] = [];
+  for (const inkFile of inkFiles) {
+    const filePath = path.join(STORIES_DIR, `${inkFile}.ink`);
+    if (!fs.existsSync(filePath)) continue;
+    const content = fs.readFileSync(filePath, "utf-8");
+    if (inkSourceUsesLegacyDialogueWithoutSpeakerTags(content)) {
+      failures.push(
+        `${inkFile}: 仍含「…」对话但未使用 [说话人] 格式，请参考 docs/story-format.md`,
+      );
+    }
+  }
+  return {
+    name: "ink-stories.legacyDialogueFormat (warning)",
+    pass: failures.length === 0,
+    total: inkFiles.length,
+    failures,
+  };
 }
 
 const CORE_TABLES = [
@@ -782,6 +817,8 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
   const taskEffectChecks = buildTaskTemplateHealthChecks(data, milestoneKeys);
   results.push(...taskEffectChecks.results);
   warnings.push(...taskEffectChecks.warnings);
+
+  warnings.push(checkInkLegacyDialogueFormat(collectInkFilesForFormatCheck(data)));
 
   return summarizeReport(results, { warnings });
 }
