@@ -1,16 +1,14 @@
 import { redirect } from "next/navigation";
 import { PlayerShell } from "@/components/player/PlayerShell";
-import { ExplorePageLayout } from "@/components/player/locations/ExplorePageLayout";
+import { LocationSandTablePage } from "@/components/player/locations/LocationSandTablePage";
 import { getCurrentUserId } from "@/lib/session";
 import { prisma } from "@/prisma/client";
 import { getProjectState, ensureProjectState } from "@/game/projectEngine";
 import { listTasks } from "@/game/taskEngine";
 import { getMapLocations } from "@/game/locationLoader";
 import { getLocationActions } from "@/game/locationActionLoader";
-import { getRecentMapActionLogs } from "@/game/logEngine";
-import { buildExplorePageData } from "@/game/locationPresentationEngine";
+import { buildLocationSandtableViewData } from "@/game/locationSandtablePresentationEngine";
 import {
-  getChapterGoalItems,
   getChapterInfo,
   getNextRecommendedAction,
   getPendingTaskGroups,
@@ -27,28 +25,24 @@ export default async function LocationsPage() {
   const project = await getProjectState();
   if (!project) redirect("/register");
 
-  const [tasks, locations, actions, recentLogs] = await Promise.all([
+  const [tasks, locations, actions] = await Promise.all([
     listTasks(),
     getMapLocations(),
     getLocationActions(),
-    getRecentMapActionLogs(8),
   ]);
 
   const recommendedAction = getNextRecommendedAction(project, tasks);
   const chapterInfo = getChapterInfo(project);
-  const chapterGoals = getChapterGoalItems(project, tasks);
   const pendingGroups = getPendingTaskGroups(tasks);
   const pendingCount =
     pendingGroups.mainline.length + pendingGroups.emergency.length;
 
-  const exploreData = await buildExplorePageData({
+  const sandtableData = await buildLocationSandtableViewData({
     project,
     tasks,
     locations,
     actions,
     recommendedAction,
-    chapterGoals,
-    recentLogs,
   });
 
   return (
@@ -57,7 +51,7 @@ export default async function LocationsPage() {
       userNickname={user.nickname}
       pendingTaskCount={pendingCount}
     >
-      <ExplorePageLayout data={exploreData} />
+      <LocationSandTablePage data={sandtableData} />
     </PlayerShell>
   );
 }

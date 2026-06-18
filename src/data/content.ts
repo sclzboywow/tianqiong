@@ -1,4 +1,5 @@
 import type { ProjectStageId } from "@/game/projectStages";
+import { LOCATION_SANDTABLE_AREAS } from "./locationSandtableAreas";
 
 export type UnlockableWorldContent = {
   unlockStage?: ProjectStageId;
@@ -20,6 +21,7 @@ export type AreaData = {
   name: string;
   description: string;
   stage: string;
+  category?: string;
   riskTags: string[];
 } & UnlockableWorldContent;
 
@@ -116,7 +118,7 @@ export const NPCS: NpcData[] = [
   },
 ];
 
-export const AREAS: AreaData[] = [
+const BASE_AREAS: AreaData[] = [
   {
     name: "项目总控",
     description: "项目级主线任务、阶段门推进、综合协调与运营调度的虚拟管理场景。",
@@ -175,6 +177,22 @@ export const AREAS: AreaData[] = [
     riskTags: ["材料", "安全"],
     unlockStage: "CONSTRUCTION",
   },
+];
+
+const BASE_AREA_NAMES = new Set(BASE_AREAS.map((area) => area.name));
+
+export const AREAS: AreaData[] = [
+  ...BASE_AREAS,
+  ...LOCATION_SANDTABLE_AREAS.filter((area) => !BASE_AREA_NAMES.has(area.name)).map((area) => ({
+    name: area.name,
+    category: area.category,
+    description: area.description,
+    stage: area.stage,
+    riskTags: area.riskTags,
+    unlockStage: area.unlockStage,
+    relatedLocationSlugs: area.relatedLocationSlugs,
+    visibleWhenLocked: area.visibleWhenLocked,
+  })),
 ];
 
 export const ITEMS = [

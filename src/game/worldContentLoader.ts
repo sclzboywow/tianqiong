@@ -70,7 +70,7 @@ export async function getAreas(): Promise<AreaData[]> {
     const result = await payload.find({
       collection: "areas",
       where: { enabled: { equals: true } },
-      limit: 100,
+      limit: 500,
     });
 
     if (result.docs.length === 0) return AREAS;
