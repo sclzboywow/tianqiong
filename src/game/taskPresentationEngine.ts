@@ -289,7 +289,7 @@ function taskMatchesCategory(item: TaskItem, categoryId: TaskBoardCategoryId): b
 export function buildTaskBoardCategories(items: TaskItem[]): TaskBoardCategory[] {
   const active = items.filter((item) => !item.isCompleted);
   return [
-    { id: "all", label: "全部待处理", count: active.length },
+    { id: "all", label: "待处理", count: active.length },
     {
       id: "mainline",
       label: "主线推进",

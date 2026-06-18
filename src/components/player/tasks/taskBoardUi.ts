@@ -15,6 +15,12 @@ export const taskHudButtonPrimary =
 export const taskHudButtonSecondary =
   "inline-flex h-9 flex-1 items-center justify-center gap-1.5 border border-cyan-400/15 bg-slate-950/40 px-3 text-[11px] text-slate-300 transition hover:border-cyan-400/30 hover:text-cyan-100";
 
+export const taskHudButtonCompactPrimary =
+  "inline-flex h-7 items-center gap-1 border border-cyan-400/35 bg-cyan-950/30 px-2 text-[10px] text-cyan-100 transition hover:border-cyan-400/55";
+
+export const taskHudButtonCompactSecondary =
+  "inline-flex h-7 items-center gap-1 border border-cyan-400/15 bg-slate-950/40 px-2 text-[10px] text-slate-400 transition hover:border-cyan-400/30 hover:text-cyan-200";
+
 export const taskHudChip =
   "inline-flex items-center gap-1.5 border px-2.5 py-1 text-[11px] transition";
 

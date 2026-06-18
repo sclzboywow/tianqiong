@@ -7,20 +7,23 @@ import type { ChapterGoalItem } from "@/game/playerGuidanceEngine";
 import { taskHudPanel, taskHudPanelHeader } from "./taskBoardUi";
 
 export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
+  const visibleLogs = logs.slice(0, 3);
+
   return (
     <section className={taskHudPanel}>
       <div className={taskHudPanelHeader}>
         <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
           <ScrollText className="size-3.5 text-cyan-400" />
-          近期结算 / 任务日志
+          近期结算
+          <span className="ml-auto text-[10px] text-slate-600">最多 3 条</span>
         </h3>
       </div>
       <div className="p-3">
-        {logs.length === 0 ? (
+        {visibleLogs.length === 0 ? (
           <p className="text-[11px] text-slate-600">暂无任务结算记录</p>
         ) : (
           <ul className="space-y-2">
-            {logs.map((log) => (
+            {visibleLogs.map((log) => (
               <li
                 key={log.id}
                 className="border border-cyan-400/10 bg-slate-950/50 p-2.5 text-[11px] leading-5 text-slate-400"
@@ -37,19 +40,7 @@ export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
 
 function TaskBoardRiskPanel({ hud, summary }: { hud: TaskBoardHud; summary: TaskBoardSummary }) {
   if (summary.emergencyCount === 0 && !hud.riskAlert) {
-    return (
-      <section className={taskHudPanel}>
-        <div className={taskHudPanelHeader}>
-          <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
-            <AlertTriangle className="size-3.5 text-amber-400" />
-            风险提示
-          </h3>
-        </div>
-        <div className="p-3">
-          <p className="text-[11px] text-slate-600">当前无突发风险待处理。</p>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   return (
@@ -61,13 +52,13 @@ function TaskBoardRiskPanel({ hud, summary }: { hud: TaskBoardHud; summary: Task
           <span className="ml-auto text-[10px] tabular-nums text-amber-200">{summary.emergencyCount} 项</span>
         </h3>
       </div>
-      <div className="space-y-2 p-3">
+      <div className="p-3">
         {hud.riskAlert ? (
           <p className="border border-amber-400/20 bg-amber-950/20 p-2.5 text-[11px] leading-5 text-amber-100/90">
             {hud.riskAlert}
           </p>
         ) : (
-          <p className="text-[11px] text-slate-500">有 {summary.emergencyCount} 项突发风险待处理，请优先在协同地图跟进。</p>
+          <p className="text-[11px] text-slate-500">有 {summary.emergencyCount} 项突发风险待处理。</p>
         )}
       </div>
     </section>
