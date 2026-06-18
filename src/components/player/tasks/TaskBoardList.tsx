@@ -118,60 +118,52 @@ export function TaskBoardList({ taskItems, categories, excludeTaskId }: TaskBoar
     ];
   }, [pendingItems]);
 
-  const copy =
-    activeCategory === "all"
-      ? null
-      : CATEGORY_COPY[activeCategory as Exclude<TaskBoardCategoryId, "all">];
+  const isAll = activeCategory === "all";
+  const copy = isAll ? null : CATEGORY_COPY[activeCategory as Exclude<TaskBoardCategoryId, "all">];
 
   return (
-    <div className="space-y-3">
-      <section className={cn(taskHudPanel, "p-2.5")}>
-        <p className="mb-2 px-0.5 text-[10px] text-slate-500">按队列筛选 · 地点内处理请前往协同地图</p>
+    <section className={taskHudPanel}>
+      <div className={cn(taskHudPanelHeader, "space-y-2")}>
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-[12px] font-medium text-cyan-50">
+              {isAll ? "待处理队列" : copy?.title}
+            </h2>
+            <p className="mt-0.5 text-[10px] text-slate-500">
+              {isAll ? "按影响排序，必要时前往地点处理。" : copy?.description}
+            </p>
+          </div>
+          {!isAll ? (
+            <span className="shrink-0 text-[10px] tabular-nums text-slate-500">{filtered.length} 项</span>
+          ) : null}
+        </div>
         <TaskBoardCategoryChips
           categories={categories}
           activeId={activeCategory}
           onSelect={setActiveCategory}
         />
-      </section>
+      </div>
 
-      {activeCategory === "all" ? (
-        <section className={taskHudPanel}>
-          <div className={taskHudPanelHeader}>
-            <h2 className="text-[12px] font-medium text-cyan-50">待处理队列</h2>
-            <p className="mt-0.5 text-[10px] text-slate-500">主线、突发、协作纵向展示 · 已完成请用筛选或右侧日志复盘</p>
-          </div>
-          <div className="p-3">
-            <PendingQueueView
-              sections={pendingSections}
-              hasExcludedPriority={Boolean(excludeTaskId)}
-            />
-          </div>
-        </section>
-      ) : (
-        <section className={cn(taskHudPanel, "p-3")}>
-          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-[13px] font-semibold text-cyan-50">{copy?.title}</h2>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500">{copy?.description}</p>
-            </div>
-            <span className="text-[10px] tabular-nums text-slate-500">{filtered.length} 项</span>
-          </div>
-
-          {filtered.length === 0 ? (
-            <p className="border border-dashed border-cyan-400/10 px-4 py-6 text-center text-[11px] text-slate-600">
-              该分类下暂无任务。
-            </p>
-          ) : (
-            <ul className="space-y-1.5">
-              {filtered.map((item) => (
-                <li key={item.id}>
-                  <TaskBoardCompactRow item={item} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-    </div>
+      <div className="p-3">
+        {isAll ? (
+          <PendingQueueView
+            sections={pendingSections}
+            hasExcludedPriority={Boolean(excludeTaskId)}
+          />
+        ) : filtered.length === 0 ? (
+          <p className="border border-dashed border-cyan-400/10 px-4 py-6 text-center text-[11px] text-slate-600">
+            该分类下暂无任务。
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {filtered.map((item) => (
+              <li key={item.id}>
+                <TaskBoardCompactRow item={item} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }

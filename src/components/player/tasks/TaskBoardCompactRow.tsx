@@ -23,7 +23,7 @@ function typeAccentClass(type: TaskItem["type"]) {
 
 export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
   const isCompleted = item.isCompleted;
-  const settlementLabel = isCompleted ? "查看结果" : item.type === "emergency" ? "结算" : "结算";
+  const detailLabel = isCompleted ? "查看结果" : "任务详情";
   const milestone =
     item.hasStageGate && item.milestoneLabels.length > 0
       ? item.milestoneLabels.join("、")
@@ -81,7 +81,7 @@ export function TaskBoardCompactRow({ item }: TaskBoardCompactRowProps) {
                   : taskHudButtonCompactSecondary,
               )}
             >
-              {settlementLabel}
+              {detailLabel}
               <ArrowRight className="size-3 shrink-0" />
             </Link>
           </div>

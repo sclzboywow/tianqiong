@@ -6,6 +6,15 @@ import { ChapterMilestoneCard } from "../ChapterMilestoneCard";
 import type { ChapterGoalItem } from "@/game/playerGuidanceEngine";
 import { taskHudPanel, taskHudPanelHeader } from "./taskBoardUi";
 
+function formatLogTime(value: Date | string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
   const visibleLogs = logs.slice(0, 3);
 
@@ -15,20 +24,20 @@ export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
         <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
           <ScrollText className="size-3.5 text-cyan-400" />
           近期结算
-          <span className="ml-auto text-[10px] text-slate-600">最多 3 条</span>
         </h3>
       </div>
-      <div className="p-3">
+      <div className="px-3 py-2.5">
         {visibleLogs.length === 0 ? (
           <p className="text-[11px] text-slate-600">暂无任务结算记录</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="relative border-l border-cyan-400/15 pl-3">
             {visibleLogs.map((log) => (
-              <li
-                key={log.id}
-                className="border border-cyan-400/10 bg-slate-950/50 p-2.5 text-[11px] leading-5 text-slate-400"
-              >
-                <p className="text-slate-300">{sanitizePlayerLogContent(log.content)}</p>
+              <li key={log.id} className="relative pb-3 last:pb-0">
+                <span className="absolute -left-[13px] top-1.5 size-1.5 bg-cyan-400/60" />
+                <p className="text-[10px] tabular-nums text-slate-600">{formatLogTime(log.createdAt)}</p>
+                <p className="mt-0.5 text-[11px] leading-5 text-slate-400">
+                  {sanitizePlayerLogContent(log.content)}
+                </p>
               </li>
             ))}
           </ul>
