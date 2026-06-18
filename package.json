@@ -28,6 +28,7 @@
     "verify:npc-qa": "tsx scripts/verify-npc-data-quality.ts",
     "verify:npc-presence": "tsx scripts/verify-npc-presence.ts",
     "verify:npc-tasks": "tsx scripts/verify-npc-task-requirements.ts",
+    "verify:npc-actions": "tsx scripts/verify-npc-task-actions.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

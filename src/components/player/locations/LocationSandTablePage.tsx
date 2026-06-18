@@ -31,6 +31,7 @@ import type {
 } from "@/game/locationSandtablePresentationEngine";
 import { SandtableNpcList } from "./SandtableNpcList";
 import { NpcTaskRequirementList } from "./NpcTaskRequirementList";
+import { NpcTaskActionList } from "./NpcTaskActionList";
 
 type FilterId = "all" | LocationNodeStatus;
 
@@ -629,6 +630,8 @@ function LocationDetailPanel({
       </DetailSection>
 
       <NpcTaskRequirementList node={node} project={project} tasks={tasks} />
+
+      <NpcTaskActionList node={node} project={project} tasks={tasks} />
 
       <DetailSection icon={DoorOpen} title="可执行行动">
         <TokenList
