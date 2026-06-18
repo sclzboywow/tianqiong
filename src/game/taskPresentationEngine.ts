@@ -94,7 +94,7 @@ const MAINLINE_TEMPLATE_IDS = new Set(
 );
 
 const EMERGENCY_RARITIES = new Set(["SR", "SSR", "UR"]);
-const COMPLETED_STATUSES = new Set(["COMPLETED", "FAILED"]);
+const TERMINAL_STATUSES = new Set(["COMPLETED", "FAILED", "EXPIRED"]);
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "待处理",
@@ -172,7 +172,7 @@ function isCollaborationTask(task: Task): boolean {
 }
 
 function isCompletedTask(task: Task): boolean {
-  return COMPLETED_STATUSES.has(task.status);
+  return TERMINAL_STATUSES.has(task.status);
 }
 
 function getUrgency(task: Task): "高" | "中" | "低" | undefined {

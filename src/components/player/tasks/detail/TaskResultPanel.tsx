@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowRight, Compass, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,10 @@ type TaskResultPanelProps = {
   milestoneLabels: string[];
   recentLogs: Array<{ id: string; content: string }>;
 };
+
+function subscribeToResultHintStore() {
+  return () => {};
+}
 
 function EffectList({ lines }: { lines: PlayerEffectLine[] }) {
   if (lines.length === 0) return null;
@@ -64,14 +68,18 @@ export function TaskResultPanel({
   const showResult = result?.finalized || isCompleted;
   const success = result?.success ?? resolvedSuccess;
   const effectLines = formatPlayerMetricEffectLinesFromRecord(result?.effects, 6);
-  const [showFirstResultHint, setShowFirstResultHint] = useState(false);
+  const firstTaskResultHintSeen = useSyncExternalStore(
+    subscribeToResultHintStore,
+    isFirstTaskResultHintSeen,
+    () => true,
+  );
+  const showFirstResultHint = showResult && !firstTaskResultHintSeen;
 
   useEffect(() => {
-    if (showResult && !isFirstTaskResultHintSeen()) {
-      setShowFirstResultHint(true);
+    if (showFirstResultHint) {
       markFirstTaskResultHintSeen();
     }
-  }, [showResult]);
+  }, [showFirstResultHint]);
 
   return (
     <div className="space-y-4">

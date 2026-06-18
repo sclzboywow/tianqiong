@@ -132,8 +132,26 @@ function inferEventTriggerLocationSlugs(taskSlug: string): string[] {
   return [...slugs];
 }
 
+const areaNames = new Set(AREAS.map((area) => area.name));
+
+function inferEventTriggerAreaNames(template: Pick<TaskTemplateData, "area" | "slug">): string[] {
+  if (template.area && areaNames.has(template.area)) return [template.area];
+
+  const names = new Set<string>();
+  for (const location of MAP_LOCATIONS) {
+    if ((location.relatedTaskSlugs || []).includes(template.slug)) {
+      for (const name of location.relatedAreaNames || []) {
+        if (areaNames.has(name)) names.add(name);
+      }
+    }
+  }
+
+  return [...names];
+}
+
 function buildEventTemplatePayloadData(template: TaskTemplateData) {
   const eventSlug = `evt_${template.slug}`;
+  const triggerAreaNames = inferEventTriggerAreaNames(template);
   return {
     slug: eventSlug,
     title: template.title,
@@ -150,7 +168,7 @@ function buildEventTemplatePayloadData(template: TaskTemplateData) {
     triggerBroadcast: template.triggerBroadcast || false,
     triggerStage: template.stage,
     triggerLocationSlugs: inferEventTriggerLocationSlugs(template.slug).map((slug) => ({ slug })),
-    triggerAreaNames: template.area ? [{ name: template.area }] : [],
+    triggerAreaNames: triggerAreaNames.map((name) => ({ name })),
     triggerNpcNames: template.sourceName ? [{ name: template.sourceName }] : [],
     riskTags: [],
     unlockMilestones: [],
@@ -182,6 +200,7 @@ function buildStoryEntryPayloadData(template: TaskTemplateData, storyType: "task
 }
 
 function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
+  const triggerAreaNames = event.area && areaNames.has(event.area) ? [event.area] : [];
   return {
     slug: event.slug,
     title: event.title,
@@ -194,7 +213,7 @@ function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
     triggerStage: event.triggerStage,
     triggerLocationSlugs: (event.triggerLocationSlugs || []).map((slug) => ({ slug })),
     triggerTaskSlugs: (event.triggerTaskSlugs || []).map((slug) => ({ slug })),
-    triggerAreaNames: event.area ? [{ name: event.area }] : [],
+    triggerAreaNames: triggerAreaNames.map((name) => ({ name })),
     riskTags: (event.riskTags || []).map((tag) => ({ tag })),
     weight: event.weight ?? 10,
     onceOnly: event.onceOnly ?? false,

@@ -6,9 +6,9 @@ type DailyReportKeyChangesCardProps = {
 };
 
 function toneClass(tone: DailyReportKeyChange["tone"]) {
-  if (tone === "positive") return "text-[#22C55E]";
-  if (tone === "negative") return "text-[#EF4444]";
-  return "text-[#EAF3FF]/90";
+  if (tone === "positive") return "border-[rgba(34,197,94,0.18)] bg-[rgba(34,197,94,0.08)] text-[#86EFAC]";
+  if (tone === "negative") return "border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.08)] text-[#FCA5A5]";
+  return "border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.45)] text-[#EAF3FF]/90";
 }
 
 export function DailyReportKeyChangesCard({ changes }: DailyReportKeyChangesCardProps) {
@@ -25,7 +25,7 @@ export function DailyReportKeyChangesCard({ changes }: DailyReportKeyChangesCard
             {changes.map((change) => (
               <li
                 key={change.text}
-                className={`rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.45)] px-3 py-2 text-[13px] font-medium ${toneClass(change.tone)}`}
+                className={`rounded-xl border px-3 py-2 text-[13px] font-medium ${toneClass(change.tone)}`}
               >
                 {change.text}
               </li>

@@ -24,26 +24,29 @@ export function ProfilePageLayout({
   recentGrowth,
 }: ProfilePageLayoutProps) {
   return (
-    <div className="flex flex-col gap-3 lg:gap-5">
+    <div className="space-y-4 lg:space-y-5">
       {pageHeader}
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-5">
-        <div className="lg:col-span-4 lg:space-y-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5">
+        <main className="min-w-0 space-y-4 lg:space-y-5">
           {identity}
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
+            {resources}
+            {jobAbility}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
+            {careerTrack}
+            {contribution}
+          </div>
+        </main>
+
+        <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
           {growth}
           {careerRank}
-        </div>
-
-        <div className="lg:col-span-5 lg:space-y-4">
-          {resources}
-          {jobAbility}
-          {careerTrack}
-        </div>
-
-        <div className="lg:col-span-3 lg:space-y-4">
-          {contribution}
           {recentGrowth}
-        </div>
+        </aside>
       </div>
     </div>
   );

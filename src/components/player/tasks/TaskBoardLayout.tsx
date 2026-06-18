@@ -13,23 +13,21 @@ export function TaskBoardLayout({ data }: TaskBoardLayoutProps) {
     <div className="space-y-4 lg:space-y-5">
       <TaskBoardHeader stageName={data.stageName} totalActive={data.summary.totalActive} />
 
-      {data.recommendedTask && (
-        <div className="lg:hidden">
-          <TaskBoardRecommendedCard item={data.recommendedTask} />
-        </div>
-      )}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
+        <main className="min-w-0 space-y-4 lg:space-y-5">
+          {data.recommendedTask && <TaskBoardRecommendedCard item={data.recommendedTask} />}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:gap-5">
-        <TaskBoardList taskItems={data.taskItems} categories={data.categories} />
+          <TaskBoardList taskItems={data.taskItems} categories={data.categories} />
+        </main>
+
         <TaskBoardSidebar
           summary={data.summary}
-          recommendedTask={data.recommendedTask}
           chapterGoals={data.chapterGoals}
           recentTaskLogs={data.recentTaskLogs}
         />
       </div>
 
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <TaskBoardRecentLogs logs={data.recentTaskLogs} />
       </div>
     </div>

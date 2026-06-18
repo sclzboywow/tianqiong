@@ -2,8 +2,11 @@
  * 为 payload.db 的 event_templates 表补齐新字段并回填 slug / 触发配置
  */
 import { createClient, type Client } from "@libsql/client";
+import { pathToFileURL } from "url";
 import { TASK_TEMPLATES } from "../src/data/taskTemplates";
 import { LOCATION_ACTIONS } from "../src/data/locationActions";
+import { AREAS } from "../src/data/content";
+import { MAP_LOCATIONS } from "../src/data/locations";
 
 const databaseUrl = process.env.DATABASE_URL || "file:./payload.db";
 
@@ -59,6 +62,23 @@ function inferEventTriggerLocationSlugs(taskSlug: string): string[] {
     }
   }
   return [...slugs];
+}
+
+const areaNames = new Set(AREAS.map((area) => area.name));
+
+function inferEventTriggerAreaNames(task: { area?: string; slug: string }): string[] {
+  if (task.area && areaNames.has(task.area)) return [task.area];
+
+  const names = new Set<string>();
+  for (const location of MAP_LOCATIONS) {
+    if ((location.relatedTaskSlugs || []).includes(task.slug)) {
+      for (const name of location.relatedAreaNames || []) {
+        if (areaNames.has(name)) names.add(name);
+      }
+    }
+  }
+
+  return [...names];
 }
 
 function parentFromChildTable(table: string): string {
@@ -128,12 +148,12 @@ async function recreateEventChildTables(client: Client) {
   );
 }
 
-async function main() {
+export async function migrateEventTemplatesSchema() {
   const client = createClient({ url: databaseUrl });
 
   if (!(await tableExists(client, "event_templates"))) {
     console.error("event_templates 表不存在");
-    process.exit(1);
+    throw new Error("event_templates table does not exist");
   }
 
   await recreateEventChildTables(client);
@@ -209,11 +229,14 @@ async function main() {
       });
     }
 
-    if (await tableExists(client, "event_templates_trigger_area_names") && task.area) {
-      await client.execute({
-        sql: "INSERT INTO event_templates_trigger_area_names (_order, _parent_id, id, name) VALUES (0, ?, ?, ?)",
-        args: [id, `${id}-area0`, task.area],
-      });
+    if (await tableExists(client, "event_templates_trigger_area_names")) {
+      const triggerAreaNames = inferEventTriggerAreaNames(task);
+      for (const [order, areaName] of triggerAreaNames.entries()) {
+        await client.execute({
+          sql: "INSERT INTO event_templates_trigger_area_names (_order, _parent_id, id, name) VALUES (?, ?, ?, ?)",
+          args: [order, id, `${id}-area${order}`, areaName],
+        });
+      }
     }
 
     if (await tableExists(client, "event_templates_trigger_npc_names") && task.sourceName) {
@@ -227,7 +250,9 @@ async function main() {
   console.log(`Migrated event_templates; backfilled ${updated} slugs`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  migrateEventTemplatesSchema().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

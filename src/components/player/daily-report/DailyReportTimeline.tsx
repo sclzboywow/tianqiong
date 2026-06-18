@@ -8,7 +8,7 @@ type DailyReportTimelineProps = {
 export function DailyReportTimeline({ items }: DailyReportTimelineProps) {
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(10,24,40,0.45)] px-4 py-8 text-center">
+      <div className="rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(10,24,40,0.45)] px-4 py-10 text-center">
         <p className="text-sm text-[#8EA3B8]">该分类下暂无今日记录。</p>
         <p className="mt-1 text-xs text-[#8EA3B8]/80">完成任务或执行地点行动后，日志会显示在这里。</p>
       </div>
@@ -16,14 +16,26 @@ export function DailyReportTimeline({ items }: DailyReportTimelineProps) {
   }
 
   return (
-    <div className="relative space-y-3 lg:space-y-4">
-      <div className="pointer-events-none absolute bottom-0 left-[15px] top-0 hidden w-px bg-[rgba(60,160,255,0.15)] lg:block" />
-      {items.map((item) => (
-        <div key={item.id} className="relative lg:pl-8">
-          <span className="absolute left-2.5 top-5 hidden size-2 rounded-full bg-[#2EA8FF] lg:block" />
-          <DailyReportLogCard item={item} />
+    <section className="rounded-2xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.34)] p-3 lg:p-4">
+      <div className="mb-4 flex items-center justify-between px-1">
+        <div>
+          <h2 className="text-base font-semibold text-[#EAF3FF]">今日时间线</h2>
+          <p className="mt-1 text-xs text-[#8EA3B8]">按发生顺序记录项目变化</p>
         </div>
-      ))}
-    </div>
+        <span className="rounded-full border border-[rgba(60,160,255,0.18)] px-2 py-0.5 text-xs tabular-nums text-[#8EA3B8]">
+          {items.length} 条
+        </span>
+      </div>
+
+      <div className="relative space-y-3 lg:space-y-4">
+        <div className="pointer-events-none absolute bottom-0 left-[17px] top-0 hidden w-px bg-[rgba(60,160,255,0.16)] lg:block" />
+        {items.map((item) => (
+          <div key={item.id} className="relative lg:pl-9">
+            <span className="absolute left-3 top-6 hidden size-2.5 rounded-full border border-[#2EA8FF] bg-[#07111F] lg:block" />
+            <DailyReportLogCard item={item} />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

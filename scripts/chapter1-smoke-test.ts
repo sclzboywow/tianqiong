@@ -4,7 +4,6 @@
  */
 import fs from "fs";
 import path from "path";
-import { spawnSync } from "child_process";
 import {
   CHAPTER1_EVENT_SLUGS,
   CHAPTER1_LOCATION_ACTIONS,
@@ -15,6 +14,7 @@ import {
 import { LOCATION_ACTIONS } from "../src/data/locationActions";
 import { buildChapter1AcceptanceFromStatic } from "../src/game/chapter1Acceptance";
 import { PROJECT_STAGES } from "../src/game/projectStages";
+import { runContentHealthCheckFromSqlite } from "../src/game/contentHealthCheck";
 
 function log(step: string, ok: boolean, detail?: string) {
   console.log(`${ok ? "✓" : "✗"} ${step}${detail ? ` — ${detail}` : ""}`);
@@ -127,13 +127,14 @@ async function main() {
   if (!gateOk) failed = true;
 
   console.log("\n--- 运行 content:check ---\n");
-  const check = spawnSync("npm", ["run", "content:check"], {
-    stdio: "inherit",
-    shell: true,
-    env: process.env,
-  });
-  log("10. npm run content:check 通过", check.status === 0);
-  if (check.status !== 0) failed = true;
+  const report = await runContentHealthCheckFromSqlite();
+  const contentOk = report.failCount === 0 && report.warnCount === 0;
+  log(
+    "10. npm run content:check 通过",
+    contentOk,
+    `${report.passCount} pass, ${report.failCount} fail, ${report.warnCount} warn`,
+  );
+  if (!contentOk) failed = true;
 
   console.log(failed ? "\n第一章验收未通过\n" : "\n第一章验收全部通过\n");
   process.exit(failed ? 1 : 0);

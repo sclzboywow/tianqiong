@@ -37,6 +37,7 @@ const baseTemplates: TaskTemplateData[] = [
       schedule_fix: { progress: 1, fireRisk: -2 },
       ignore_sign: { fireRisk: 5, dataIntegrity: -2 },
     },
+    successEffects: { fireRisk: -4, safety: 2, dataIntegrity: 1 },
   },
   {
     slug: "sprinkler_blocked",
@@ -53,6 +54,7 @@ const baseTemplates: TaskTemplateData[] = [
       partial_adjust: { fireRisk: -4, progress: 2 },
       delay_fix: { fireRisk: 8, progress: 3 },
     },
+    successEffects: { fireRisk: -5, quality: 2 },
   },
   {
     slug: "merchant_early_entry",
@@ -69,6 +71,7 @@ const baseTemplates: TaskTemplateData[] = [
       conditional_entry: { progress: 2, dataIntegrity: 1 },
       reject_entry: { ownerTrust: -3, safety: 3 },
     },
+    successEffects: { progress: 3, ownerTrust: 1, safety: 1 },
   },
   {
     slug: "finish_protection_damaged",
@@ -83,6 +86,7 @@ const baseTemplates: TaskTemplateData[] = [
      局部修补: { quality: 2, progress: 1 },
       record_only: { quality: -3, dataIntegrity: 1 },
     },
+    successEffects: { quality: 3, dataIntegrity: 1 },
   },
   {
     slug: "property_key_handover",
@@ -98,6 +102,7 @@ const baseTemplates: TaskTemplateData[] = [
       wait_completion: { ownerTrust: 2, propertyHandover: -2 },
       sign_memo: { propertyHandover: 3, dataIntegrity: 2 },
     },
+    successEffects: { propertyHandover: 4, dataIntegrity: 1 },
   },
   {
     slug: "drawing_mismatch",
@@ -113,6 +118,7 @@ const baseTemplates: TaskTemplateData[] = [
       site_verify: { dataIntegrity: 4, quality: 2 },
       ignore_diff: { dataIntegrity: -5, ownerTrust: -2 },
     },
+    successEffects: { dataIntegrity: 5, quality: 2 },
   },
   {
     slug: "hidden_acceptance_missing",
@@ -128,6 +134,7 @@ const baseTemplates: TaskTemplateData[] = [
       temporary_record: { dataIntegrity: 2, latentRisk: 2 },
       skip_for_now: { dataIntegrity: -4, ownerTrust: -3 },
     },
+    successEffects: { dataIntegrity: 4, latentRisk: -2 },
   },
   {
     slug: "material_retest_failed",
@@ -143,6 +150,7 @@ const baseTemplates: TaskTemplateData[] = [
       negotiate_use: { progress: 2, quality: -3 },
       stop_work: { progress: -3, quality: 3, safety: 2 },
     },
+    successEffects: { quality: 4, safety: 2, latentRisk: -2 },
   },
   {
     slug: "atrium_upgrade_request",
@@ -159,6 +167,7 @@ const baseTemplates: TaskTemplateData[] = [
       propose_alternative: { ownerTrust: 4, cost: 4 },
       reject_change: { ownerTrust: -6, progress: 2 },
     },
+    successEffects: { ownerTrust: 4, quality: 2 },
   },
   {
     slug: "supervisor_reject_close",
@@ -174,6 +183,7 @@ const baseTemplates: TaskTemplateData[] = [
       negotiate_sign: { dataIntegrity: 2, ownerTrust: 1 },
       escalate: { ownerTrust: -2, dataIntegrity: 4 },
     },
+    successEffects: { quality: 3, dataIntegrity: 3 },
   },
   {
     slug: "equipment_debug_unready",
@@ -188,6 +198,7 @@ const baseTemplates: TaskTemplateData[] = [
       force_debug: { progress: 4, safety: -4 },
       postpone: { progress: -2, ownerTrust: -1 },
     },
+    successEffects: { progress: 2, safety: 2 },
   },
   {
     slug: "mep_collision",
@@ -202,6 +213,7 @@ const baseTemplates: TaskTemplateData[] = [
       on_site_adjust: { progress: 2, quality: 1 },
       ignore_collision: { safety: -5, quality: -4 },
     },
+    successEffects: { quality: 3, safety: 2, latentRisk: -2 },
   },
   {
     slug: "design_reply_delayed",
@@ -217,6 +229,7 @@ const baseTemplates: TaskTemplateData[] = [
       temporary_solution: { progress: 2, latentRisk: 3 },
       wait_reply: { progress: -3, ownerTrust: -2 },
     },
+    successEffects: { dataIntegrity: 3, ownerTrust: 1, latentRisk: -1 },
   },
   {
     slug: "supplier_delay",
@@ -232,6 +245,7 @@ const baseTemplates: TaskTemplateData[] = [
       expedite_delivery: { progress: 3, cost: 4 },
       adjust_schedule: { progress: -2, ownerTrust: -1 },
     },
+    successEffects: { progress: 2, cost: -1, ownerTrust: 1 },
   },
   {
     slug: "merchant_power_request",
@@ -247,6 +261,7 @@ const baseTemplates: TaskTemplateData[] = [
       refuse_power: { safety: 3, ownerTrust: -2 },
       full_power: { progress: 5, fireRisk: 5, safety: -4 },
     },
+    successEffects: { progress: 2, safety: 2, fireRisk: -2 },
   },
   {
     slug: "night_construction_complaint",
@@ -261,6 +276,7 @@ const baseTemplates: TaskTemplateData[] = [
       reduce_noise: { progress: 1, ownerTrust: 1 },
       continue_work: { progress: 4, ownerTrust: -4 },
     },
+    successEffects: { safety: 2, ownerTrust: 1, latentRisk: -1 },
   },
   {
     slug: "quality_station_report",
@@ -276,6 +292,7 @@ const baseTemplates: TaskTemplateData[] = [
       submit_existing: { dataIntegrity: 2, latentRisk: 4 },
       delay_submit: { dataIntegrity: -5, ownerTrust: -3 },
     },
+    successEffects: { dataIntegrity: 4, quality: 2 },
   },
   {
     slug: "property_maintenance_access",
@@ -291,6 +308,7 @@ const baseTemplates: TaskTemplateData[] = [
       temporary_plan: { propertyHandover: 2, latentRisk: 2 },
       reject_change: { propertyHandover: -3, ownerTrust: -2 },
     },
+    successEffects: { propertyHandover: 4, safety: 1 },
   },
   {
     slug: "opening_joint_inspection",
@@ -307,6 +325,7 @@ const baseTemplates: TaskTemplateData[] = [
       minimum_prepare: { progress: 2, latentRisk: 5 },
       gamble_opening: { progress: 8, fireRisk: 10, safety: -5 },
     },
+    successEffects: { progress: 3, dataIntegrity: 3, safety: 2, fireRisk: -3, propertyHandover: 2 },
   },
 ];
 

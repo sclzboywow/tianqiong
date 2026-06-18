@@ -1,9 +1,16 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Sparkles, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  MapPin,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TaskItem } from "@/game/taskPresentationEngine";
 import type { PlayerEffectLine } from "@/game/taskEffectPlayerDisplay";
-import { playerCardClass } from "../playerTheme";
 
 type TaskBoardCardProps = {
   item: TaskItem;
@@ -46,110 +53,136 @@ function typeBadgeClass(type: TaskItem["type"]) {
   }
 }
 
+function accentClass(item: TaskItem) {
+  if (item.isCompleted) return "bg-[#64748B]";
+  if (item.type === "emergency") return "bg-[#FACC15]";
+  if (item.type === "collaboration") return "bg-[#C084FC]";
+  return "bg-[#2EA8FF]";
+}
+
 export function TaskBoardCard({ item }: TaskBoardCardProps) {
   const isCompleted = item.isCompleted;
   const isEmergency = item.type === "emergency" && !isCompleted;
-
-  const cardClass = cn(
-    playerCardClass,
-    "flex flex-col p-4 transition-colors",
-    item.isRecommended && !isCompleted && "border-[#2EA8FF]",
-    isEmergency && "border-[rgba(250,204,21,0.25)] bg-[rgba(250,204,21,0.04)]",
-    isCompleted && "opacity-60",
-  );
-
-  const buttonLabel = isCompleted
-    ? "查看结果"
-    : isEmergency
-      ? "立即处理"
-      : "处理任务";
+  const buttonLabel = isCompleted ? "查看结果" : isEmergency ? "立即处理" : "处理任务";
+  const hasPreview =
+    !isCompleted && (item.successEffectsSummary.length > 0 || item.milestoneLabels.length > 0);
 
   return (
-    <article className={cardClass}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={cn("rounded-full border px-2 py-0.5 text-[11px]", typeBadgeClass(item.type))}>
-            {item.typeLabel}
+    <article
+      className={cn(
+        "group relative overflow-hidden rounded-xl border bg-[rgba(7,17,31,0.82)] p-4 transition-colors",
+        item.isRecommended && !isCompleted
+          ? "border-[#2EA8FF] shadow-[0_0_18px_rgba(30,136,255,0.1)]"
+          : "border-[rgba(60,160,255,0.16)]",
+        isEmergency && "bg-[rgba(250,204,21,0.045)]",
+        isCompleted && "opacity-65",
+      )}
+    >
+      <div className={cn("absolute inset-y-0 left-0 w-1", accentClass(item))} />
+
+      <div className="pl-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn("rounded-full border px-2 py-0.5 text-[11px]", typeBadgeClass(item.type))}>
+              {item.typeLabel}
+            </span>
+            {item.isRecommended && !isCompleted && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(30,136,255,0.15)] px-2 py-0.5 text-[10px] text-[#2EA8FF]">
+                <Sparkles className="size-3" />
+                推荐
+              </span>
+            )}
+            {item.urgency && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(239,68,68,0.12)] px-2 py-0.5 text-[10px] text-[#EF4444]">
+                <AlertTriangle className="size-3" />
+                {item.urgency}风险
+              </span>
+            )}
+          </div>
+
+          <span className="inline-flex items-center gap-1 text-xs text-[#8EA3B8]">
+            {isCompleted ? <CheckCircle2 className="size-3" /> : <Clock3 className="size-3" />}
+            {item.statusLabel}
           </span>
-          {item.isRecommended && !isCompleted && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(30,136,255,0.15)] px-2 py-0.5 text-[10px] text-[#2EA8FF]">
-              <Sparkles className="size-3" />
-              推荐
+        </div>
+
+        <h3 className="mt-3 text-[16px] font-semibold leading-snug text-[#EAF3FF]">
+          {item.title}
+        </h3>
+
+        {item.description && (
+          <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[#8EA3B8]">
+            {item.description}
+          </p>
+        )}
+
+        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#8EA3B8]">
+          <div className="rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.36)] px-3 py-2">
+            <p>成功率</p>
+            <p className="mt-0.5 text-sm font-semibold text-[#EAF3FF]">
+              {Math.round(item.baseSuccessRate)}%
+            </p>
+          </div>
+          <div className="rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.36)] px-3 py-2">
+            <p>等级 / 模式</p>
+            <p className="mt-0.5 truncate text-sm font-semibold text-[#EAF3FF]">
+              {item.rarity} · {item.resolutionMode}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#8EA3B8]">
+          {item.sourceLocationName ? (
+            <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
+              <MapPin className="size-3" />
+              {item.sourceLocationName}
+            </span>
+          ) : null}
+
+          {(item.isCollaboration || item.requiredCount > 1) && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(168,85,247,0.25)] px-2 py-0.5 text-[#C084FC]">
+              <Users className="size-3" />
+              {item.participantCount}/{item.requiredCount} 人
             </span>
           )}
-          {item.hasStageGate && item.type === "mainline" && !isCompleted && (
-            <span className="rounded-full border border-[rgba(30,136,255,0.25)] px-2 py-0.5 text-[10px] text-[#2EA8FF]">
+
+          {item.hasStageGate && !isCompleted && (
+            <span className="rounded-md border border-[rgba(30,136,255,0.22)] px-2 py-0.5 text-[#2EA8FF]">
               阶段关键节点
             </span>
           )}
-          {item.urgency && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(239,68,68,0.12)] px-2 py-0.5 text-[10px] text-[#EF4444]">
-              <AlertTriangle className="size-3" />
-              紧急度 {item.urgency}
-            </span>
-          )}
         </div>
-        <span className="text-xs text-[#8EA3B8]">{item.statusLabel}</span>
-      </div>
 
-      <h3 className="mt-2 text-[15px] font-semibold leading-snug text-[#EAF3FF]">{item.title}</h3>
-
-      {item.description && (
-        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8EA3B8]">
-          {item.description}
-        </p>
-      )}
-
-      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#8EA3B8]">
-        {item.sourceLocationName ? (
-          <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
-            来源地点：{item.sourceLocationName}
-          </span>
-        ) : null}
-        <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
-          成功率 {Math.round(item.baseSuccessRate)}%
-        </span>
-        <span className="rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
-          任务等级 {item.rarity}
-        </span>
-        {(item.isCollaboration || item.requiredCount > 1) && (
-          <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(168,85,247,0.25)] px-2 py-0.5 text-[#C084FC]">
-            <Users className="size-3" />
-            {item.participantCount}/{item.requiredCount} 人
-          </span>
+        {item.requiredJobLabels.length > 0 && item.isCollaboration && (
+          <p className="mt-2 text-xs text-[#8EA3B8]">
+            所需岗位：{item.requiredJobLabels.join("、")}
+          </p>
         )}
-      </div>
 
-      {item.requiredJobLabels.length > 0 && item.isCollaboration && (
-        <p className="mt-2 text-xs text-[#8EA3B8]">
-          所需岗位：{item.requiredJobLabels.join("、")}
-        </p>
-      )}
+        {hasPreview && (
+          <div className="mt-3 rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.36)] px-3 py-3">
+            <EffectLines lines={item.successEffectsSummary.slice(0, 2)} label="处理收益" />
+            {item.milestoneLabels.length > 0 && (
+              <p className="mt-2 text-xs text-[#2EA8FF]">
+                关键节点：{item.milestoneLabels.join("、")}
+              </p>
+            )}
+          </div>
+        )}
 
-      {item.milestoneLabels.length > 0 && (
-        <p className="mt-2 text-xs text-[#2EA8FF]">
-          关键节点：{item.milestoneLabels.join("、")}
-        </p>
-      )}
+        {isEmergency && item.failEffectsSummary.length > 0 && (
+          <div className="mt-3 rounded-xl border border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.06)] px-3 py-3">
+            <EffectLines lines={item.failEffectsSummary.slice(0, 2)} label="拖延风险" />
+          </div>
+        )}
 
-      {!isCompleted && item.successEffectsSummary.length > 0 && (
-        <div className="mt-3">
-          <EffectLines lines={item.successEffectsSummary} label="成功影响" />
-        </div>
-      )}
-
-      {isEmergency && item.failEffectsSummary.length > 0 && (
-        <div className="mt-3">
-          <EffectLines lines={item.failEffectsSummary.slice(0, 2)} label="失败风险" />
-        </div>
-      )}
-
-      <div className="mt-4">
         <Link
           href={item.href}
           className={cn(
-            "inline-flex items-center gap-1 text-sm font-medium",
-            isCompleted ? "text-[#8EA3B8] hover:text-[#EAF3FF]" : "text-[#2EA8FF] hover:underline",
+            "mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors",
+            isCompleted
+              ? "border border-[rgba(60,160,255,0.18)] text-[#C9D7E6] hover:border-[#2EA8FF]"
+              : "bg-[#1E88FF] text-white hover:bg-[#2EA8FF]",
           )}
         >
           {buttonLabel}

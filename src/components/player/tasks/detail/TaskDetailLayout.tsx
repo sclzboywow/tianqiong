@@ -13,21 +13,17 @@ export function TaskDetailLayout({ header, intel, story, impact, result }: TaskD
     <div className="space-y-4 lg:space-y-5">
       {header}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
-        <div className="order-1 lg:col-span-5 lg:col-start-5">{story}</div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-5">
+        <main className="min-w-0 space-y-4 lg:space-y-5">
+          {story}
 
-        <div className="order-2 lg:hidden">{impact}</div>
-
-        <div className="order-3 lg:col-span-4 lg:col-start-1 lg:row-start-1">
-          <div className="lg:sticky lg:top-4 lg:space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
             {intel}
-            <div className="hidden lg:block">{impact}</div>
+            {impact}
           </div>
-        </div>
+        </main>
 
-        <div className="order-4 lg:col-span-3 lg:col-start-10 lg:row-start-1">
-          <div className="lg:sticky lg:top-4">{result}</div>
-        </div>
+        <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">{result}</aside>
       </div>
     </div>
   );

@@ -119,7 +119,7 @@ async function main() {
   }
 
   // 3. 完成项目启动 4 个任务
-  let initiationTasks = await getMainlineTasks(INITIATION_SLUGS);
+  const initiationTasks = await getMainlineTasks(INITIATION_SLUGS);
   log("3a. 启动阶段主线任务", initiationTasks.length === 4, `共 ${initiationTasks.length} 个`);
 
   for (let i = 0; i < initiationTasks.length; i++) {
@@ -148,7 +148,7 @@ async function main() {
   }
 
   // 5. 完成前期报批 4 个任务
-  let approvalTasks = await getMainlineTasks(APPROVAL_SLUGS);
+  const approvalTasks = await getMainlineTasks(APPROVAL_SLUGS);
   log("5a. 报批阶段主线任务", approvalTasks.length === 4, `共 ${approvalTasks.length} 个`);
 
   if (approvalTasks.length < 4) {

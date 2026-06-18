@@ -33,7 +33,7 @@ export function ProjectMapHud({
       </div>
       <p className="text-xs text-[#8EA3B8] sm:text-sm">大厅看全局，地图推事项</p>
       <p className="mt-2 text-[11px] leading-relaxed text-[#8EA3B8] sm:text-xs">
-        点击节点进入地点工作台，处理地点行动、本地点待办与风险线索。
+        查看节点角标判断待办、风险与推荐地点；点击节点进入地点工作台。
       </p>
 
       <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] sm:gap-2 sm:text-xs">

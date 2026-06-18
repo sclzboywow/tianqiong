@@ -38,12 +38,8 @@ async function main() {
   console.log("\n=== 协同地图 Smoke 测试 ===\n");
   let failed = false;
 
-  const { spawnSync } = await import("child_process");
-  spawnSync("npx", ["tsx", "scripts/migrate-event-templates-schema.ts"], {
-    cwd: process.cwd(),
-    shell: true,
-    stdio: "ignore",
-  });
+  const { migrateEventTemplatesSchema } = await import("./migrate-event-templates-schema");
+  await migrateEventTemplatesSchema();
 
   const { initializeProjectForSeed } = await import("../src/game/projectEngine");
   await initializeProjectForSeed();

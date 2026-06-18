@@ -1,14 +1,12 @@
-import type { TaskBoardSummary, RecommendedTaskBoardItem } from "@/game/taskPresentationEngine";
+import type { TaskBoardSummary } from "@/game/taskPresentationEngine";
 import type { GameLogSummary } from "@/game/logEngine";
 import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
 import { ChapterMilestoneCard } from "../ChapterMilestoneCard";
 import type { ChapterGoalItem } from "@/game/playerGuidanceEngine";
-import { TaskBoardRecommendedCard } from "./TaskBoardHeader";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
 
 function TaskBoardStatsCard({ summary }: { summary: TaskBoardSummary }) {
   const rows = [
-    { label: "待处理", value: summary.totalActive },
     { label: "主线", value: summary.mainlineCount },
     { label: "突发", value: summary.emergencyCount },
     { label: "协作", value: summary.collaborationCount },
@@ -18,9 +16,16 @@ function TaskBoardStatsCard({ summary }: { summary: TaskBoardSummary }) {
   return (
     <section className={playerCardClass}>
       <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">任务统计</h3>
+        <h3 className="text-base font-semibold text-[#EAF3FF]">任务概览</h3>
       </div>
-      <div className={playerCardBodyClass}>
+      <div className={`${playerCardBodyClass} space-y-4`}>
+        <div className="rounded-xl border border-[rgba(30,136,255,0.16)] bg-[rgba(30,136,255,0.08)] px-4 py-3">
+          <p className="text-xs text-[#8EA3B8]">当前待处理</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-[#2EA8FF]">
+            {summary.totalActive}
+          </p>
+        </div>
+
         <ul className="space-y-2">
           {rows.map((row) => (
             <li key={row.label} className="flex items-center justify-between text-sm">
@@ -62,20 +67,17 @@ export function TaskBoardRecentLogs({ logs }: { logs: GameLogSummary[] }) {
 
 type TaskBoardSidebarProps = {
   summary: TaskBoardSummary;
-  recommendedTask: RecommendedTaskBoardItem | null;
   chapterGoals: ChapterGoalItem[];
   recentTaskLogs: GameLogSummary[];
 };
 
 export function TaskBoardSidebar({
   summary,
-  recommendedTask,
   chapterGoals,
   recentTaskLogs,
 }: TaskBoardSidebarProps) {
   return (
-    <aside className="hidden w-[280px] shrink-0 space-y-4 lg:block">
-      {recommendedTask && <TaskBoardRecommendedCard item={recommendedTask} />}
+    <aside className="hidden w-[320px] shrink-0 space-y-4 xl:block xl:sticky xl:top-4 xl:self-start">
       <TaskBoardStatsCard summary={summary} />
       <ChapterMilestoneCard goals={chapterGoals} />
       <TaskBoardRecentLogs logs={recentTaskLogs} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Compass, X } from "lucide-react";
 import { isOnboardingSeen, markOnboardingSeen } from "@/lib/onboardingStorage";
@@ -12,16 +12,26 @@ type ChapterOneOnboardingCardProps = {
   recommendedActionLabel?: string;
 };
 
+function subscribeToOnboardingStore() {
+  return () => {};
+}
+
+function shouldShowOnboarding() {
+  return !isOnboardingSeen();
+}
+
 export function ChapterOneOnboardingCard({
   recommendedHref,
   recommendedLocationName,
   recommendedActionLabel,
 }: ChapterOneOnboardingCardProps) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    setVisible(!isOnboardingSeen());
-  }, []);
+  const shouldShowStoredOnboarding = useSyncExternalStore(
+    subscribeToOnboardingStore,
+    shouldShowOnboarding,
+    () => false,
+  );
+  const [dismissed, setDismissed] = useState(false);
+  const visible = shouldShowStoredOnboarding && !dismissed;
 
   if (!visible) return null;
 
@@ -34,12 +44,12 @@ export function ChapterOneOnboardingCard({
 
   function dismiss() {
     markOnboardingSeen();
-    setVisible(false);
+    setDismissed(true);
   }
 
   function handleStart() {
     markOnboardingSeen();
-    setVisible(false);
+    setDismissed(true);
   }
 
   return (

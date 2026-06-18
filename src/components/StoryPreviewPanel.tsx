@@ -53,8 +53,10 @@ export function StoryPreviewPanel({ entry }: StoryPreviewPanelProps) {
   );
 
   useEffect(() => {
-    loadStory([]);
-    setChoicePath([]);
+    queueMicrotask(() => {
+      setChoicePath([]);
+      void loadStory([]);
+    });
   }, [loadStory]);
 
   async function handleChoose(_choiceId: string, index: number) {
