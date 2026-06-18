@@ -12,6 +12,7 @@ export const NPC_CATEGORIES: CategoryOption[] = [
   { label: "甲方与监管", value: "owner_regulator" },
   { label: "施工体系", value: "construction" },
   { label: "设计与供应", value: "design_supply" },
+  { label: "专业咨询", value: "professional_consulting" },
   { label: "运营与物业", value: "operation" },
 ];
 
@@ -68,6 +69,7 @@ const NPC_TYPE_CATEGORY: Record<string, string> = {
   contractor: "construction",
   subcontractor: "construction",
   design: "design_supply",
+  consultant: "professional_consulting",
   supplier: "design_supply",
   merchant: "operation",
   property: "operation",
@@ -199,6 +201,7 @@ export function inferMapLocationCategory(group: string, category?: string) {
 const NPC_TYPE_UNLOCK_STAGE: Record<string, ProjectStageId> = {
   owner: "INITIATION",
   design: "DESIGN",
+  consultant: "DESIGN",
   supplier: "PROCUREMENT",
   contractor: "CONSTRUCTION",
   subcontractor: "CONSTRUCTION",

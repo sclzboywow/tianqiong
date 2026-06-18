@@ -24,6 +24,7 @@
     "content:check": "tsx --env-file=.env scripts/content-check.ts",
     "sync:sandtable": "tsx --env-file=.env scripts/sync-sandtable-payload.ts",
     "sync:npcs": "tsx --env-file=.env scripts/sync-npc-profiles-payload.ts",
+    "verify:npcs": "tsx scripts/verify-npc-profiles.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

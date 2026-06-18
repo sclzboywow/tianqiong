@@ -8,6 +8,19 @@ import { buildNpcProfilePayloadData } from "../src/lib/npcProfilePayload";
 
 const databaseUrl = process.env.DATABASE_URL || "file:./payload.db";
 
+const LEGACY_WORLD_NPC_NAMES = [
+  "甲方代表",
+  "监理单位",
+  "质监站",
+  "消防专家",
+  "总承包单位",
+  "专业分包",
+  "设计院",
+  "供应商",
+  "商户/运营团队",
+  "物业公司",
+];
+
 async function tableExists(client: ReturnType<typeof createClient>, table: string) {
   const result = await client.execute({
     sql: "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
@@ -28,7 +41,12 @@ async function columnExists(
 async function ensureNpcColumns(client: ReturnType<typeof createClient>) {
   const columns: [string, string][] = [
     ["slug", "TEXT"],
+    ["excel_id", "TEXT"],
     ["title", "TEXT"],
+    ["organization", "TEXT"],
+    ["resident_region", "TEXT"],
+    ["sandtable_region_id", "TEXT"],
+    ["task_function", "TEXT"],
     ["level", "TEXT"],
     ["faction", "TEXT"],
     ["personality", "TEXT"],
@@ -40,6 +58,49 @@ async function ensureNpcColumns(client: ReturnType<typeof createClient>) {
       console.log(`Added npcs.${name}`);
     }
   }
+}
+
+async function deleteNpcById(client: ReturnType<typeof createClient>, npcId: unknown) {
+  const arrayTables = [
+    "npcs_quotes",
+    "npcs_related_metrics",
+    "npcs_related_location_slugs",
+    "npcs_unlock_milestones",
+    "npcs_helps_with",
+    "npcs_blocks_when",
+    "npcs_risk_tags",
+  ];
+  for (const table of arrayTables) {
+    if (await tableExists(client, table)) {
+      await client.execute({
+        sql: `DELETE FROM ${table} WHERE _parent_id = ?`,
+        args: [npcId],
+      });
+    }
+  }
+  await client.execute({ sql: "DELETE FROM npcs WHERE id = ?", args: [npcId] });
+}
+
+async function removeLegacyWorldNpcs(client: ReturnType<typeof createClient>) {
+  const legacyByName = await client.execute({
+    sql: `SELECT id, name FROM npcs WHERE name IN (${LEGACY_WORLD_NPC_NAMES.map(() => "?").join(",")})`,
+    args: LEGACY_WORLD_NPC_NAMES,
+  });
+  const legacyNoSlug = await client.execute({
+    sql: "SELECT id, name FROM npcs WHERE slug IS NULL OR slug = ''",
+  });
+
+  const toDelete = new Map<string, string>();
+  for (const row of [...legacyByName.rows, ...legacyNoSlug.rows]) {
+    toDelete.set(String(row.id), String(row.name));
+  }
+
+  for (const [id, name] of toDelete) {
+    await deleteNpcById(client, id);
+    console.log(`Removed legacy NPC: ${name}`);
+  }
+
+  return toDelete.size;
 }
 
 async function replaceNpcArrayItems(
@@ -75,8 +136,13 @@ async function upsertNpcProfile(
 
   const scalarValues = {
     slug: data.slug,
+    excel_id: data.excelId,
     name: data.name,
     title: data.title,
+    organization: data.organization,
+    resident_region: data.residentRegion,
+    sandtable_region_id: data.sandtableRegionId || null,
+    task_function: data.taskFunction,
     level: data.level,
     faction: data.faction,
     category: data.category,
@@ -90,33 +156,39 @@ async function upsertNpcProfile(
     enabled: 1,
   };
 
+  const updateSql = `UPDATE npcs SET
+    slug = ?, excel_id = ?, name = ?, title = ?, organization = ?, resident_region = ?,
+    sandtable_region_id = ?, task_function = ?, level = ?, faction = ?,
+    category = ?, type = ?, description = ?, personality = ?, agenda = ?,
+    default_relation = ?, unlock_stage = ?, visible_when_locked = ?, enabled = ?,
+    updated_at = datetime('now')
+    WHERE id = ?`;
+
+  const updateArgs = [
+    scalarValues.slug,
+    scalarValues.excel_id,
+    scalarValues.name,
+    scalarValues.title,
+    scalarValues.organization,
+    scalarValues.resident_region,
+    scalarValues.sandtable_region_id,
+    scalarValues.task_function,
+    scalarValues.level,
+    scalarValues.faction,
+    scalarValues.category,
+    scalarValues.type,
+    scalarValues.description,
+    scalarValues.personality,
+    scalarValues.agenda,
+    scalarValues.default_relation,
+    scalarValues.unlock_stage,
+    scalarValues.visible_when_locked,
+    scalarValues.enabled,
+  ];
+
   if (existing.rows.length > 0) {
     const id = existing.rows[0].id;
-    await client.execute({
-      sql: `UPDATE npcs SET
-        slug = ?, name = ?, title = ?, level = ?, faction = ?,
-        category = ?, type = ?, description = ?, personality = ?, agenda = ?,
-        default_relation = ?, unlock_stage = ?, visible_when_locked = ?, enabled = ?,
-        updated_at = datetime('now')
-        WHERE id = ?`,
-      args: [
-        scalarValues.slug,
-        scalarValues.name,
-        scalarValues.title,
-        scalarValues.level,
-        scalarValues.faction,
-        scalarValues.category,
-        scalarValues.type,
-        scalarValues.description,
-        scalarValues.personality,
-        scalarValues.agenda,
-        scalarValues.default_relation,
-        scalarValues.unlock_stage,
-        scalarValues.visible_when_locked,
-        scalarValues.enabled,
-        id,
-      ],
-    });
+    await client.execute({ sql: updateSql, args: [...updateArgs, id] });
     await replaceNpcArrayItems(
       client,
       "npcs_helps_with",
@@ -143,13 +215,19 @@ async function upsertNpcProfile(
 
   const insert = await client.execute({
     sql: `INSERT INTO npcs (
-      slug, name, title, level, faction, category, type, description, personality, agenda,
+      slug, excel_id, name, title, organization, resident_region, sandtable_region_id,
+      task_function, level, faction, category, type, description, personality, agenda,
       default_relation, unlock_stage, visible_when_locked, enabled, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
     args: [
       scalarValues.slug,
+      scalarValues.excel_id,
       scalarValues.name,
       scalarValues.title,
+      scalarValues.organization,
+      scalarValues.resident_region,
+      scalarValues.sandtable_region_id,
+      scalarValues.task_function,
       scalarValues.level,
       scalarValues.faction,
       scalarValues.category,
@@ -200,6 +278,7 @@ async function main() {
   }
 
   await ensureNpcColumns(client);
+  const removedLegacy = await removeLegacyWorldNpcs(client);
 
   let created = 0;
   let updated = 0;
@@ -213,6 +292,7 @@ async function main() {
     JSON.stringify(
       {
         ok: true,
+        removedLegacy,
         created,
         updated,
         total: NPC_PROFILES.length,

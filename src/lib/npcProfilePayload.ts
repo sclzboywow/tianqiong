@@ -1,24 +1,25 @@
 import type { NpcProfile } from "@/data/npcProfiles";
-import {
-  inferNpcCategoryFromFaction,
-  inferNpcTypeFromFaction,
-  inferNpcUnlockStage,
-} from "@/payload/contentCategories";
+import { inferNpcUnlockStage } from "@/payload/contentCategories";
 
 export function buildNpcProfilePayloadData(profile: NpcProfile) {
-  const type = inferNpcTypeFromFaction(profile.faction);
-  const category = inferNpcCategoryFromFaction(profile.faction);
+  const type = profile.payloadType;
+  const category = profile.payloadCategory;
   const unlockStage = profile.appearStages?.[0] || inferNpcUnlockStage(type);
 
   return {
     slug: profile.id,
+    excelId: profile.excelId,
     name: profile.name,
     title: profile.title,
+    organization: profile.organization,
+    residentRegion: profile.residentRegion,
+    sandtableRegionId: profile.sandtableRegionId,
     category,
     type,
     level: profile.level,
     faction: profile.faction,
     description: profile.description,
+    taskFunction: profile.description,
     personality: profile.personality || "",
     agenda: profile.agenda || "",
     helpsWith: (profile.helpsWith || []).map((item) => ({ item })),

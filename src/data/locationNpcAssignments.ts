@@ -65,7 +65,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_gm_office",
-    "npcId": "owner_operation_prep_lead",
+    "npcId": "legal_audit_liaison",
     "level": "C",
     "role": "support",
     "regionId": "owner_hub",
@@ -89,7 +89,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_leader_office",
-    "npcId": "owner_pre_approval_officer",
+    "npcId": "owner_cost_contract_lead",
     "level": "A",
     "role": "support",
     "regionId": "owner_hub",
@@ -113,7 +113,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_archive_room",
-    "npcId": "public_resource_center_officer",
+    "npcId": "completion_filing_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "owner_hub",
@@ -121,7 +121,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_cost_contract_dept",
-    "npcId": "owner_pre_approval_officer",
+    "npcId": "owner_cost_contract_lead",
     "level": "A",
     "role": "primary",
     "regionId": "owner_hub",
@@ -137,7 +137,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_cost_contract_dept",
-    "npcId": "owner_operation_prep_lead",
+    "npcId": "legal_audit_liaison",
     "level": "C",
     "role": "blocker",
     "regionId": "owner_hub",
@@ -145,7 +145,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_procurement_office",
-    "npcId": "owner_cost_contract_lead",
+    "npcId": "owner_procurement_lead",
     "level": "A",
     "role": "primary",
     "regionId": "owner_hub",
@@ -153,7 +153,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_procurement_office",
-    "npcId": "cost_consultant_lead",
+    "npcId": "bidding_agent_lead",
     "level": "B",
     "role": "support",
     "regionId": "owner_hub",
@@ -161,7 +161,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_procurement_office",
-    "npcId": "municipal_garden_window_officer",
+    "npcId": "public_resource_center_officer",
     "level": "B",
     "role": "support",
     "regionId": "owner_hub",
@@ -169,7 +169,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_finance_dept",
-    "npcId": "owner_procurement_lead",
+    "npcId": "owner_finance_reviewer",
     "level": "A",
     "role": "primary",
     "regionId": "owner_hub",
@@ -177,7 +177,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_finance_dept",
-    "npcId": "owner_pre_approval_officer",
+    "npcId": "owner_cost_contract_lead",
     "level": "A",
     "role": "support",
     "regionId": "owner_hub",
@@ -193,7 +193,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_operation_prep_office",
-    "npcId": "owner_finance_reviewer",
+    "npcId": "owner_operation_prep_lead",
     "level": "A",
     "role": "primary",
     "regionId": "owner_hub",
@@ -225,7 +225,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "project_meeting_room",
-    "npcId": "legal_audit_liaison",
+    "npcId": "contractor_project_manager",
     "level": "S",
     "role": "support",
     "regionId": "command_center",
@@ -233,7 +233,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "project_meeting_room",
-    "npcId": "supervisor_engineer",
+    "npcId": "chief_supervisor",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -241,7 +241,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_contractor_pm_office",
-    "npcId": "legal_audit_liaison",
+    "npcId": "contractor_project_manager",
     "level": "S",
     "role": "primary",
     "regionId": "command_center",
@@ -249,7 +249,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_contractor_pm_office",
-    "npcId": "contractor_project_manager",
+    "npcId": "contractor_production_manager",
     "level": "A",
     "role": "primary",
     "regionId": "command_center",
@@ -265,7 +265,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_production_dispatch_room",
-    "npcId": "contractor_project_manager",
+    "npcId": "contractor_production_manager",
     "level": "A",
     "role": "primary",
     "regionId": "command_center",
@@ -273,7 +273,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_production_dispatch_room",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -289,7 +289,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_tech_bim_room",
-    "npcId": "contractor_production_manager",
+    "npcId": "bim_technical_lead",
     "level": "A",
     "role": "primary",
     "regionId": "command_center",
@@ -297,7 +297,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_tech_bim_room",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -305,7 +305,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_tech_bim_room",
-    "npcId": "survey_unit_lead",
+    "npcId": "drawing_review_lead",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -313,7 +313,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_safety_quality_office",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "primary",
     "regionId": "command_center",
@@ -321,7 +321,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_safety_quality_office",
-    "npcId": "contractor_safety_quality_lead",
+    "npcId": "contractor_technical_lead",
     "level": "A",
     "role": "primary",
     "regionId": "command_center",
@@ -329,7 +329,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_safety_quality_office",
-    "npcId": "housing_bureau_officer",
+    "npcId": "quality_safety_station_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "command_center",
@@ -345,7 +345,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_business_contract_room",
-    "npcId": "owner_pre_approval_officer",
+    "npcId": "owner_cost_contract_lead",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -353,7 +353,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_business_contract_room",
-    "npcId": "green_building_consultant",
+    "npcId": "audit_settlement_officer",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -369,7 +369,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_material_equipment_office",
-    "npcId": "whole_process_consultant",
+    "npcId": "material_testing_engineer",
     "level": "B",
     "role": "regulator",
     "regionId": "command_center",
@@ -385,7 +385,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "project_document_room",
-    "npcId": "chief_supervisor",
+    "npcId": "supervisor_document_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "command_center",
@@ -401,7 +401,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "project_document_room",
-    "npcId": "supervisor_engineer",
+    "npcId": "chief_supervisor",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -409,7 +409,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_supervisor_office",
-    "npcId": "supervisor_engineer",
+    "npcId": "chief_supervisor",
     "level": "A",
     "role": "primary",
     "regionId": "command_center",
@@ -417,7 +417,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_supervisor_office",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "support",
     "regionId": "command_center",
@@ -425,7 +425,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_supervisor_office",
-    "npcId": "housing_bureau_officer",
+    "npcId": "quality_safety_station_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "command_center",
@@ -441,7 +441,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_labor_realname_office",
-    "npcId": "contractor_project_manager",
+    "npcId": "contractor_production_manager",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -449,7 +449,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_labor_realname_office",
-    "npcId": "audit_settlement_officer",
+    "npcId": "site_main_gate_officer",
     "level": "C",
     "role": "support",
     "regionId": "command_center",
@@ -465,7 +465,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_team_coordination_room",
-    "npcId": "contractor_project_manager",
+    "npcId": "contractor_production_manager",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -473,7 +473,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_team_coordination_room",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -489,7 +489,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_sample_disclosure_room",
-    "npcId": "contractor_safety_quality_lead",
+    "npcId": "contractor_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "command_center",
@@ -497,7 +497,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_sample_disclosure_room",
-    "npcId": "site_carpentry_lead",
+    "npcId": "finishing_team_lead",
     "level": "B",
     "role": "support",
     "regionId": "command_center",
@@ -505,7 +505,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_service_center",
-    "npcId": "bim_technical_lead",
+    "npcId": "government_window_officer",
     "level": "B",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -513,7 +513,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_service_center",
-    "npcId": "natural_resources_officer",
+    "npcId": "housing_bureau_officer",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -529,7 +529,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_dev_reform_window",
-    "npcId": "government_window_officer",
+    "npcId": "dev_reform_window_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "approval_regulatory",
@@ -545,7 +545,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_dev_reform_window",
-    "npcId": "owner_operation_prep_lead",
+    "npcId": "legal_audit_liaison",
     "level": "C",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -553,7 +553,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_natural_resources",
-    "npcId": "dev_reform_window_officer",
+    "npcId": "natural_resources_officer",
     "level": "A",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -561,7 +561,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_natural_resources",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -569,7 +569,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_natural_resources",
-    "npcId": "environment_testing_engineer",
+    "npcId": "survey_mapping_engineer",
     "level": "B",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -577,7 +577,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_housing_construction",
-    "npcId": "natural_resources_officer",
+    "npcId": "housing_bureau_officer",
     "level": "A",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -585,7 +585,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_housing_construction",
-    "npcId": "housing_bureau_officer",
+    "npcId": "quality_safety_station_officer",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -593,7 +593,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "gov_housing_construction",
-    "npcId": "public_resource_center_officer",
+    "npcId": "completion_filing_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "approval_regulatory",
@@ -601,7 +601,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_quality_safety_station",
-    "npcId": "housing_bureau_officer",
+    "npcId": "quality_safety_station_officer",
     "level": "A",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -609,7 +609,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_quality_safety_station",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -617,7 +617,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_quality_safety_station",
-    "npcId": "supervisor_engineer",
+    "npcId": "chief_supervisor",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -625,7 +625,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_design_review_window",
-    "npcId": "quality_safety_station_officer",
+    "npcId": "fire_design_review_officer",
     "level": "A",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -633,7 +633,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_design_review_window",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -641,7 +641,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_design_review_window",
-    "npcId": "contractor_production_manager",
+    "npcId": "bim_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -649,7 +649,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_acceptance_window",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -657,7 +657,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_acceptance_window",
-    "npcId": "pile_foundation_testing_engineer",
+    "npcId": "fire_testing_engineer",
     "level": "A",
     "role": "regulator",
     "regionId": "approval_regulatory",
@@ -665,7 +665,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_acceptance_window",
-    "npcId": "floor_construction_worker",
+    "npcId": "mep_system_lead",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -673,7 +673,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_civil_defense_window",
-    "npcId": "fire_acceptance_officer",
+    "npcId": "civil_defense_window_officer",
     "level": "B",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -681,7 +681,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_civil_defense_window",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -689,7 +689,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_civil_defense_window",
-    "npcId": "chief_supervisor",
+    "npcId": "supervisor_document_engineer",
     "level": "B",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -697,7 +697,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_ecology_window",
-    "npcId": "civil_defense_window_officer",
+    "npcId": "ecology_window_officer",
     "level": "B",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -705,7 +705,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_ecology_window",
-    "npcId": "settlement_monitoring_engineer",
+    "npcId": "environment_testing_engineer",
     "level": "B",
     "role": "regulator",
     "regionId": "approval_regulatory",
@@ -713,7 +713,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_ecology_window",
-    "npcId": "site_unloading_dispatcher",
+    "npcId": "logistics_lane_coordinator",
     "level": "C",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -721,7 +721,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_water_drainage_window",
-    "npcId": "ecology_window_officer",
+    "npcId": "water_drainage_window_officer",
     "level": "B",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -729,7 +729,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_water_drainage_window",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -737,7 +737,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_water_drainage_window",
-    "npcId": "logistics_lane_coordinator",
+    "npcId": "quality_supervision_officer",
     "level": "B",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -745,7 +745,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_municipal_garden_window",
-    "npcId": "water_drainage_window_officer",
+    "npcId": "municipal_garden_window_officer",
     "level": "B",
     "role": "primary",
     "regionId": "approval_regulatory",
@@ -753,7 +753,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_municipal_garden_window",
-    "npcId": "site_safety_officer",
+    "npcId": "outdoor_municipal_coordinator",
     "level": "B",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -761,7 +761,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_municipal_garden_window",
-    "npcId": "mep_system_lead",
+    "npcId": "site_fire_lane_officer",
     "level": "C",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -769,7 +769,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_public_resource_center",
-    "npcId": "municipal_garden_window_officer",
+    "npcId": "public_resource_center_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "approval_regulatory",
@@ -777,7 +777,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_public_resource_center",
-    "npcId": "owner_cost_contract_lead",
+    "npcId": "owner_procurement_lead",
     "level": "A",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -785,7 +785,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_public_resource_center",
-    "npcId": "cost_consultant_lead",
+    "npcId": "bidding_agent_lead",
     "level": "B",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -793,7 +793,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_completion_filing_window",
-    "npcId": "public_resource_center_officer",
+    "npcId": "completion_filing_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "approval_regulatory",
@@ -809,7 +809,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_completion_filing_window",
-    "npcId": "chief_supervisor",
+    "npcId": "supervisor_document_engineer",
     "level": "B",
     "role": "support",
     "regionId": "approval_regulatory",
@@ -817,7 +817,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "third_design_institute",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -825,7 +825,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "third_design_institute",
-    "npcId": "contractor_production_manager",
+    "npcId": "bim_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -833,7 +833,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "third_design_institute",
-    "npcId": "quality_safety_station_officer",
+    "npcId": "fire_design_review_officer",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -841,7 +841,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_survey_unit",
-    "npcId": "design_lead",
+    "npcId": "survey_unit_lead",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -849,7 +849,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_survey_unit",
-    "npcId": "engineering_supervisor_lead",
+    "npcId": "pile_foundation_testing_engineer",
     "level": "B",
     "role": "regulator",
     "regionId": "professional_service",
@@ -857,7 +857,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_survey_unit",
-    "npcId": "contractor_production_manager",
+    "npcId": "bim_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -865,7 +865,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_drawing_review_agency",
-    "npcId": "survey_unit_lead",
+    "npcId": "drawing_review_lead",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -873,7 +873,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_drawing_review_agency",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -881,7 +881,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_drawing_review_agency",
-    "npcId": "natural_resources_officer",
+    "npcId": "housing_bureau_officer",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -889,7 +889,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "third_cost_consultant",
-    "npcId": "drawing_review_lead",
+    "npcId": "cost_consultant_lead",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -897,7 +897,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "third_cost_consultant",
-    "npcId": "owner_pre_approval_officer",
+    "npcId": "owner_cost_contract_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -913,7 +913,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_bidding_agent",
-    "npcId": "cost_consultant_lead",
+    "npcId": "bidding_agent_lead",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -921,7 +921,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_bidding_agent",
-    "npcId": "owner_cost_contract_lead",
+    "npcId": "owner_procurement_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -929,7 +929,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_bidding_agent",
-    "npcId": "municipal_garden_window_officer",
+    "npcId": "public_resource_center_officer",
     "level": "B",
     "role": "support",
     "regionId": "professional_service",
@@ -937,7 +937,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_whole_process_consultant",
-    "npcId": "bidding_agent_lead",
+    "npcId": "whole_process_consultant",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -961,7 +961,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_engineering_supervisor",
-    "npcId": "supervisor_engineer",
+    "npcId": "chief_supervisor",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -969,7 +969,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_engineering_supervisor",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "support",
     "regionId": "professional_service",
@@ -977,7 +977,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_engineering_supervisor",
-    "npcId": "housing_bureau_officer",
+    "npcId": "quality_safety_station_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "professional_service",
@@ -985,7 +985,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "third_testing_center",
-    "npcId": "whole_process_consultant",
+    "npcId": "material_testing_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -1001,7 +1001,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "third_testing_center",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "support",
     "regionId": "professional_service",
@@ -1009,7 +1009,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_pile_foundation_testing",
-    "npcId": "engineering_supervisor_lead",
+    "npcId": "pile_foundation_testing_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -1017,7 +1017,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_pile_foundation_testing",
-    "npcId": "design_lead",
+    "npcId": "survey_unit_lead",
     "level": "B",
     "role": "support",
     "regionId": "professional_service",
@@ -1025,7 +1025,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_pile_foundation_testing",
-    "npcId": "housing_bureau_officer",
+    "npcId": "quality_safety_station_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "professional_service",
@@ -1033,7 +1033,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_settlement_monitoring_unit",
-    "npcId": "material_testing_engineer",
+    "npcId": "settlement_monitoring_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -1041,7 +1041,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_settlement_monitoring_unit",
-    "npcId": "engineering_supervisor_lead",
+    "npcId": "pile_foundation_testing_engineer",
     "level": "B",
     "role": "support",
     "regionId": "professional_service",
@@ -1049,7 +1049,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_settlement_monitoring_unit",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -1057,7 +1057,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_testing_agency",
-    "npcId": "pile_foundation_testing_engineer",
+    "npcId": "fire_testing_engineer",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -1065,7 +1065,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_testing_agency",
-    "npcId": "floor_construction_worker",
+    "npcId": "mep_system_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -1073,7 +1073,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_testing_agency",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "professional_service",
@@ -1081,7 +1081,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_environment_testing_agency",
-    "npcId": "settlement_monitoring_engineer",
+    "npcId": "environment_testing_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -1089,7 +1089,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_environment_testing_agency",
-    "npcId": "civil_defense_window_officer",
+    "npcId": "ecology_window_officer",
     "level": "B",
     "role": "support",
     "regionId": "professional_service",
@@ -1097,7 +1097,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_environment_testing_agency",
-    "npcId": "parking_operation_manager",
+    "npcId": "site_living_area_manager",
     "level": "B",
     "role": "support",
     "regionId": "professional_service",
@@ -1105,7 +1105,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_green_building_consultant",
-    "npcId": "fire_testing_engineer",
+    "npcId": "green_building_consultant",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -1113,7 +1113,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_green_building_consultant",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -1121,7 +1121,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_green_building_consultant",
-    "npcId": "public_resource_center_officer",
+    "npcId": "completion_filing_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "professional_service",
@@ -1129,7 +1129,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_survey_mapping_unit",
-    "npcId": "environment_testing_engineer",
+    "npcId": "survey_mapping_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "professional_service",
@@ -1137,7 +1137,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_survey_mapping_unit",
-    "npcId": "dev_reform_window_officer",
+    "npcId": "natural_resources_officer",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -1145,7 +1145,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_survey_mapping_unit",
-    "npcId": "public_resource_center_officer",
+    "npcId": "completion_filing_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "professional_service",
@@ -1153,7 +1153,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_audit_settlement_unit",
-    "npcId": "green_building_consultant",
+    "npcId": "audit_settlement_officer",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -1161,7 +1161,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_audit_settlement_unit",
-    "npcId": "owner_pre_approval_officer",
+    "npcId": "owner_cost_contract_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -1177,7 +1177,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_special_consultant",
-    "npcId": "survey_mapping_engineer",
+    "npcId": "special_consultant",
     "level": "A",
     "role": "primary",
     "regionId": "professional_service",
@@ -1193,7 +1193,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_special_consultant",
-    "npcId": "completion_filing_officer",
+    "npcId": "design_lead",
     "level": "A",
     "role": "support",
     "regionId": "professional_service",
@@ -1201,7 +1201,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_main_gate",
-    "npcId": "audit_settlement_officer",
+    "npcId": "site_main_gate_officer",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -1209,7 +1209,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_main_gate",
-    "npcId": "special_consultant",
+    "npcId": "site_vehicle_wash_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1217,7 +1217,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_main_gate",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -1225,7 +1225,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_realname_channel",
-    "npcId": "audit_settlement_officer",
+    "npcId": "site_main_gate_officer",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -1241,7 +1241,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_realname_channel",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1249,7 +1249,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_vehicle_wash",
-    "npcId": "special_consultant",
+    "npcId": "site_vehicle_wash_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1257,7 +1257,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_vehicle_wash",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1265,7 +1265,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_vehicle_wash",
-    "npcId": "civil_defense_window_officer",
+    "npcId": "ecology_window_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1273,7 +1273,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_road",
-    "npcId": "special_consultant",
+    "npcId": "site_vehicle_wash_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1281,7 +1281,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_road",
-    "npcId": "mep_system_lead",
+    "npcId": "site_fire_lane_officer",
     "level": "C",
     "role": "support",
     "regionId": "construction_site",
@@ -1289,7 +1289,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_road",
-    "npcId": "contractor_project_manager",
+    "npcId": "contractor_production_manager",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1297,7 +1297,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "mep_system_lead",
+    "npcId": "site_fire_lane_officer",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -1305,7 +1305,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1313,7 +1313,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -1321,7 +1321,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "site_main_gate_officer",
+    "npcId": "temp_utilities_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1329,7 +1329,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1337,7 +1337,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1345,7 +1345,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_water",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1353,7 +1353,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_water",
-    "npcId": "logistics_lane_coordinator",
+    "npcId": "quality_supervision_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1361,7 +1361,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_water",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1369,7 +1369,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rain_sewage_pipe",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1377,7 +1377,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rain_sewage_pipe",
-    "npcId": "civil_defense_window_officer",
+    "npcId": "ecology_window_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "construction_site",
@@ -1385,7 +1385,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rain_sewage_pipe",
-    "npcId": "site_unloading_dispatcher",
+    "npcId": "logistics_lane_coordinator",
     "level": "C",
     "role": "support",
     "regionId": "construction_site",
@@ -1393,7 +1393,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "site_vehicle_wash_officer",
+    "npcId": "site_safety_officer",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -1401,7 +1401,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1417,7 +1417,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_main_gate",
-    "npcId": "site_vehicle_wash_officer",
+    "npcId": "site_safety_officer",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -1433,7 +1433,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_main_gate",
-    "npcId": "housing_bureau_officer",
+    "npcId": "quality_safety_station_officer",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1441,7 +1441,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_project_office_building",
-    "npcId": "legal_audit_liaison",
+    "npcId": "contractor_project_manager",
     "level": "S",
     "role": "primary",
     "regionId": "construction_site",
@@ -1449,7 +1449,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_project_office_building",
-    "npcId": "contractor_project_manager",
+    "npcId": "contractor_production_manager",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1457,7 +1457,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_project_office_building",
-    "npcId": "chief_supervisor",
+    "npcId": "supervisor_document_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1465,7 +1465,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_worker_dorm",
-    "npcId": "site_temp_road_officer",
+    "npcId": "site_office_admin",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1481,7 +1481,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_worker_dorm",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1489,7 +1489,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_canteen_market",
-    "npcId": "site_temp_road_officer",
+    "npcId": "site_office_admin",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1497,7 +1497,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_canteen_market",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1505,7 +1505,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_canteen_market",
-    "npcId": "parking_operation_manager",
+    "npcId": "site_living_area_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1513,7 +1513,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_medical_room",
-    "npcId": "site_temp_road_officer",
+    "npcId": "site_office_admin",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1521,7 +1521,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_medical_room",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1529,7 +1529,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_medical_room",
-    "npcId": "site_vehicle_wash_officer",
+    "npcId": "site_safety_officer",
     "level": "C",
     "role": "support",
     "regionId": "construction_site",
@@ -1537,7 +1537,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "site_fire_lane_officer",
+    "npcId": "site_material_yard_manager",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1553,7 +1553,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1561,7 +1561,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "site_office_admin",
+    "npcId": "site_medical_officer",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -1569,7 +1569,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1577,7 +1577,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -1585,7 +1585,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rebar_processing",
-    "npcId": "site_living_area_manager",
+    "npcId": "site_rebar_processing_lead",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1593,7 +1593,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rebar_processing",
-    "npcId": "contractor_safety_quality_lead",
+    "npcId": "contractor_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1601,7 +1601,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rebar_processing",
-    "npcId": "whole_process_consultant",
+    "npcId": "material_testing_engineer",
     "level": "B",
     "role": "regulator",
     "regionId": "construction_site",
@@ -1609,7 +1609,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_carpentry_processing",
-    "npcId": "site_canteen_manager",
+    "npcId": "site_carpentry_lead",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1617,7 +1617,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_carpentry_processing",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1625,7 +1625,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_carpentry_processing",
-    "npcId": "mep_system_lead",
+    "npcId": "site_fire_lane_officer",
     "level": "C",
     "role": "support",
     "regionId": "construction_site",
@@ -1633,7 +1633,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_mep_processing",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1641,7 +1641,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_mep_processing",
-    "npcId": "contractor_production_manager",
+    "npcId": "bim_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1649,7 +1649,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_mep_processing",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "regulator",
     "regionId": "construction_site",
@@ -1657,7 +1657,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "site_rebar_processing_lead",
+    "npcId": "engineering_supervisor_lead",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1673,7 +1673,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1681,7 +1681,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "site_carpentry_lead",
+    "npcId": "finishing_team_lead",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1697,7 +1697,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "site_fire_lane_officer",
+    "npcId": "site_material_yard_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1705,7 +1705,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_equipment_yard",
-    "npcId": "site_mep_processing_lead",
+    "npcId": "site_unloading_dispatcher",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1713,7 +1713,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_equipment_yard",
-    "npcId": "special_consultant",
+    "npcId": "site_vehicle_wash_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1745,7 +1745,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_equipment_yard",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1753,7 +1753,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "site_unloading_dispatcher",
+    "npcId": "logistics_lane_coordinator",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -1761,7 +1761,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "parking_operation_manager",
+    "npcId": "site_living_area_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1769,7 +1769,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "civil_defense_window_officer",
+    "npcId": "ecology_window_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1777,7 +1777,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_b2",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1785,7 +1785,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_b2",
-    "npcId": "floor_construction_worker",
+    "npcId": "mep_system_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1793,7 +1793,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_b2",
-    "npcId": "finishing_team_lead",
+    "npcId": "hvac_room_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1801,7 +1801,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_b1_mep_corridor",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1809,7 +1809,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_b1_mep_corridor",
-    "npcId": "hvac_room_engineer",
+    "npcId": "parking_lot_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1817,7 +1817,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_b1_mep_corridor",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1825,7 +1825,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_l1_commercial_street",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1833,7 +1833,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_l1_commercial_street",
-    "npcId": "site_carpentry_lead",
+    "npcId": "finishing_team_lead",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1841,7 +1841,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_l1_commercial_street",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -1849,7 +1849,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_2f",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1857,7 +1857,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_2f",
-    "npcId": "site_carpentry_lead",
+    "npcId": "finishing_team_lead",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1873,7 +1873,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_3f",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1881,7 +1881,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_3f",
-    "npcId": "site_carpentry_lead",
+    "npcId": "finishing_team_lead",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1889,7 +1889,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_3f",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1897,7 +1897,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_5f",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1913,7 +1913,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_5f",
-    "npcId": "contractor_safety_quality_lead",
+    "npcId": "contractor_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1921,7 +1921,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_b1",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1929,7 +1929,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_b1",
-    "npcId": "finishing_team_lead",
+    "npcId": "hvac_room_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1937,7 +1937,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_b1",
-    "npcId": "floor_supervision_engineer",
+    "npcId": "fire_pump_room_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1945,7 +1945,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_roof_floor",
-    "npcId": "site_material_yard_manager",
+    "npcId": "floor_construction_worker",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -1953,7 +1953,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_roof_floor",
-    "npcId": "contractor_safety_quality_lead",
+    "npcId": "contractor_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1961,7 +1961,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_roof_floor",
-    "npcId": "finishing_team_lead",
+    "npcId": "hvac_room_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1969,7 +1969,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_atrium",
-    "npcId": "site_rebar_processing_lead",
+    "npcId": "engineering_supervisor_lead",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -1977,7 +1977,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_atrium",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -1985,7 +1985,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_atrium",
-    "npcId": "hvac_room_engineer",
+    "npcId": "parking_lot_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -1993,7 +1993,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_strong_power_shaft",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -2001,7 +2001,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_strong_power_shaft",
-    "npcId": "site_main_gate_officer",
+    "npcId": "temp_utilities_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2009,7 +2009,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_strong_power_shaft",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2017,7 +2017,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_weak_power_shaft",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -2025,7 +2025,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_weak_power_shaft",
-    "npcId": "outdoor_municipal_coordinator",
+    "npcId": "site_realname_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2033,7 +2033,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_weak_power_shaft",
-    "npcId": "wayfinding_design_lead",
+    "npcId": "smart_weak_current_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2041,7 +2041,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -2049,7 +2049,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2057,7 +2057,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "logistics_lane_coordinator",
+    "npcId": "quality_supervision_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2065,7 +2065,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "finishing_team_lead",
+    "npcId": "hvac_room_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2073,7 +2073,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "contractor_production_manager",
+    "npcId": "bim_technical_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2081,7 +2081,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2089,7 +2089,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_transformer_room",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -2097,7 +2097,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_transformer_room",
-    "npcId": "parking_lot_manager",
+    "npcId": "subcontractor_lead",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2105,7 +2105,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_transformer_room",
-    "npcId": "site_main_gate_officer",
+    "npcId": "temp_utilities_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2113,7 +2113,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_transformer_room",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -2129,7 +2129,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_transformer_room",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2137,7 +2137,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_fire_pump_room",
-    "npcId": "floor_construction_worker",
+    "npcId": "mep_system_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -2145,7 +2145,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_fire_pump_room",
-    "npcId": "pile_foundation_testing_engineer",
+    "npcId": "fire_testing_engineer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2153,7 +2153,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_fire_pump_room",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2161,7 +2161,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_fire_pump_room",
-    "npcId": "floor_construction_worker",
+    "npcId": "mep_system_lead",
     "level": "A",
     "role": "primary",
     "regionId": "construction_site",
@@ -2169,7 +2169,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_fire_pump_room",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2177,7 +2177,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "site_fire_pump_room",
-    "npcId": "logistics_lane_coordinator",
+    "npcId": "quality_supervision_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2193,7 +2193,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_control_room",
-    "npcId": "floor_construction_worker",
+    "npcId": "mep_system_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2201,7 +2201,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_fire_control_room",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2209,7 +2209,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "finishing_team_lead",
+    "npcId": "hvac_room_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2217,7 +2217,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2225,7 +2225,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "pile_foundation_testing_engineer",
+    "npcId": "fire_testing_engineer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2233,7 +2233,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "floor_supervision_engineer",
+    "npcId": "fire_pump_room_engineer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2241,7 +2241,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2249,7 +2249,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "supervisor_document_engineer",
+    "npcId": "supervisor_engineer",
     "level": "B",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2257,7 +2257,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "logistics_lane_coordinator",
+    "npcId": "quality_supervision_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2265,7 +2265,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2281,7 +2281,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rain_sewage_pipe",
-    "npcId": "site_safety_officer",
+    "npcId": "outdoor_municipal_coordinator",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2289,7 +2289,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rain_sewage_pipe",
-    "npcId": "site_realname_officer",
+    "npcId": "site_temp_road_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2297,7 +2297,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_rain_sewage_pipe",
-    "npcId": "ecology_window_officer",
+    "npcId": "water_drainage_window_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2305,7 +2305,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_water",
-    "npcId": "logistics_lane_coordinator",
+    "npcId": "quality_supervision_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2313,7 +2313,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_water",
-    "npcId": "site_safety_officer",
+    "npcId": "outdoor_municipal_coordinator",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2321,7 +2321,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_water",
-    "npcId": "ecology_window_officer",
+    "npcId": "water_drainage_window_officer",
     "level": "B",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2329,7 +2329,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "parking_lot_manager",
+    "npcId": "subcontractor_lead",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2337,7 +2337,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2345,7 +2345,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "site_main_gate_officer",
+    "npcId": "temp_utilities_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2353,7 +2353,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "temp_utilities_officer",
+    "npcId": "supplier_representative",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -2361,7 +2361,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "site_safety_officer",
+    "npcId": "outdoor_municipal_coordinator",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2369,7 +2369,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2377,7 +2377,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "outdoor_municipal_coordinator",
+    "npcId": "site_realname_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2385,7 +2385,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "wayfinding_design_lead",
+    "npcId": "smart_weak_current_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2393,7 +2393,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2401,7 +2401,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "mep_system_lead",
+    "npcId": "site_fire_lane_officer",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -2409,7 +2409,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
     "regionId": "construction_site",
@@ -2417,7 +2417,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_fire_lane",
-    "npcId": "contractor_technical_lead",
+    "npcId": "contractor_safety_quality_lead",
     "level": "A",
     "role": "support",
     "regionId": "construction_site",
@@ -2425,7 +2425,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_atrium",
-    "npcId": "hvac_room_engineer",
+    "npcId": "parking_lot_manager",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2433,7 +2433,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_atrium",
-    "npcId": "subcontractor_lead",
+    "npcId": "wayfinding_design_lead",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2449,7 +2449,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_parking_lot",
-    "npcId": "hvac_room_engineer",
+    "npcId": "parking_lot_manager",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2457,7 +2457,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_parking_lot",
-    "npcId": "smart_weak_current_manager",
+    "npcId": "parking_operation_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2473,7 +2473,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "atrium_operations_lead",
+    "npcId": "site_canteen_manager",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -2481,7 +2481,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "quality_supervision_officer",
+    "npcId": "logistics_receiving_coordinator",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2489,7 +2489,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "special_consultant",
+    "npcId": "site_vehicle_wash_officer",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2497,7 +2497,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "site_unloading_dispatcher",
+    "npcId": "logistics_lane_coordinator",
     "level": "C",
     "role": "primary",
     "regionId": "construction_site",
@@ -2505,7 +2505,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "parking_operation_manager",
+    "npcId": "site_living_area_manager",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2513,7 +2513,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_unloading_zone",
-    "npcId": "quality_supervision_officer",
+    "npcId": "logistics_receiving_coordinator",
     "level": "B",
     "role": "support",
     "regionId": "construction_site",
@@ -2521,7 +2521,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_logistics_lane",
-    "npcId": "quality_supervision_officer",
+    "npcId": "logistics_receiving_coordinator",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
@@ -2529,7 +2529,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_logistics_lane",
-    "npcId": "atrium_operations_lead",
+    "npcId": "site_canteen_manager",
     "level": "C",
     "role": "support",
     "regionId": "construction_site",
@@ -2537,7 +2537,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_logistics_lane",
-    "npcId": "mep_system_lead",
+    "npcId": "site_fire_lane_officer",
     "level": "C",
     "role": "support",
     "regionId": "construction_site",
@@ -2545,16 +2545,18 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_operation_prep_office",
-    "npcId": "owner_finance_reviewer",
+    "npcId": "owner_operation_prep_lead",
     "level": "A",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "陆宁在【运营筹备办公室】围绕「开业筹备/商户进场/运营移交」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "owner_operation_prep_office",
-    "npcId": "logistics_receiving_coordinator",
+    "npcId": "floor_supervision_engineer",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "唐检在【运营筹备办公室】围绕「开业联检/问题派单/整改销项」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2562,6 +2564,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "property_engineering_manager",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "郝工在【运营筹备办公室】围绕「物业接管/设备移交/缺陷销项」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2569,20 +2572,23 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "opening_leasing_manager",
     "level": "A",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "沈嘉在【招商 / 租赁中心】围绕「招商租赁/商户需求/开业目标」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_opening_leasing_center",
-    "npcId": "owner_finance_reviewer",
+    "npcId": "owner_operation_prep_lead",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "陆宁在【招商 / 租赁中心】围绕「开业筹备/商户进场/运营移交」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_opening_leasing_center",
-    "npcId": "owner_pre_approval_officer",
+    "npcId": "owner_cost_contract_lead",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "马衡在【招商 / 租赁中心】围绕「合同边界/签证变更/成本预警」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2590,6 +2596,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "merchant_fitout_manager",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "麦然在【商户装修服务中心】围绕「商户服务/进场协调/投诉处置」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2597,13 +2604,15 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "second_fitout_admin",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "谢承二在【商户装修服务中心】围绕「二装管理/巡查整改/商户冲突」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_merchant_fitout_service",
-    "npcId": "supplier_representative",
+    "npcId": "merchant_representative",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "钟证在【商户装修服务中心】围绕「商户证照/手续协助/资料补正」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2611,6 +2620,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "second_fitout_admin",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "谢承二在【二装管理办公室】围绕「二装管理/巡查整改/商户冲突」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2618,13 +2628,15 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "fire_control_room_officer",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "叶青在【二装管理办公室】围绕「消防值守/报警处理/联动测试」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_second_fitout_office",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
+    "regionId": "opening_prep",
     "note": "梁瑜在【二装管理办公室】围绕「消防验收/联动测试/整改销项」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2632,6 +2644,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "property_customer_manager",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "乔安在【物业客服中心】围绕「客服报修/服务保障/投诉闭环」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2639,13 +2652,15 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "property_engineering_manager",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "郝工在【物业客服中心】围绕「物业接管/设备移交/缺陷销项」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_property_customer_center",
-    "npcId": "merchant_representative",
+    "npcId": "owner_pre_approval_officer",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "袁值在【物业客服中心】围绕「试营业指挥/突发响应/资源调度」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2653,20 +2668,23 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "property_engineering_manager",
     "level": "A",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "郝工在【物业工程部】围绕「物业接管/设备移交/缺陷销项」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "site_property_handover",
-    "npcId": "site_medical_officer",
+    "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "余成电在【物业工程部】围绕「机电安装/管线综合/系统调试」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "site_property_handover",
-    "npcId": "wayfinding_design_lead",
+    "npcId": "smart_weak_current_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "罗智在【物业工程部】围绕「智能化运维/弱电中控/系统联调」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2674,20 +2692,23 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "fire_control_room_officer",
     "level": "A",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "叶青在【消防控制室】围绕「消防值守/报警处理/联动测试」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_fire_control_room",
-    "npcId": "floor_construction_worker",
+    "npcId": "mep_system_lead",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "江防在【消防控制室】围绕「消防系统/水电调试/联动整改」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_fire_control_room",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "regulator",
+    "regionId": "opening_prep",
     "note": "梁瑜在【消防控制室】围绕「消防验收/联动测试/整改销项」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2695,34 +2716,39 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "security_roster_manager",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "高安在【安保指挥室】围绕「安保排班/应急预案/秩序维护」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_security_roster_room",
-    "npcId": "merchant_representative",
+    "npcId": "owner_pre_approval_officer",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "袁值在【安保指挥室】围绕「试营业指挥/突发响应/资源调度」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_security_roster_room",
-    "npcId": "smart_weak_current_manager",
-    "level": "B",
-    "role": "support",
-    "note": "裴景在【安保指挥室】围绕「停车运营/系统联调/车流组织」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_security_roster_room",
     "npcId": "parking_operation_manager",
     "level": "B",
+    "role": "support",
+    "regionId": "opening_prep",
+    "note": "裴景在【安保指挥室】围绕「停车运营/系统联调/车流组织」提出请求、设置条件或触发冲突。"
+  },
+  {
+    "locationId": "area_security_roster_room",
+    "npcId": "site_living_area_manager",
+    "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "温洁在【保洁 / 环境管理办公室】围绕「保洁环境/垃圾协调/品质巡查」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_security_roster_room",
-    "npcId": "quality_supervision_officer",
+    "npcId": "logistics_receiving_coordinator",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "孙后在【保洁 / 环境管理办公室】围绕「后勤收货/垃圾清运/路线协调」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2730,20 +2756,23 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "property_customer_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "乔安在【保洁 / 环境管理办公室】围绕「客服报修/服务保障/投诉闭环」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_parking_management_center",
-    "npcId": "smart_weak_current_manager",
+    "npcId": "parking_operation_manager",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "裴景在【停车场管理中心】围绕「停车运营/系统联调/车流组织」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_parking_management_center",
-    "npcId": "hvac_room_engineer",
+    "npcId": "parking_lot_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "裴车在【停车场管理中心】围绕「停车系统/道闸调试/车流组织」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2751,20 +2780,23 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "security_roster_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "高安在【停车场管理中心】围绕「安保排班/应急预案/秩序维护」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_smart_weak_current_center",
-    "npcId": "wayfinding_design_lead",
+    "npcId": "smart_weak_current_manager",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "罗智在【智能化 / 弱电中控室】围绕「智能化运维/弱电中控/系统联调」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_smart_weak_current_center",
-    "npcId": "outdoor_municipal_coordinator",
+    "npcId": "site_realname_officer",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "程信在【智能化 / 弱电中控室】围绕「通信接入/弱电接口/运营商协调」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2772,13 +2804,15 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "fire_control_room_officer",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "叶青在【智能化 / 弱电中控室】围绕「消防值守/报警处理/联动测试」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_opening_joint_command",
-    "npcId": "logistics_receiving_coordinator",
+    "npcId": "floor_supervision_engineer",
     "level": "A",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "唐检在【开业联检指挥部】围绕「开业联检/问题派单/整改销项」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2786,6 +2820,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "owner_project_director",
     "level": "S",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "林知远在【开业联检指挥部】围绕「主线任务/综合协调/问题闭环」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2793,20 +2828,23 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "property_engineering_manager",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "郝工在【开业联检指挥部】围绕「物业接管/设备移交/缺陷销项」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_trial_operation_command",
-    "npcId": "merchant_representative",
+    "npcId": "owner_pre_approval_officer",
     "level": "A",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "袁值在【试营业指挥部】围绕「试营业指挥/突发响应/资源调度」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_trial_operation_command",
-    "npcId": "owner_finance_reviewer",
+    "npcId": "owner_operation_prep_lead",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "陆宁在【试营业指挥部】围绕「开业筹备/商户进场/运营移交」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2814,13 +2852,15 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "security_roster_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "高安在【试营业指挥部】围绕「安保排班/应急预案/秩序维护」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_merchant_license_point",
-    "npcId": "supplier_representative",
+    "npcId": "merchant_representative",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "钟证在【商户证照办理点】围绕「商户证照/手续协助/资料补正」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2828,20 +2868,23 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "merchant_fitout_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "麦然在【商户证照办理点】围绕「商户服务/进场协调/投诉处置」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_merchant_license_point",
-    "npcId": "fire_design_review_officer",
+    "npcId": "fire_acceptance_officer",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "梁瑜在【商户证照办理点】围绕「消防验收/联动测试/整改销项」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_wayfinding_display_studio",
-    "npcId": "subcontractor_lead",
+    "npcId": "wayfinding_design_lead",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "米陈在【导视美陈工作室】围绕「导视美陈/品牌落地/效果调整」提出请求、设置条件或触发冲突。"
   },
   {
@@ -2849,34 +2892,39 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "npcId": "opening_leasing_manager",
     "level": "A",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "沈嘉在【导视美陈工作室】围绕「招商租赁/商户需求/开业目标」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_wayfinding_display_studio",
-    "npcId": "hvac_room_engineer",
+    "npcId": "parking_lot_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "裴车在【导视美陈工作室】围绕「停车系统/道闸调试/车流组织」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_logistics_dispatch",
-    "npcId": "quality_supervision_officer",
+    "npcId": "logistics_receiving_coordinator",
     "level": "B",
     "role": "primary",
+    "regionId": "opening_prep",
     "note": "孙后在【后勤收货 / 垃圾清运协调点】围绕「后勤收货/垃圾清运/路线协调」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_logistics_dispatch",
-    "npcId": "atrium_operations_lead",
+    "npcId": "site_canteen_manager",
     "level": "C",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "邱卸在【后勤收货 / 垃圾清运协调点】围绕「卸货调度/物流排队/临堆管理」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_logistics_dispatch",
-    "npcId": "parking_operation_manager",
+    "npcId": "site_living_area_manager",
     "level": "B",
     "role": "support",
+    "regionId": "opening_prep",
     "note": "温洁在【后勤收货 / 垃圾清运协调点】围绕「保洁环境/垃圾协调/品质巡查」提出请求、设置条件或触发冲突。"
   }
 ];

@@ -7,10 +7,120 @@ import path from "node:path";
 import XLSX from "xlsx";
 import { LOCATION_SANDTABLE_AREAS } from "../src/data/locationSandtableAreas";
 import { MAP_LOCATION_SEED } from "../src/data/locations";
+import { getOrganizationPayload } from "../src/lib/npcOrganizationPayload";
 
 const ROOT = path.resolve(__dirname, "..");
 const XLSX_PATH = path.join(ROOT, "天穹_分区沙盘NPC分级配置表.xlsx");
 
+/** 按 Excel「职务/身份」映射稳定 profile id（勿按 NPC 序号硬编码，Excel 行序与旧序号不一致） */
+const PROFILE_ID_BY_TITLE: Record<string, string> = {
+  业主总经理: "owner_general_manager",
+  分管领导: "owner_executive_leader",
+  业主项目负责人: "owner_project_director",
+  项目管理专员: "owner_project_coordinator",
+  成本合约负责人: "owner_cost_contract_lead",
+  招采专员: "owner_procurement_lead",
+  财务资金负责人: "owner_finance_reviewer",
+  档案资料管理员: "owner_archive_manager",
+  运营筹备经理: "owner_operation_prep_lead",
+  法审与审计联络人: "legal_audit_liaison",
+  总包项目经理: "contractor_project_manager",
+  生产经理: "contractor_production_manager",
+  "技术/BIM负责人": "bim_technical_lead",
+  安全总监: "contractor_safety_quality_lead",
+  质量负责人: "contractor_technical_lead",
+  商务经理: "contractor_business_lead",
+  材料设备主管: "contractor_material_equipment_lead",
+  资料主管: "supervisor_document_engineer",
+  总监理工程师: "chief_supervisor",
+  专业监理工程师: "supervisor_engineer",
+  劳务实名制管理员: "labor_realname_officer",
+  班组长: "team_coordination_lead",
+  样板与精装工程师: "sample_disclosure_lead",
+  综合窗口受理员: "government_window_officer",
+  发改审批经办: "dev_reform_window_officer",
+  规划审查负责人: "natural_resources_officer",
+  施工许可科长: "housing_bureau_officer",
+  质安监督员: "quality_safety_station_officer",
+  消防设计审查工程师: "fire_design_review_officer",
+  消防验收专员: "fire_acceptance_officer",
+  人防窗口经办: "civil_defense_window_officer",
+  生态环境窗口经办: "ecology_window_officer",
+  水务排水接入专员: "water_drainage_window_officer",
+  市政园林窗口经办: "municipal_garden_window_officer",
+  交易中心项目经办: "public_resource_center_officer",
+  竣工备案审查员: "completion_filing_officer",
+  设计总负责人: "design_lead",
+  勘察项目负责人: "survey_unit_lead",
+  施工图审查工程师: "drawing_review_lead",
+  造价咨询负责人: "cost_consultant_lead",
+  招标代理项目经理: "bidding_agent_lead",
+  全过程咨询项目经理: "whole_process_consultant",
+  材料检测工程师: "material_testing_engineer",
+  "桩基/基坑检测负责人": "pile_foundation_testing_engineer",
+  沉降监测工程师: "settlement_monitoring_engineer",
+  消防检测工程师: "fire_testing_engineer",
+  环境检测工程师: "environment_testing_engineer",
+  节能绿建咨询师: "green_building_consultant",
+  测绘项目负责人: "survey_mapping_engineer",
+  审计结算负责人: "audit_settlement_officer",
+  专项顾问: "special_consultant",
+  门卫与实名制管理员: "site_main_gate_officer",
+  车辆与机械调度员: "site_vehicle_wash_officer",
+  临电电工: "temp_utilities_officer",
+  临水排水工长: "site_temp_road_officer",
+  安全体验区讲解员: "site_safety_officer",
+  后勤主管: "site_office_admin",
+  材料仓库管理员: "site_material_yard_manager",
+  危化品管理员: "site_medical_officer",
+  钢筋工长: "site_rebar_processing_lead",
+  木工工长: "site_carpentry_lead",
+  机电工长: "site_mep_processing_lead",
+  幕墙工长: "engineering_supervisor_lead",
+  精装工长: "finishing_team_lead",
+  周转材料管理员: "site_unloading_dispatcher",
+  设备管理员: "site_equipment_yard_manager",
+  垃圾清运负责人: "logistics_lane_coordinator",
+  栋号长: "floor_construction_worker",
+  水电消防工长: "mep_system_lead",
+  电梯厂家工程师: "fire_pump_room_engineer",
+  暖通工程师: "hvac_room_engineer",
+  市政管网工长: "outdoor_municipal_coordinator",
+  消防车道巡查员: "site_fire_lane_officer",
+  景观工程师: "atrium_operations_lead",
+  停车系统工程师: "parking_lot_manager",
+  卸货调度员: "site_canteen_manager",
+  通信接入工程师: "site_realname_officer",
+  燃气接入协调人: "supplier_representative",
+  供电接入经理: "subcontractor_lead",
+  给水接入经理: "quality_supervision_officer",
+  招商经理: "opening_leasing_manager",
+  商户服务专员: "merchant_fitout_manager",
+  二装管理员: "second_fitout_admin",
+  物业客服主管: "property_customer_manager",
+  物业工程经理: "property_engineering_manager",
+  消防控制室值班长: "fire_control_room_officer",
+  安保经理: "security_roster_manager",
+  保洁环境经理: "site_living_area_manager",
+  停车场运营经理: "parking_operation_manager",
+  智能化运维工程师: "smart_weak_current_manager",
+  开业联检总协调: "floor_supervision_engineer",
+  试营业值班指挥官: "owner_pre_approval_officer",
+  商户证照专员: "merchant_representative",
+  导视美陈设计师: "wayfinding_design_lead",
+  后勤收货协调人: "logistics_receiving_coordinator",
+};
+
+function profileIdForRow(row: Record<string, string>): string {
+  const title = row["职务/身份"];
+  const id = PROFILE_ID_BY_TITLE[title];
+  if (id) return id;
+  const excelId = row.NPC_ID;
+  console.warn("Missing title map:", excelId, title);
+  return excelId?.toLowerCase() || title;
+}
+
+/** @deprecated 仅作 title 映射缺失时的兜底 */
 const NPC_ID_TO_PROFILE_ID: Record<string, string> = {
   NPC001: "owner_general_manager",
   NPC002: "owner_executive_leader",
@@ -109,27 +219,14 @@ const NPC_ID_TO_PROFILE_ID: Record<string, string> = {
   NPC095: "quality_supervision_officer",
 };
 
-const FACTION_MAP: Record<string, string> = {
-  业主方: "owner",
-  总包方: "contractor",
-  监理方: "supervisor",
-  "政府/监管": "government",
-  "政府单位": "government",
-  "咨询/第三方": "consultant",
-  第三方机构: "consultant",
-  供应商: "supplier",
-  "商户/运营": "merchant",
-  物业方: "property",
-  "劳务/班组": "labor",
-  "公众/周边": "public",
-};
-
 const REGION_MAP: Record<string, string> = {
   业主: "owner_hub",
+  业主中枢: "owner_hub",
   现场指挥区: "command_center",
   审批监管区: "approval_regulatory",
   专业服务区: "professional_service",
   施工现场: "construction_site",
+  开业筹备: "opening_prep",
   开业筹备区: "opening_prep",
 };
 
@@ -304,23 +401,35 @@ function main() {
   const placeMap = buildPlaceToLocationIdMap();
   const unresolvedPlaces = new Set<string>();
 
+  const excelNpcIdToProfileId: Record<string, string> = {};
+  for (const row of profileRows) {
+    excelNpcIdToProfileId[row.NPC_ID] = profileIdForRow(row);
+  }
+
   const profiles = profileRows.map((row) => {
-    const excelId = row.NPC_ID;
-    const id = NPC_ID_TO_PROFILE_ID[excelId] || excelId.toLowerCase();
-    const faction = FACTION_MAP[row["所属阵营/单位"]] || "other";
+    const id = excelNpcIdToProfileId[row.NPC_ID];
+    const organization = row["所属阵营/单位"];
+    const orgPayload = getOrganizationPayload(organization);
     const helpsWith = splitList(row["可推动任务"]);
     const blocksWhen = splitList(row["可能制造阻力"]);
+    const taskFunction = row["任务功能"] || row["核心诉求"] || row["职务/身份"];
     return {
       id,
+      excelId: row.NPC_ID,
       name: row["NPC姓名"],
       title: row["职务/身份"],
-      faction,
+      organization,
+      faction: orgPayload.faction,
       level: row["基础等级"] || "B",
-      description: row["任务功能"] || row["核心诉求"] || row["职务/身份"],
+      residentRegion: row["常驻大区"],
+      sandtableRegionId: REGION_MAP[row["常驻大区"]],
+      description: taskFunction,
       personality: row["性格/立场"],
       agenda: row["核心诉求"],
       helpsWith,
       blocksWhen,
+      payloadCategory: orgPayload.category,
+      payloadType: orgPayload.type,
     };
   });
 
@@ -333,7 +442,7 @@ function main() {
       continue;
     }
     const excelNpcId = row.NPC_ID;
-    const npcId = NPC_ID_TO_PROFILE_ID[excelNpcId];
+    const npcId = excelNpcIdToProfileId[excelNpcId] || NPC_ID_TO_PROFILE_ID[excelNpcId];
     if (!npcId) continue;
     const priority = Number(row["优先级"] || 3);
     assignments.push({
@@ -369,6 +478,7 @@ function main() {
   ];
 
   const profilesTs = `import type { ProjectStageId } from "@/game/projectStages";
+import type { LocationRegionId } from "@/game/locationSandtablePresentationEngine";
 
 export type NpcFaction =
   | "owner"
@@ -387,10 +497,14 @@ export type NpcLevel = "S" | "A" | "B" | "C";
 
 export type NpcProfile = {
   id: string;
+  excelId: string;
   name: string;
   title: string;
+  organization: string;
   faction: NpcFaction;
   level: NpcLevel;
+  residentRegion: string;
+  sandtableRegionId?: LocationRegionId;
   description: string;
   personality?: string;
   agenda?: string;
@@ -398,6 +512,8 @@ export type NpcProfile = {
   blocksWhen?: string[];
   riskTags?: string[];
   appearStages?: ProjectStageId[];
+  payloadCategory: string;
+  payloadType: string;
 };
 
 /** 旧 MapLocation.relatedNpcNames → profile id */

@@ -12,6 +12,7 @@ import {
   type TaskTemplateEffectDoc,
 } from "./taskTemplateEffectMapper";
 import { inkSourceUsesLegacyDialogueWithoutSpeakerTags } from "./storySegmentParser";
+import { LEGACY_NPC_NAME_ALIASES } from "@/data/npcProfiles";
 
 const STORIES_DIR = path.join(process.cwd(), "src/ink/stories");
 
@@ -417,6 +418,9 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
   const eventTemplateSlugs = new Set(data.eventTemplates.map((row) => row.slug).filter(Boolean));
   const storyEntrySlugs = new Set(data.storyEntries.map((row) => row.slug).filter(Boolean));
   const npcNames = new Set(data.npcNames.filter(Boolean));
+  for (const legacyName of Object.keys(LEGACY_NPC_NAME_ALIASES)) {
+    npcNames.add(legacyName);
+  }
   const areaNames = new Set(data.areaNames.filter(Boolean));
   const milestoneKeys = new Set(Object.keys(MILESTONE_LABELS));
 

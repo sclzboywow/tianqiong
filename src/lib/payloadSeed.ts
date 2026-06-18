@@ -1,6 +1,6 @@
 import type { Payload } from "payload";
 import { TASK_TEMPLATES } from "@/data/taskTemplates";
-import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
+import { AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
 import { NPC_PROFILES } from "@/data/npcProfiles";
 import { buildNpcProfilePayloadData } from "@/lib/npcProfilePayload";
 import { ACHIEVEMENTS } from "@/data/achievements";
@@ -21,8 +21,6 @@ import {
   inferAreaUnlockStage,
   inferItemCategory,
   inferMapLocationCategory,
-  inferNpcCategory,
-  inferNpcUnlockStage,
   inferTaskCategory,
 } from "@/payload/contentCategories";
 
@@ -254,35 +252,6 @@ export async function seedPayloadCollections(
       where: { slug: { equals: profile.id } },
       limit: 1,
     });
-    const doc = existing.docs[0];
-    await applySeedRecord(
-      stats.npcs,
-      overwrite,
-      Boolean(doc),
-      () => payload.create({ collection: "npcs", data }),
-      () => payload.update({ collection: "npcs", id: doc.id, data }),
-    );
-  }
-
-  for (const npc of NPCS) {
-    const category = inferNpcCategory(npc.type, (npc as { category?: string }).category);
-    const data = {
-      name: npc.name,
-      category,
-      type: npc.type,
-      description: npc.description,
-      defaultRelation: npc.defaultRelation,
-      quotes: npc.quotes.map((q) => ({ quote: q })),
-      relatedMetrics: npc.relatedMetrics.map((m) => ({ metric: m })),
-      ...buildUnlockPayloadData({
-        unlockStage: npc.unlockStage || inferNpcUnlockStage(npc.type),
-        unlockMilestones: npc.unlockMilestones,
-        relatedLocationSlugs: npc.relatedLocationSlugs,
-        visibleWhenLocked: npc.visibleWhenLocked,
-      }),
-      enabled: true,
-    };
-    const existing = await payload.find({ collection: "npcs", where: { name: { equals: npc.name } } });
     const doc = existing.docs[0];
     await applySeedRecord(
       stats.npcs,

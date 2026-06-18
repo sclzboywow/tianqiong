@@ -1,6 +1,19 @@
-import { NPCS, AREAS, type NpcData, type AreaData } from "@/data/content";
+import { NPC_PROFILES, type NpcProfile } from "@/data/npcProfiles";
+import { AREAS, type NpcData, type AreaData } from "@/data/content";
 import { inferAreaUnlockStage, inferNpcUnlockStage } from "@/payload/contentCategories";
 import type { ProjectStageId } from "./projectStages";
+
+function profileToNpcData(profile: NpcProfile): NpcData {
+  return {
+    name: profile.name,
+    type: profile.payloadType,
+    description: profile.description,
+    defaultRelation: 50,
+    quotes: [],
+    relatedMetrics: [],
+    unlockStage: inferNpcUnlockStage(profile.payloadType),
+  };
+}
 
 function mapPayloadNpc(doc: Record<string, unknown>): NpcData {
   const type = doc.type as string;
@@ -60,11 +73,11 @@ export async function getNpcs(): Promise<NpcData[]> {
       limit: 200,
     });
 
-    if (result.docs.length === 0) return NPCS;
+    if (result.docs.length === 0) return NPC_PROFILES.map(profileToNpcData);
 
     return result.docs.map((doc) => mapPayloadNpc(doc as Record<string, unknown>));
   } catch {
-    return NPCS;
+    return NPC_PROFILES.map(profileToNpcData);
   }
 }
 
