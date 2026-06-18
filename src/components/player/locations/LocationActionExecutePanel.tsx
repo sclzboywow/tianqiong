@@ -24,6 +24,8 @@ type LocationActionExecutePanelProps = {
   actions: LocationActionDisplayItem[];
   user: UserResources;
   unlocked: boolean;
+  appearance?: "default" | "sandtable";
+  onExecuted?: () => void;
 };
 
 type ExecuteFeedback = {
@@ -110,8 +112,11 @@ export function LocationActionExecutePanel({
   actions,
   user,
   unlocked,
+  appearance = "default",
+  onExecuted,
 }: LocationActionExecutePanelProps) {
   const router = useRouter();
+  const isSandtable = appearance === "sandtable";
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ExecuteFeedback | null>(null);
   const [showFirstActionHint, setShowFirstActionHint] = useState(false);
@@ -150,7 +155,10 @@ export function LocationActionExecutePanel({
         setShowFirstActionHint(true);
         markFirstActionHintSeen();
       }
-      router.refresh();
+      onExecuted?.();
+      if (!isSandtable) {
+        router.refresh();
+      }
     } catch {
       setFeedback({ type: "error", message: "网络错误，请稍后重试" });
     } finally {
@@ -159,17 +167,27 @@ export function LocationActionExecutePanel({
   }
 
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">地点行动</h3>
-        <p className="mt-1 text-xs text-[#8EA3B8]">
+    <section
+      className={
+        isSandtable
+          ? "border border-cyan-400/15 bg-slate-950/50"
+          : playerCardClass
+      }
+    >
+      <div className={isSandtable ? "border-b border-cyan-400/10 px-3 py-2.5" : playerCardHeaderClass}>
+        <h3 className={isSandtable ? "text-xs font-medium text-cyan-100" : "text-base font-semibold text-[#EAF3FF]"}>
+          地点行动
+        </h3>
+        <p className={isSandtable ? "mt-1 text-[10px] text-slate-500" : "mt-1 text-xs text-[#8EA3B8]"}>
           在此地点发起行动，可能生成任务、推进事件或记录动态。
         </p>
       </div>
 
-      <div className={`${playerCardBodyClass} space-y-3`}>
+      <div className={cn(isSandtable ? "space-y-2 p-3" : `${playerCardBodyClass} space-y-3`)}>
         {actions.length === 0 ? (
-          <p className="text-sm text-[#8EA3B8]">当前暂无可用行动。</p>
+          <p className={isSandtable ? "text-[11px] text-slate-600" : "text-sm text-[#8EA3B8]"}>
+            当前暂无可用行动。
+          </p>
         ) : (
           actions.map((action) => {
             const blockReason = canExecuteAction(action, user);
@@ -182,10 +200,17 @@ export function LocationActionExecutePanel({
               <article
                 key={action.id}
                 className={cn(
-                  "rounded-lg border bg-[rgba(5,11,20,0.45)] p-4",
-                  isRecommended
-                    ? "border-[#2EA8FF] shadow-[0_0_12px_rgba(30,136,255,0.15)]"
-                    : "border-[rgba(60,160,255,0.15)]",
+                  "border p-3",
+                  isSandtable
+                    ? isRecommended
+                      ? "border-cyan-400/40 bg-cyan-950/25"
+                      : "border-cyan-400/10 bg-slate-950/40"
+                    : cn(
+                        "rounded-lg bg-[rgba(5,11,20,0.45)] p-4",
+                        isRecommended
+                          ? "border-[#2EA8FF] shadow-[0_0_12px_rgba(30,136,255,0.15)]"
+                          : "border-[rgba(60,160,255,0.15)]",
+                      ),
                 )}
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
