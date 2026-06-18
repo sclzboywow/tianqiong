@@ -1,113 +1,190 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { TaskDetailViewData } from "@/game/taskDetailPresentationEngine";
 import type { PlayerEffectLine } from "@/game/taskEffectPlayerDisplay";
-import { taskHudPanel, taskHudPanelHeader, taskHudTag } from "../taskBoardUi";
+import {
+  taskDetailPanel,
+  taskDetailPanelHeader,
+  taskDetailTag,
+} from "../taskBoardUi";
+import { TaskDetailExpandButton } from "./taskDetailExpand";
 
 type TaskIntelImpactPanelProps = {
   data: TaskDetailViewData;
 };
 
-function EffectBlock({ title, lines }: { title: string; lines: PlayerEffectLine[] }) {
-  if (lines.length === 0) return null;
+const IMPACT_PREVIEW_LIMIT = 3;
+
+function ImpactColumn({
+  title,
+  lines,
+  emptyText,
+  tone,
+  expanded,
+}: {
+  title: string;
+  lines: PlayerEffectLine[];
+  emptyText: string;
+  tone: "success" | "fail";
+  expanded: boolean;
+}) {
+  const visibleLines = expanded ? lines : lines.slice(0, IMPACT_PREVIEW_LIMIT);
+
   return (
-    <div>
-      <p className="mb-1.5 text-[10px] text-slate-500">{title}</p>
-      <ul className="space-y-1">
-        {lines.map((line) => (
-          <li
-            key={line.text}
-            className={cn(
-              "text-[11px] leading-5",
-              line.tone === "positive" && "text-emerald-400",
-              line.tone === "negative" && "text-red-400",
-              line.tone === "neutral" && "text-slate-500",
-            )}
-          >
-            · {line.text}
-          </li>
-        ))}
-      </ul>
+    <div
+      className={cn(
+        "min-h-[56px] px-2.5 py-2",
+        tone === "success" ? "bg-emerald-950/10" : "bg-rose-950/10",
+      )}
+    >
+      <p
+        className={cn(
+          "mb-1 text-[10px] font-medium",
+          tone === "success" ? "text-emerald-400/75" : "text-rose-400/75",
+        )}
+      >
+        {title}
+      </p>
+      {lines.length === 0 ? (
+        <p className="text-[10px] text-slate-600">{emptyText}</p>
+      ) : (
+        <ul className="space-y-0.5">
+          {visibleLines.map((line) => (
+            <li
+              key={line.text}
+              className={cn(
+                "text-[11px] leading-4",
+                tone === "success"
+                  ? line.tone === "negative"
+                    ? "text-amber-300/90"
+                    : "text-emerald-400/90"
+                  : line.tone === "positive"
+                    ? "text-emerald-400/60"
+                    : "text-rose-400/85",
+              )}
+            >
+              · {line.text}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function TagRow({
+  label,
+  tags,
+  emptyText,
+  tagClassName,
+}: {
+  label: string;
+  tags: string[];
+  emptyText: string;
+  tagClassName?: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <span className="shrink-0 text-[10px] text-slate-600">{label}</span>
+      {tags.length > 0 ? (
+        tags.map((tag) => (
+          <span key={tag} className={cn(taskDetailTag, tagClassName)}>
+            {tag}
+          </span>
+        ))
+      ) : (
+        <span className="text-[10px] text-slate-600">{emptyText}</span>
+      )}
     </div>
   );
 }
 
 export function TaskIntelImpactPanel({ data }: TaskIntelImpactPanelProps) {
-  const hasImpact =
-    data.successEffectsSummary.length > 0 ||
-    data.failEffectsSummary.length > 0 ||
-    data.milestoneLabels.length > 0;
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [impactsExpanded, setImpactsExpanded] = useState(false);
+
+  const description = data.description || "暂无任务说明。";
+  const descriptionLong = description.length > 80 || description.split("\n").length > 2;
+  const hasMoreImpacts =
+    data.successEffectsSummary.length > IMPACT_PREVIEW_LIMIT ||
+    data.failEffectsSummary.length > IMPACT_PREVIEW_LIMIT;
 
   return (
-    <section className={taskHudPanel}>
-      <div className={taskHudPanelHeader}>
+    <section className={taskDetailPanel}>
+      <div className={taskDetailPanelHeader}>
         <h3 className="text-[12px] font-medium text-cyan-100">任务情报与影响</h3>
       </div>
 
-      <div className="space-y-3 p-3">
-        <p className="text-[11px] leading-5 text-slate-400">
-          {data.description || "暂无任务说明。"}
-        </p>
-
-        <dl className="grid gap-2 sm:grid-cols-2">
-          <div>
-            <dt className="text-[10px] text-slate-600">基础成功率</dt>
-            <dd className="mt-0.5 text-[11px] font-medium text-cyan-100">
-              {Math.round(data.baseSuccessRate)}%
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[10px] text-slate-600">参与人数</dt>
-            <dd className="mt-0.5 text-[11px] text-slate-300">
-              {data.participantCount}/{data.requiredCount} 人
-            </dd>
-          </div>
-          {data.minResolveCount > 1 && (
-            <div>
-              <dt className="text-[10px] text-slate-600">提交进度</dt>
-              <dd className="mt-0.5 text-[11px] text-slate-300">
-                {data.submittedCount}/{data.minResolveCount} 人已提交
-              </dd>
-            </div>
-          )}
-          <div>
-            <dt className="text-[10px] text-slate-600">结算模式</dt>
-            <dd className="mt-0.5 text-[11px] text-slate-300">{data.resolutionModeLabel}</dd>
-          </div>
-        </dl>
-
-        {data.requiredJobLabels.length > 0 && (
-          <div>
-            <p className="mb-1.5 text-[10px] text-slate-600">推荐岗位</p>
-            <div className="flex flex-wrap gap-1.5">
-              {data.requiredJobLabels.map((job) => (
-                <span key={job} className={`${taskHudTag} border-cyan-400/20 text-slate-300`}>
-                  {job}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {hasImpact ? (
-          <div className="space-y-3 border-t border-cyan-400/10 pt-3">
-            <EffectBlock title="成功影响" lines={data.successEffectsSummary} />
-            <EffectBlock title="失败风险" lines={data.failEffectsSummary} />
-            {data.milestoneLabels.length > 0 && (
-              <div>
-                <p className="mb-1.5 text-[10px] text-slate-600">关键节点</p>
-                <ul className="space-y-1">
-                  {data.milestoneLabels.map((label) => (
-                    <li key={label} className="text-[11px] text-cyan-300">
-                      · {label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+      <div className="space-y-2.5 p-3">
+        <div>
+          <p className="mb-0.5 text-[10px] font-medium text-slate-600">任务说明</p>
+          <p
+            className={cn(
+              "text-[11px] leading-[1.5] text-slate-400",
+              !descriptionExpanded && "line-clamp-2",
             )}
+          >
+            {description}
+          </p>
+          {descriptionLong ? (
+            <TaskDetailExpandButton
+              expanded={descriptionExpanded}
+              onClick={() => setDescriptionExpanded((value) => !value)}
+              expandLabel="展开完整说明"
+              collapseLabel="收起说明"
+            />
+          ) : null}
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-medium text-slate-600">关键信息</p>
+          <p className="text-[11px] text-slate-400">
+            <span className="text-slate-600">结算模式 </span>
+            {data.resolutionModeLabel}
+          </p>
+          <TagRow
+            label="推荐岗位"
+            tags={data.requiredJobLabels}
+            emptyText="暂无"
+            tagClassName="text-slate-400"
+          />
+          <TagRow
+            label="关键节点"
+            tags={data.milestoneLabels}
+            emptyText="暂无"
+            tagClassName="text-cyan-300/80"
+          />
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-[10px] font-medium text-slate-600">影响预判</p>
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+            <ImpactColumn
+              title="成功影响"
+              lines={data.successEffectsSummary}
+              emptyText="暂无成功影响"
+              tone="success"
+              expanded={impactsExpanded}
+            />
+            <ImpactColumn
+              title="失败风险"
+              lines={data.failEffectsSummary}
+              emptyText="暂无失败风险"
+              tone="fail"
+              expanded={impactsExpanded}
+            />
           </div>
-        ) : (
-          <p className="text-[11px] text-slate-600">暂无配置的项目影响摘要。</p>
-        )}
+          {hasMoreImpacts ? (
+            <TaskDetailExpandButton
+              expanded={impactsExpanded}
+              onClick={() => setImpactsExpanded((value) => !value)}
+              expandLabel="展开更多影响"
+              collapseLabel="收起影响"
+            />
+          ) : null}
+        </div>
       </div>
     </section>
   );

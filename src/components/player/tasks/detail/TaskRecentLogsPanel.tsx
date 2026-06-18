@@ -1,7 +1,10 @@
+"use client";
+
+import Link from "next/link";
 import type { GameLogSummary } from "@/game/logEngine";
 import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
 import { ScrollText } from "lucide-react";
-import { taskHudPanel, taskHudPanelHeader } from "../taskBoardUi";
+import { taskDetailExpandButton, taskDetailPanel, taskDetailPanelHeader } from "../taskBoardUi";
 
 function formatLogTime(value: Date | string) {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -21,25 +24,28 @@ export function TaskRecentLogsPanel({ logs }: TaskRecentLogsPanelProps) {
   if (visibleLogs.length === 0) return null;
 
   return (
-    <section className={taskHudPanel}>
-      <div className={taskHudPanelHeader}>
+    <section className={taskDetailPanel}>
+      <div className={taskDetailPanelHeader}>
         <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
-          <ScrollText className="size-3.5 text-cyan-400" />
+          <ScrollText className="size-3.5 text-cyan-400/80" />
           相关记录
         </h3>
       </div>
-      <div className="px-3 py-2.5">
-        <ul className="relative border-l border-cyan-400/15 pl-3">
+      <div className="px-3 py-2">
+        <ul className="relative border-l border-cyan-400/8 pl-3">
           {visibleLogs.map((log) => (
-            <li key={log.id} className="relative pb-3 last:pb-0">
-              <span className="absolute -left-[13px] top-1.5 size-1.5 bg-cyan-400/60" />
-              <p className="text-[10px] tabular-nums text-slate-600">{formatLogTime(log.createdAt)}</p>
-              <p className="mt-0.5 line-clamp-2 text-[11px] leading-5 text-slate-400">
+            <li key={log.id} className="relative pb-2.5 last:pb-0">
+              <span className="absolute -left-[13px] top-1 size-1 bg-cyan-400/40" />
+              <p className="text-[10px] tabular-nums text-slate-700">{formatLogTime(log.createdAt)}</p>
+              <p className="mt-0.5 line-clamp-2 text-[11px] leading-[1.45] text-slate-400">
                 {sanitizePlayerLogContent(log.content)}
               </p>
             </li>
           ))}
         </ul>
+        <Link href="/tasks" className={`${taskDetailExpandButton} mt-2 inline-block`}>
+          查看全部记录
+        </Link>
       </div>
     </section>
   );
