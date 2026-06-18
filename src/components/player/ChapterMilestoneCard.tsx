@@ -3,7 +3,7 @@ import { CheckCircle2, ChevronRight, Circle, Lock, LoaderCircle, Target } from "
 import type { ChapterGoalItem } from "@/game/playerGuidanceEngine";
 import { cn } from "@/lib/utils";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "./playerTheme";
-import { taskHudPanel, taskHudPanelHeader } from "./tasks/taskBoardUi";
+import { taskDetailPanel, taskDetailPanelHeader } from "./tasks/taskBoardUi";
 
 type ChapterMilestoneCardProps = {
   goals: ChapterGoalItem[];
@@ -41,11 +41,11 @@ export function ChapterMilestoneCard({ goals, variant = "default" }: ChapterMile
   const isHud = variant === "hud";
 
   return (
-    <section className={cn(isHud ? taskHudPanel : playerCardClass)}>
+    <section className={cn(isHud ? taskDetailPanel : playerCardClass)}>
       <div
         className={cn(
           isHud
-            ? `${taskHudPanelHeader} flex items-center justify-between`
+            ? `${taskDetailPanelHeader} flex items-center justify-between`
             : `${playerCardHeaderClass} flex items-center justify-between`,
         )}
       >

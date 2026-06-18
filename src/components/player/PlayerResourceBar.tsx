@@ -1,11 +1,7 @@
-import { Coins, Heart, Plus, Sparkles, Star, TrendingUp } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Coins, Star, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getRequiredExpForLevel } from "@/game/playerProgressEngine";
-import {
-  PLAYER_SPIRIT_MAX,
-  PLAYER_STAMINA_MAX,
-  playerCardClass,
-} from "./playerTheme";
+import { PLAYER_SPIRIT_MAX, PLAYER_STAMINA_MAX } from "./playerTheme";
 
 type PlayerResourceBarProps = {
   stamina: number;
@@ -15,57 +11,36 @@ type PlayerResourceBarProps = {
   reputation: number;
   gold: number;
   careerRankTitle?: string;
+  variant?: "default" | "compact";
 };
 
-function meterFillColor(kind: "stamina" | "spirit" | "exp") {
-  if (kind === "stamina") return "#22C55E";
-  if (kind === "spirit") return "#2EA8FF";
-  return "#FACC15";
+function meterFillColor(kind: "stamina" | "spirit") {
+  return kind === "stamina" ? "#22C55E" : "#2EA8FF";
 }
 
-function ResourceIconBox({
-  icon: Icon,
-  color,
-}: {
-  icon: LucideIcon;
-  color: string;
-}) {
-  return (
-    <div
-      className="flex size-7 shrink-0 items-center justify-center rounded-md"
-      style={{
-        backgroundColor: `${color}18`,
-        border: `1px solid ${color}35`,
-      }}
-    >
-      <Icon className="size-3.5" style={{ color }} />
-    </div>
-  );
-}
-
-function MobileMeter({
+function CompactMeter({
   label,
   value,
   max,
   kind,
-  display,
 }: {
   label: string;
   value: number;
   max: number;
-  kind: "stamina" | "spirit" | "exp";
-  display: string;
+  kind: "stamina" | "spirit";
 }) {
   const percent = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
-    <div className="rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-2.5">
-      <div className="flex items-center justify-between text-[13px]">
-        <span className="text-[#8EA3B8]">{label}</span>
-        <span className="font-medium tabular-nums text-[#EAF3FF]">{display}</span>
+    <div className="min-w-[88px] flex-1">
+      <div className="flex items-center justify-between text-[10px]">
+        <span className="text-slate-600">{label}</span>
+        <span className="tabular-nums text-slate-400">
+          {value}/{max}
+        </span>
       </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+      <div className="mt-1 h-1 overflow-hidden bg-slate-950/50">
         <div
-          className="h-full rounded-full"
+          className="h-full"
           style={{ width: `${percent}%`, backgroundColor: meterFillColor(kind) }}
         />
       </div>
@@ -73,52 +48,27 @@ function MobileMeter({
   );
 }
 
-function MobileStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-3">
-      <span className="text-[13px] text-[#8EA3B8]">{label}</span>
-      <span className="text-sm font-semibold tabular-nums text-[#EAF3FF]">{value}</span>
-    </div>
-  );
-}
-
-function DesktopMeter({
+function CompactStat({
   label,
   value,
-  max,
-  kind,
-  rightLabel,
-  icon,
+  icon: Icon,
+  iconClass,
 }: {
   label: string;
-  value: number;
-  max: number;
-  kind: "stamina" | "spirit" | "exp";
-  rightLabel: string;
-  icon: LucideIcon;
+  value: string | number;
+  icon?: LucideIcon;
+  iconClass?: string;
 }) {
-  const color = meterFillColor(kind);
-  const percent = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-2">
-      <ResourceIconBox icon={icon} color={color} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-[#8EA3B8]">{label}</span>
-          <span className="text-sm font-medium tabular-nums text-[#EAF3FF]">{rightLabel}</span>
-        </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${percent}%`, backgroundColor: color }}
-          />
-        </div>
-      </div>
+    <div className="flex items-center gap-1.5 px-1">
+      {Icon ? <Icon className={cn("size-3 shrink-0", iconClass)} /> : null}
+      <span className="text-[10px] text-slate-600">{label}</span>
+      <span className="text-[11px] font-semibold tabular-nums text-slate-300">{value}</span>
     </div>
   );
 }
 
-export function PlayerResourceBar({
+function DefaultResourceBar({
   stamina,
   spirit,
   level,
@@ -126,110 +76,78 @@ export function PlayerResourceBar({
   reputation,
   gold,
   careerRankTitle,
-}: PlayerResourceBarProps) {
+}: Omit<PlayerResourceBarProps, "variant">) {
   const expRequired = getRequiredExpForLevel(level);
 
   return (
-    <section className={`${playerCardClass} p-3 lg:p-4`}>
+    <section className="overflow-hidden border border-cyan-400/12 bg-slate-950/35 p-3 lg:p-4">
       <div className="grid grid-cols-3 gap-2 lg:hidden">
-        <MobileMeter
-          label="体力"
-          value={stamina}
-          max={PLAYER_STAMINA_MAX}
-          kind="stamina"
-          display={`${stamina}/${PLAYER_STAMINA_MAX}`}
-        />
-        <MobileMeter
-          label="精神"
-          value={spirit}
-          max={PLAYER_SPIRIT_MAX}
-          kind="spirit"
-          display={`${spirit}/${PLAYER_SPIRIT_MAX}`}
-        />
-        <MobileStat label="声望" value={reputation} />
+        <CompactMeter label="体力" value={stamina} max={PLAYER_STAMINA_MAX} kind="stamina" />
+        <CompactMeter label="精神" value={spirit} max={PLAYER_SPIRIT_MAX} kind="spirit" />
+        <CompactStat label="声望" value={reputation} icon={Star} iconClass="text-amber-300/80" />
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2 lg:hidden">
-        <MobileMeter
-          label="等级"
-          value={exp}
-          max={expRequired}
-          kind="exp"
-          display={`Lv.${level}`}
-        />
-        <div className="flex items-center justify-between rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-3">
-          <div className="flex items-center gap-2">
-            <Coins className="size-4 text-[#FACC15]" />
-            <div>
-              <p className="text-[13px] text-[#8EA3B8]">金币</p>
-              <p className="text-sm font-semibold tabular-nums text-[#EAF3FF]">{gold}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="flex size-7 items-center justify-center rounded-md border border-[rgba(60,160,255,0.25)] text-[#8EA3B8]"
-            aria-label="金币"
-          >
-            <Plus className="size-4" />
-          </button>
-        </div>
+        <CompactStat label="等级" value={`Lv.${level}`} />
+        <CompactStat label="金币" value={gold} icon={Coins} iconClass="text-amber-300/80" />
       </div>
 
-      <div className="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-stretch lg:gap-3">
-        <DesktopMeter
-          label="体力"
-          value={stamina}
-          max={PLAYER_STAMINA_MAX}
-          kind="stamina"
-          rightLabel={`${stamina}/${PLAYER_STAMINA_MAX}`}
-          icon={Heart}
-        />
-        <DesktopMeter
-          label="精神"
-          value={spirit}
-          max={PLAYER_SPIRIT_MAX}
-          kind="spirit"
-          rightLabel={`${spirit}/${PLAYER_SPIRIT_MAX}`}
-          icon={Sparkles}
-        />
-        <DesktopMeter
-          label="等级"
-          value={exp}
-          max={expRequired}
-          kind="exp"
-          rightLabel={`Lv.${level}`}
-          icon={TrendingUp}
-        />
-        <div className="flex min-w-[88px] items-center gap-2.5 rounded-lg border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-2">
-          <ResourceIconBox icon={Star} color="#FACC15" />
-          <div>
-            <p className="text-xs text-[#8EA3B8]">声望</p>
-            <p className="text-sm font-semibold tabular-nums text-[#EAF3FF]">{reputation}</p>
-          </div>
-        </div>
-        <div className="flex min-w-[120px] items-center justify-between gap-2 rounded-lg border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-2">
-          <div className="flex items-center gap-2.5">
-            <ResourceIconBox icon={Coins} color="#FACC15" />
-            <div>
-              <p className="text-xs text-[#8EA3B8]">金币</p>
-              <p className="text-sm font-semibold tabular-nums text-[#EAF3FF]">{gold}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="flex size-7 items-center justify-center rounded-md border border-[rgba(60,160,255,0.25)] text-[#8EA3B8] hover:border-[#2EA8FF] hover:text-[#2EA8FF]"
-            aria-label="金币"
-          >
-            <Plus className="size-4" />
-          </button>
-        </div>
+      <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 lg:flex">
+        <CompactMeter label="体力" value={stamina} max={PLAYER_STAMINA_MAX} kind="stamina" />
+        <CompactMeter label="精神" value={spirit} max={PLAYER_SPIRIT_MAX} kind="spirit" />
+        <CompactStat label="Lv" value={level} />
+        <CompactStat label="声望" value={reputation} icon={Star} iconClass="text-amber-300/80" />
+        <CompactStat label="金币" value={gold} icon={Coins} iconClass="text-amber-300/80" />
+        <span className="hidden text-[10px] text-slate-700 xl:inline">
+          EXP {exp}/{expRequired}
+        </span>
       </div>
 
       {careerRankTitle ? (
-        <p className="mt-2 text-xs text-[#8EA3B8] lg:mt-3">
+        <p className="mt-2 text-xs text-slate-600 lg:mt-3">
           当前阶位：
-          <span className="text-[#2EA8FF]">{careerRankTitle}</span>
+          <span className="text-cyan-400/80">{careerRankTitle}</span>
         </p>
       ) : null}
     </section>
   );
+}
+
+function CompactResourceBar({
+  stamina,
+  spirit,
+  level,
+  reputation,
+  gold,
+}: Pick<
+  PlayerResourceBarProps,
+  "stamina" | "spirit" | "level" | "reputation" | "gold"
+>) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <CompactMeter label="体力" value={stamina} max={PLAYER_STAMINA_MAX} kind="stamina" />
+      <CompactMeter label="精神" value={spirit} max={PLAYER_SPIRIT_MAX} kind="spirit" />
+      <CompactStat label="Lv" value={level} />
+      <CompactStat label="声望" value={reputation} icon={Star} iconClass="text-amber-300/80" />
+      <CompactStat label="金币" value={gold} icon={Coins} iconClass="text-amber-300/80" />
+    </div>
+  );
+}
+
+export function PlayerResourceBar({
+  variant = "default",
+  ...props
+}: PlayerResourceBarProps) {
+  if (variant === "compact") {
+    return (
+      <CompactResourceBar
+        stamina={props.stamina}
+        spirit={props.spirit}
+        level={props.level}
+        reputation={props.reputation}
+        gold={props.gold}
+      />
+    );
+  }
+
+  return <DefaultResourceBar {...props} />;
 }

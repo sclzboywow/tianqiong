@@ -1,60 +1,52 @@
 import type { ReactNode } from "react";
+import { taskHudShell } from "./tasks/taskBoardUi";
 
 type CommandCenterLayoutProps = {
-  onboarding?: ReactNode;
+  header: ReactNode;
   recommendedAction: ReactNode;
-  resourceBar: ReactNode;
-  projectStatus: ReactNode;
   chapterMilestones: ReactNode;
   pendingTasks: ReactNode;
-  pendingTasksMobile: ReactNode;
+  projectStatus: ReactNode;
   recentActivity: ReactNode;
-  recentActivityMobile: ReactNode;
+  quickLinks: ReactNode;
+  resourceBar: ReactNode;
 };
 
 export function CommandCenterLayout({
-  onboarding,
+  header,
   recommendedAction,
-  resourceBar,
-  projectStatus,
   chapterMilestones,
   pendingTasks,
-  pendingTasksMobile,
+  projectStatus,
   recentActivity,
-  recentActivityMobile,
+  quickLinks,
+  resourceBar,
 }: CommandCenterLayoutProps) {
   return (
-    <div className="space-y-4 lg:space-y-5">
-      {/* PC：资源条是指挥中心仪表盘顶部状态栏 */}
-      <div className="hidden lg:block">{resourceBar}</div>
+    <div className={taskHudShell}>
+      {header}
 
-      {onboarding && <div>{onboarding}</div>}
-
-      {/* 移动端：先给玩家下一步，再给状态 */}
-      <div className="space-y-4 lg:hidden">
-        {recommendedAction}
-        {projectStatus}
-        {chapterMilestones}
-        {pendingTasksMobile}
-        {recentActivityMobile}
-        {resourceBar}
-      </div>
-
-      {/* PC：主行动区 + 右侧战况栏 */}
-      <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5">
-        <main className="min-w-0 space-y-5">
+      <div className="hidden xl:grid xl:grid-cols-[minmax(0,1fr)_320px]">
+        <main className="min-w-0 space-y-2.5 border-cyan-400/10 p-3 xl:border-r">
           {recommendedAction}
-
-          <div className="grid grid-cols-12 gap-5">
-            <div className="col-span-4">{chapterMilestones}</div>
-            <div className="col-span-8">{pendingTasks}</div>
-          </div>
+          {chapterMilestones}
+          {pendingTasks}
         </main>
 
-        <aside className="space-y-5 lg:sticky lg:top-4 lg:self-start">
+        <aside className="space-y-2.5 p-3 xl:sticky xl:top-4 xl:block xl:self-start">
           {projectStatus}
           {recentActivity}
+          {quickLinks}
         </aside>
+      </div>
+
+      <div className="space-y-2.5 p-3 xl:hidden">
+        {recommendedAction}
+        {projectStatus}
+        {pendingTasks}
+        {chapterMilestones}
+        {recentActivity}
+        {resourceBar}
       </div>
     </div>
   );

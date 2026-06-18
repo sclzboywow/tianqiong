@@ -1,142 +1,145 @@
 import Link from "next/link";
+import { ArrowRight, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { PendingTaskGroup } from "@/game/playerGuidanceEngine";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "./playerTheme";
+import {
+  taskDetailDivider,
+  taskDetailPanel,
+  taskDetailPanelHeader,
+  taskDetailTagMuted,
+  taskHudButtonCompactPrimary,
+  taskHudButtonCompactSecondary,
+  taskHudTag,
+} from "./tasks/taskBoardUi";
 
 type PendingTasksSummaryProps = {
   groups: PendingTaskGroup;
   maxItems?: number;
+  locationHrefByTaskId?: Record<string, string>;
 };
 
-function TaskRow({
-  title,
-  area,
-  href,
-  tag,
-  tagClass,
-  buttonLabel,
-  buttonClass,
-  urgency,
-  compact,
-}: {
+type DisplayTask = {
+  id: string;
   title: string;
   area: string;
   href: string;
   tag: string;
-  tagClass: string;
-  buttonLabel: string;
-  buttonClass: string;
+  tagTone: "mainline" | "emergency";
   urgency?: string;
-  compact?: boolean;
-}) {
+  locationHref?: string;
+};
+
+function buildDisplayTasks(
+  groups: PendingTaskGroup,
+  maxItems: number,
+  locationHrefByTaskId?: Record<string, string>,
+): DisplayTask[] {
+  const items: DisplayTask[] = [];
+
+  for (const task of groups.mainline) {
+    if (items.length >= maxItems) break;
+    items.push({
+      id: task.id,
+      title: task.title,
+      area: task.area,
+      href: task.href,
+      tag: "主线",
+      tagTone: "mainline",
+      locationHref: locationHrefByTaskId?.[task.id],
+    });
+  }
+
+  for (const task of groups.emergency) {
+    if (items.length >= maxItems) break;
+    items.push({
+      id: task.id,
+      title: task.title,
+      area: task.area,
+      href: task.href,
+      tag: "突发",
+      tagTone: "emergency",
+      urgency: task.urgency,
+      locationHref: locationHrefByTaskId?.[task.id],
+    });
+  }
+
+  return items;
+}
+
+function TaskCompactRow({ task }: { task: DisplayTask }) {
+  const hasLocationHref = Boolean(task.locationHref);
+
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.45)] px-3 py-3">
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${tagClass}`}>{tag}</span>
-          {urgency ? (
-            <span className="text-[10px] text-[#EF4444]">紧急度 {urgency}</span>
-          ) : null}
+    <li className="border border-cyan-400/10 border-l-2 border-l-cyan-400/50 bg-slate-950/40 px-2.5 py-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            <span
+              className={cn(
+                taskHudTag,
+                task.tagTone === "mainline"
+                  ? "border-cyan-400/25 text-cyan-300/80"
+                  : "border-amber-400/25 text-amber-200/90",
+              )}
+            >
+              {task.tag}
+            </span>
+            {task.urgency ? (
+              <span className="text-[10px] text-rose-300/80">紧急度 {task.urgency}</span>
+            ) : null}
+          </div>
+          <p className="truncate text-[12px] font-medium text-cyan-50">{task.title}</p>
+          <p className="mt-0.5 truncate text-[10px] text-slate-600">{task.area}</p>
         </div>
-        <p className="truncate text-[13px] font-medium text-[#EAF3FF] lg:text-sm">{title}</p>
-        {!compact ? (
-          <>
-            <p className="mt-0.5 truncate text-xs text-[#8EA3B8]">{area}</p>
-            <p className="mt-1 hidden text-[10px] text-[#8EA3B8] lg:block">推荐等级 Lv.1</p>
-          </>
-        ) : null}
+
+        <div className="flex shrink-0 gap-1.5">
+          {hasLocationHref ? (
+            <Link href={task.locationHref!} className={taskHudButtonCompactSecondary}>
+              <MapPin className="size-3 shrink-0" />
+              前往地点
+            </Link>
+          ) : null}
+          <Link href={task.href} className={taskHudButtonCompactPrimary}>
+            任务详情
+            <ArrowRight className="size-3 shrink-0" />
+          </Link>
+        </div>
       </div>
-      <Link
-        href={href}
-        className={`shrink-0 rounded-lg px-3 py-2 text-xs font-medium ${buttonClass}`}
-      >
-        {buttonLabel}
-      </Link>
     </li>
   );
 }
 
-export function PendingTasksSummary({ groups, maxItems }: PendingTasksSummaryProps) {
+export function PendingTasksSummary({
+  groups,
+  maxItems = 3,
+  locationHrefByTaskId,
+}: PendingTasksSummaryProps) {
   const total = groups.mainline.length + groups.emergency.length;
-  const mobileLimit = maxItems ?? 3;
-
-  const mainlineSlice = maxItems ? groups.mainline.slice(0, mobileLimit) : groups.mainline;
-  const emergencySlice = maxItems
-    ? groups.emergency.slice(0, Math.max(0, mobileLimit - mainlineSlice.length))
-    : groups.emergency;
-
-  const displayMainline = maxItems ? mainlineSlice : groups.mainline;
-  const displayEmergency = maxItems ? emergencySlice : groups.emergency;
+  const displayTasks = buildDisplayTasks(groups, maxItems, locationHrefByTaskId);
 
   return (
-    <section className={playerCardClass}>
-      <div className={`${playerCardHeaderClass} flex items-center justify-between`}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">待处理任务</h3>
-        {total > 0 ? (
-          <span className="text-xs text-[#8EA3B8]">
-            <span className="lg:hidden">
-              主线 {groups.mainline.length}
-              {groups.emergency.length > 0 ? ` · 突发 ${groups.emergency.length}` : ""}
-            </span>
-            <span className="hidden lg:inline">{total} 项</span>
-          </span>
-        ) : null}
+    <section className={taskDetailPanel}>
+      <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
+        <h3 className="text-[12px] font-medium text-cyan-100">待处理卡点</h3>
+        {total > 0 ? <span className={taskDetailTagMuted}>{total} 项</span> : null}
       </div>
 
-      <div className={`${playerCardBodyClass} space-y-4`}>
+      <div className="p-3">
         {total === 0 ? (
-          <p className="text-[13px] text-[#8EA3B8] lg:text-sm">
-            暂无待处理任务，可跟随推荐行动前往地点触发新任务。
+          <p className="text-[11px] text-slate-600">
+            暂无待处理卡点，可跟随当前指令前往地点触发新任务。
           </p>
         ) : (
-          <>
-            {displayMainline.length > 0 ? (
-              <div>
-                <p className="mb-2 text-xs font-medium text-[#8EA3B8]">主线任务</p>
-                <ul className="space-y-2">
-                  {displayMainline.map((task) => (
-                    <TaskRow
-                      key={task.id}
-                      title={task.title}
-                      area={task.area}
-                      href={task.href}
-                      tag="主线任务"
-                      tagClass="bg-[rgba(30,136,255,0.15)] text-[#2EA8FF]"
-                      buttonLabel="前往"
-                      buttonClass="bg-[#1E88FF] text-white hover:bg-[#2EA8FF]"
-                      compact={Boolean(maxItems)}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {displayEmergency.length > 0 ? (
-              <div>
-                <p className="mb-2 text-xs font-medium text-[#EF4444]">突发事件</p>
-                <ul className="space-y-2">
-                  {displayEmergency.map((task) => (
-                    <TaskRow
-                      key={task.id}
-                      title={task.title}
-                      area={task.area}
-                      href={task.href}
-                      tag="突发事件"
-                      tagClass="bg-[rgba(239,68,68,0.15)] text-[#EF4444]"
-                      buttonLabel="处理"
-                      buttonClass="border border-[rgba(239,68,68,0.45)] bg-[rgba(239,68,68,0.12)] text-[#EF4444]"
-                      urgency={task.urgency}
-                      compact={Boolean(maxItems)}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </>
+          <ul className={`${taskDetailDivider} space-y-1.5`}>
+            {displayTasks.map((task) => (
+              <TaskCompactRow key={task.id} task={task} />
+            ))}
+          </ul>
         )}
 
         {total > 0 ? (
-          <Link href="/tasks" className="inline-block text-xs text-[#2EA8FF] hover:underline">
-            查看全部任务{total > 0 ? ` (${total})` : ""} →
+          <Link href="/tasks" className="mt-3 inline-block text-[11px] text-cyan-400/80 hover:text-cyan-300">
+            查看全部任务 ({total}) →
           </Link>
         ) : null}
       </div>
