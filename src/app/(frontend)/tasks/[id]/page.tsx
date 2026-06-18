@@ -6,6 +6,8 @@ import { prisma } from "@/prisma/client";
 import { getTaskById } from "@/game/taskEngine";
 import { getProjectState, ensureProjectState } from "@/game/projectEngine";
 import { buildTaskDetailViewData } from "@/game/taskDetailPresentationEngine";
+import { getAllLocations } from "@/game/locationEngine";
+import { getLocationActions } from "@/game/locationActionLoader";
 import {
   getChapterInfo,
   getPendingTaskGroups,
@@ -31,7 +33,14 @@ export default async function TaskDetailPage({
   const task = await getTaskById(id);
   if (!task) notFound();
 
-  const viewData = await buildTaskDetailViewData(task, project, userId);
+  const [locations, locationActions] = await Promise.all([
+    getAllLocations(),
+    getLocationActions(),
+  ]);
+  const viewData = await buildTaskDetailViewData(task, project, userId, {
+    locations,
+    locationActions,
+  });
 
   const tasks = await listTasks();
   const chapterInfo = getChapterInfo(project);
