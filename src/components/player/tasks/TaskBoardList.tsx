@@ -151,7 +151,7 @@ export function TaskBoardList({ taskItems, categories }: TaskBoardListProps) {
       </section>
 
       {activeCategory === "all" ? (
-        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           {lanes.map((lane) => (
             <BoardLane key={lane.id} lane={lane} />
           ))}

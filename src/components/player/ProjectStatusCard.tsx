@@ -11,6 +11,12 @@ type ProjectStatusCardProps = {
   project: ProjectState;
 };
 
+const PROJECT_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "推进中",
+  SUCCESS: "已交付",
+  FAILED: "项目受阻",
+};
+
 function MetricTile({
   label,
   value,
@@ -84,7 +90,7 @@ export function ProjectStatusCard({ project }: ProjectStatusCardProps) {
           </h3>
         </div>
         <span className="rounded-full border border-[rgba(60,160,255,0.18)] px-2.5 py-1 text-xs text-[#8EA3B8]">
-          {project.status}
+          {PROJECT_STATUS_LABELS[project.status] || project.status}
         </span>
       </div>
 

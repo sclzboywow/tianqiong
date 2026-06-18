@@ -168,7 +168,10 @@ export async function getEventTemplates(): Promise<EventTemplateData[]> {
     return result.docs
       .map((doc) => mapPayloadDoc(doc as Record<string, unknown>))
       .filter((event) => event.slug.trim().length > 0);
-  } catch {
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[eventTemplateLoader] fallback to sqlite:", error);
+    }
     return getEventTemplatesFromSqlite();
   }
 }

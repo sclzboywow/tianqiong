@@ -4,7 +4,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock3,
-  MapPin,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -62,10 +61,10 @@ function accentClass(item: TaskItem) {
 
 export function TaskBoardCard({ item }: TaskBoardCardProps) {
   const isCompleted = item.isCompleted;
+  const isMainline = item.type === "mainline" && !isCompleted;
   const isEmergency = item.type === "emergency" && !isCompleted;
+  const isCollaboration = item.type === "collaboration" && !isCompleted;
   const buttonLabel = isCompleted ? "查看结果" : isEmergency ? "立即处理" : "处理任务";
-  const hasPreview =
-    !isCompleted && (item.successEffectsSummary.length > 0 || item.milestoneLabels.length > 0);
 
   return (
     <article
@@ -92,12 +91,6 @@ export function TaskBoardCard({ item }: TaskBoardCardProps) {
                 推荐
               </span>
             )}
-            {item.urgency && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(239,68,68,0.12)] px-2 py-0.5 text-[10px] text-[#EF4444]">
-                <AlertTriangle className="size-3" />
-                {item.urgency}风险
-              </span>
-            )}
           </div>
 
           <span className="inline-flex items-center gap-1 text-xs text-[#8EA3B8]">
@@ -116,56 +109,30 @@ export function TaskBoardCard({ item }: TaskBoardCardProps) {
           </p>
         )}
 
-        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#8EA3B8]">
-          <div className="rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.36)] px-3 py-2">
-            <p>成功率</p>
-            <p className="mt-0.5 text-sm font-semibold text-[#EAF3FF]">
-              {Math.round(item.baseSuccessRate)}%
-            </p>
-          </div>
-          <div className="rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.36)] px-3 py-2">
-            <p>等级 / 模式</p>
-            <p className="mt-0.5 truncate text-sm font-semibold text-[#EAF3FF]">
-              {item.rarity} · {item.resolutionMode}
-            </p>
-          </div>
+        <div className="mt-3 rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.36)] px-3 py-2 text-[11px] text-[#8EA3B8]">
+          <p>成功率</p>
+          <p className="mt-0.5 text-sm font-semibold text-[#EAF3FF]">
+            {Math.round(item.baseSuccessRate)}%
+          </p>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#8EA3B8]">
-          {item.sourceLocationName ? (
-            <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(60,160,255,0.12)] px-2 py-0.5">
-              <MapPin className="size-3" />
-              {item.sourceLocationName}
-            </span>
-          ) : null}
-
-          {(item.isCollaboration || item.requiredCount > 1) && (
-            <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(168,85,247,0.25)] px-2 py-0.5 text-[#C084FC]">
-              <Users className="size-3" />
-              {item.participantCount}/{item.requiredCount} 人
-            </span>
-          )}
-
-          {item.hasStageGate && !isCompleted && (
-            <span className="rounded-md border border-[rgba(30,136,255,0.22)] px-2 py-0.5 text-[#2EA8FF]">
-              阶段关键节点
-            </span>
-          )}
-        </div>
-
-        {item.requiredJobLabels.length > 0 && item.isCollaboration && (
-          <p className="mt-2 text-xs text-[#8EA3B8]">
-            所需岗位：{item.requiredJobLabels.join("、")}
+        {isMainline && item.hasStageGate && (
+          <p className="mt-2 text-xs text-[#2EA8FF]">
+            阶段关键节点
+            {item.milestoneLabels.length > 0 ? `：${item.milestoneLabels.join("、")}` : ""}
           </p>
         )}
 
-        {hasPreview && (
-          <div className="mt-3 rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.36)] px-3 py-3">
-            <EffectLines lines={item.successEffectsSummary.slice(0, 2)} label="处理收益" />
-            {item.milestoneLabels.length > 0 && (
-              <p className="mt-2 text-xs text-[#2EA8FF]">
-                关键节点：{item.milestoneLabels.join("、")}
-              </p>
+        {isCollaboration && (
+          <div className="mt-2 space-y-1 text-xs text-[#8EA3B8]">
+            {(item.isCollaboration || item.requiredCount > 1) && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(168,85,247,0.25)] px-2 py-0.5 text-[#C084FC]">
+                <Users className="size-3" />
+                {item.participantCount}/{item.requiredCount} 人
+              </span>
+            )}
+            {item.requiredJobLabels.length > 0 && (
+              <p>所需岗位：{item.requiredJobLabels.join("、")}</p>
             )}
           </div>
         )}
@@ -174,6 +141,13 @@ export function TaskBoardCard({ item }: TaskBoardCardProps) {
           <div className="mt-3 rounded-xl border border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.06)] px-3 py-3">
             <EffectLines lines={item.failEffectsSummary.slice(0, 2)} label="拖延风险" />
           </div>
+        )}
+
+        {isEmergency && item.urgency && (
+          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-[rgba(239,68,68,0.12)] px-2 py-0.5 text-[10px] text-[#EF4444]">
+            <AlertTriangle className="size-3" />
+            {item.urgency}风险
+          </span>
         )}
 
         <Link

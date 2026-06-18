@@ -13,20 +13,26 @@ type DailyReportLogCardProps = {
   item: LogItem;
 };
 
-function iconForType(iconType: LogItem["iconType"]) {
+function LogTypeIcon({
+  iconType,
+  className,
+}: {
+  iconType: LogItem["iconType"];
+  className?: string;
+}) {
   switch (iconType) {
     case "map":
-      return MapPin;
+      return <MapPin className={className} />;
     case "event":
-      return Zap;
+      return <Zap className={className} />;
     case "task":
-      return ClipboardList;
+      return <ClipboardList className={className} />;
     case "growth":
-      return Sparkles;
+      return <Sparkles className={className} />;
     case "risk":
-      return AlertTriangle;
+      return <AlertTriangle className={className} />;
     default:
-      return TrendingUp;
+      return <TrendingUp className={className} />;
   }
 }
 
@@ -70,7 +76,6 @@ function effectToneClass(tone: LogItem["effectLines"][number]["tone"]) {
 }
 
 export function DailyReportLogCard({ item }: DailyReportLogCardProps) {
-  const Icon = iconForType(item.iconType);
   const tone = toneClasses(item.tone);
 
   return (
@@ -79,7 +84,7 @@ export function DailyReportLogCard({ item }: DailyReportLogCardProps) {
 
       <div className="flex items-start gap-3 pl-2">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.55)]">
-          <Icon className={cn("size-4", tone.icon)} />
+          <LogTypeIcon iconType={item.iconType} className={cn("size-4", tone.icon)} />
         </div>
 
         <div className="min-w-0 flex-1">

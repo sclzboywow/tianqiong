@@ -132,7 +132,8 @@ export function TaskStoryPanel({
   const lines = story?.lines?.length ? story.lines : ["暂无剧情文本。"];
   const choices = story?.choices || [];
   const storySegments = buildStorySegments(lines);
-  const shouldShowChoiceReplay = !showChoices && choices.length > 0 && inkAvailable;
+  const shouldShowChoiceReplay =
+    inkAvailable && choices.length > 0 && !showChoices && (hasSubmitted || !isActive);
 
   return (
     <section className={playerCardClass}>

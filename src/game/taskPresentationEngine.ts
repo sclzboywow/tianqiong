@@ -383,14 +383,19 @@ export function buildTaskBoardData(params: {
   );
 
   const active = taskItems.filter((item) => !item.isCompleted);
+  const activeMainline = active.filter((item) => item.isMainline);
+  const activeEmergency = active.filter((item) => !item.isMainline && item.isEmergency);
+  const activeCollaboration = active.filter(
+    (item) => !item.isMainline && !item.isEmergency && item.isCollaboration,
+  );
 
   return {
     stageName: getStageDisplayName(project.currentStage),
     summary: {
       totalActive: active.length,
-      mainlineCount: active.filter((item) => item.isMainline).length,
-      emergencyCount: active.filter((item) => item.isEmergency).length,
-      collaborationCount: active.filter((item) => item.isCollaboration).length,
+      mainlineCount: activeMainline.length,
+      emergencyCount: activeEmergency.length,
+      collaborationCount: activeCollaboration.length,
       completedCount: taskItems.filter((item) => item.isCompleted).length,
     },
     recommendedTask: recommended,

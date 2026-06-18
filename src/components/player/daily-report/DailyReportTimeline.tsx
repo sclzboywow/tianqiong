@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LogItem } from "@/game/dailyReportPresentationEngine";
 import { DailyReportLogCard } from "./DailyReportLogCard";
 
@@ -9,8 +10,24 @@ export function DailyReportTimeline({ items }: DailyReportTimelineProps) {
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(10,24,40,0.45)] px-4 py-10 text-center">
-        <p className="text-sm text-[#8EA3B8]">该分类下暂无今日记录。</p>
-        <p className="mt-1 text-xs text-[#8EA3B8]/80">完成任务或执行地点行动后，日志会显示在这里。</p>
+        <p className="text-sm text-[#8EA3B8]">今日暂无记录。</p>
+        <p className="mt-1 text-xs text-[#8EA3B8]/80">
+          完成任务或执行地点行动后，日志会显示在这里。
+        </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/tasks"
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-[#1E88FF] px-4 text-sm font-medium text-white hover:bg-[#2EA8FF]"
+          >
+            去处理任务
+          </Link>
+          <Link
+            href="/locations"
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-[rgba(60,160,255,0.18)] px-4 text-sm font-medium text-[#C9D7E6] hover:border-[#2EA8FF]"
+          >
+            去协同地图
+          </Link>
+        </div>
       </div>
     );
   }
