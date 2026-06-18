@@ -8,6 +8,7 @@ import { listTasks } from "@/game/taskEngine";
 import { getMapLocations } from "@/game/locationLoader";
 import { getLocationActions } from "@/game/locationActionLoader";
 import { buildLocationSandtableViewData } from "@/game/locationSandtablePresentationEngine";
+import { getNpcTaskActionProgress } from "@/game/npcTaskActionProgressEngine";
 import {
   getChapterInfo,
   getNextRecommendedAction,
@@ -45,13 +46,22 @@ export default async function LocationsPage() {
     recommendedAction,
   });
 
+  const completedNpcTaskActionIds = await getNpcTaskActionProgress({
+    taskSlugs: tasks.map((task) => task.templateId),
+  });
+
   return (
     <PlayerShell
       chapterSubtitle={chapterInfo.chapterSubtitle}
       userNickname={user.nickname}
       pendingTaskCount={pendingCount}
     >
-      <LocationSandTablePage data={sandtableData} project={project} tasks={tasks} />
+      <LocationSandTablePage
+        data={sandtableData}
+        project={project}
+        tasks={tasks}
+        completedNpcTaskActionIds={completedNpcTaskActionIds}
+      />
     </PlayerShell>
   );
 }

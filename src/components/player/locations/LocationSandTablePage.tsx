@@ -39,6 +39,7 @@ type LocationSandTablePageProps = {
   data: LocationSandtableViewData;
   project: ProjectState;
   tasks: Task[];
+  completedNpcTaskActionIds?: string[];
 };
 
 const FILTERS: { id: FilterId; label: string; icon: typeof CircleDot }[] = [
@@ -578,12 +579,14 @@ function LocationDetailPanel({
   zoneName,
   project,
   tasks,
+  completedNpcTaskActionIds,
 }: {
   node?: SandtableLocationNode;
   regionName?: string;
   zoneName?: string;
   project: ProjectState;
   tasks: Task[];
+  completedNpcTaskActionIds?: string[];
 }) {
   if (!node) {
     return (
@@ -631,7 +634,12 @@ function LocationDetailPanel({
 
       <NpcTaskRequirementList node={node} project={project} tasks={tasks} />
 
-      <NpcTaskActionList node={node} project={project} tasks={tasks} />
+      <NpcTaskActionList
+        node={node}
+        project={project}
+        tasks={tasks}
+        completedActionIds={completedNpcTaskActionIds}
+      />
 
       <DetailSection icon={DoorOpen} title="可执行行动">
         <TokenList
@@ -736,7 +744,12 @@ function TokenList({ items, empty }: { items?: string[]; empty: string }) {
   );
 }
 
-export function LocationSandTablePage({ data, project, tasks }: LocationSandTablePageProps) {
+export function LocationSandTablePage({
+  data,
+  project,
+  tasks,
+  completedNpcTaskActionIds,
+}: LocationSandTablePageProps) {
   const shellRef = useRef<HTMLElement>(null);
   const nodes = useMemo(() => flattenNodes(data), [data]);
   const defaultNodeId = data.recommendedNode?.id || nodes.find((node) => !node.locked)?.id;
@@ -820,6 +833,7 @@ export function LocationSandTablePage({ data, project, tasks }: LocationSandTabl
             zoneName={selectedZone?.name}
             project={project}
             tasks={tasks}
+            completedNpcTaskActionIds={completedNpcTaskActionIds}
           />
         </div>
       </div>
@@ -832,6 +846,7 @@ export function LocationSandTablePage({ data, project, tasks }: LocationSandTabl
             zoneName={selectedZone?.name}
             project={project}
             tasks={tasks}
+            completedNpcTaskActionIds={completedNpcTaskActionIds}
           />
         </div>
       ) : null}

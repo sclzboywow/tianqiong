@@ -29,6 +29,7 @@
     "verify:npc-presence": "tsx scripts/verify-npc-presence.ts",
     "verify:npc-tasks": "tsx scripts/verify-npc-task-requirements.ts",
     "verify:npc-actions": "tsx scripts/verify-npc-task-actions.ts",
+    "test:npc-actions": "tsx --env-file=.env scripts/test-npc-task-action-progress.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

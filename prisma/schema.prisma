@@ -162,6 +162,20 @@ model EventTriggerLog {
   @@index([seasonId, locationId])
 }
 
+model NpcTaskActionProgress {
+  id          String   @id @default(cuid())
+  seasonId    String
+  taskSlug    String
+  locationId  String
+  actionId    String
+  userId      String?
+  completedAt DateTime @default(now())
+
+  @@unique([seasonId, taskSlug, locationId, actionId])
+  @@index([seasonId, taskSlug])
+  @@index([seasonId, locationId])
+}
+
 model BroadcastLog {
   id            String   @id @default(cuid())
   type          String

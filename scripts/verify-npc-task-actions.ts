@@ -16,6 +16,8 @@ const VALID_LOCATION_IDS = new Set([
 
 const PROFILE_IDS = new Set(NPC_PROFILES.map((profile) => profile.id));
 const TASK_SLUGS = new Set(TASK_TEMPLATES.map((template) => template.slug));
+const REQUIREMENT_SLUGS = new Set(NPC_TASK_REQUIREMENTS.map((item) => item.taskSlug));
+const ACTION_BY_ID = new Map(NPC_TASK_ACTIONS.map((action) => [action.id, action]));
 const ACTION_IDS = new Set<string>();
 
 function validateLocationId(locationId: string, label: string): string | undefined {
@@ -54,6 +56,12 @@ function main() {
     if (action.targetNpcId) {
       const npcError = validateNpcId(action.targetNpcId, action.id);
       if (npcError) errors.push(npcError);
+    } else if (action.type === "contact_npc" || action.type === "invite_npc") {
+      warnings.push(`${action.id}: ${action.type} 缺少 targetNpcId`);
+    }
+
+    if (action.type === "go_to_location" && !action.targetLocationId) {
+      errors.push(`${action.id}: go_to_location 缺少 targetLocationId`);
     }
 
     if (action.targetLocationId) {
@@ -61,9 +69,21 @@ function main() {
       if (targetError) errors.push(targetError);
     }
 
+    if (action.requiresCanProgress && !REQUIREMENT_SLUGS.has(action.taskSlug)) {
+      errors.push(`${action.id}: requiresCanProgress 但任务无 NPC_TASK_REQUIREMENTS 配置`);
+    }
+
     for (const depId of action.dependsOnActionIds ?? []) {
-      if (!NPC_TASK_ACTIONS.some((item) => item.id === depId)) {
+      const dep = ACTION_BY_ID.get(depId);
+      if (!dep) {
         errors.push(`${action.id}: dependsOnActionIds 引用不存在: ${depId}`);
+        continue;
+      }
+      if (dep.taskSlug !== action.taskSlug) {
+        errors.push(`${action.id}: 依赖动作 ${depId} 不属于同一 taskSlug`);
+      }
+      if (dep.sortOrder >= action.sortOrder) {
+        errors.push(`${action.id}: 依赖动作 ${depId} sortOrder 应小于当前动作`);
       }
     }
 
@@ -73,10 +93,7 @@ function main() {
   console.log("");
 
   for (const requirement of NPC_TASK_REQUIREMENTS) {
-    const locations = [
-      requirement.locationId,
-      ...(requirement.hintLocationIds ?? []),
-    ];
+    const locations = [requirement.locationId, ...(requirement.hintLocationIds ?? [])];
     const hasAction = locations.some((locationId) =>
       NPC_TASK_ACTIONS.some(
         (action) => action.taskSlug === requirement.taskSlug && action.locationId === locationId,
