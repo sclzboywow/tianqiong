@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/session";
 import { prisma } from "@/prisma/client";
 import { getLocationOverview } from "@/game/locationEngine";
-import { getRecentLocationActionLogs } from "@/game/logEngine";
+import { getRecentLocationActionLogs, getRecentNpcInteractionLogs } from "@/game/logEngine";
 import { NPC_TASK_ACTION_LOG_PREFIX } from "@/game/npcTaskActionProgressEngine";
+import { loadNpcInteractionDialogueHistory } from "@/game/npcInteractionService";
 import { buildActionDisplayItems } from "@/game/locationPresentationEngine";
 import { getProjectState } from "@/game/projectEngine";
 import { getStageConfig } from "@/game/projectStages";
@@ -78,17 +79,15 @@ export async function GET(
     select: { id: true, content: true, createdAt: true },
   });
 
-  const npcInteractionLogs = await prisma.gameLog.findMany({
-    where: {
-      seasonId: SEASON_ID,
-      AND: [
-        { content: { startsWith: "【NPC互动】" } },
-        { content: { contains: overview.location.name } },
-      ],
-    },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    select: { id: true, content: true, createdAt: true },
+  const npcInteractionLogs = await getRecentNpcInteractionLogs(
+    { id: overview.location.id, name: overview.location.name },
+    5,
+  );
+
+  const npcDialogueHistory = await loadNpcInteractionDialogueHistory({
+    locationId: overview.location.id,
+    locationName: overview.location.name,
+    limit: 24,
   });
 
   const logs = [...mapLogs, ...npcActionLogs, ...npcInteractionLogs]
@@ -107,6 +106,7 @@ export async function GET(
     stageName: stageConfig?.name || project.currentStage,
     actionItems,
     logs,
+    npcDialogueHistory,
     user: {
       stamina: user.stamina,
       spirit: user.spirit,

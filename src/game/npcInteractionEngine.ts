@@ -4,6 +4,8 @@ import type { NpcPresenceStatus } from "./npcPresenceResolver";
 
 export type NpcInteractionType = "talk" | "report" | "coordinate" | "urge" | "submit_docs";
 
+export const NPC_INTERACTION_LOG_PREFIX = "【NPC互动】";
+
 export const NPC_INTERACTION_LABELS: Record<NpcInteractionType, string> = {
   talk: "交谈",
   report: "请示",
@@ -19,6 +21,25 @@ export const NPC_INTERACTION_ORDER: NpcInteractionType[] = [
   "urge",
   "submit_docs",
 ];
+
+export type NpcInteractionLogMeta = {
+  locationId: string;
+  npcId: string;
+  interaction: NpcInteractionType;
+  playerLine: string;
+  npcLine: string;
+};
+
+export function buildNpcInteractionLogContent(params: {
+  locationId: string;
+  locationName: string;
+  npcName: string;
+  interaction: NpcInteractionType;
+  npcLine: string;
+}): string {
+  const label = NPC_INTERACTION_LABELS[params.interaction];
+  return `${NPC_INTERACTION_LOG_PREFIX}@${params.locationId} 在「${params.locationName}」对${params.npcName}执行「${label}」：${params.npcLine}`;
+}
 
 export type NpcInteractionResult = {
   ok: boolean;
@@ -49,9 +70,10 @@ export function getAvailableNpcInteractions(npc: SandtableNpcRef): NpcInteractio
 export function resolveNpcInteraction(params: {
   npc: SandtableNpcRef;
   interaction: NpcInteractionType;
+  locationId: string;
   locationName: string;
 }): NpcInteractionResult {
-  const { npc, interaction, locationName } = params;
+  const { npc, interaction, locationId, locationName } = params;
   const profile = getNpcProfileById(npc.npcId);
   const name = profile?.name ?? npc.name;
   const agenda = profile?.agenda ?? npc.agenda ?? "当前事项";
@@ -110,7 +132,13 @@ export function resolveNpcInteraction(params: {
 
   const playerLine = pickLine(playerLines[interaction]);
   const npcLine = pickLine(npcLines[interaction]);
-  const logContent = `【NPC互动】在「${locationName}」对${name}执行「${NPC_INTERACTION_LABELS[interaction]}」：${npcLine}`;
+  const logContent = buildNpcInteractionLogContent({
+    locationId,
+    locationName,
+    npcName: name,
+    interaction,
+    npcLine,
+  });
 
   return {
     ok: true,
@@ -125,9 +153,57 @@ export type DialogueEntry = {
   role: "player" | "npc" | "system";
   speaker: string;
   text: string;
+  npcId?: string;
   interaction?: NpcInteractionType;
   createdAt: number;
 };
+
+export function dialogueEntriesFromLogMeta(params: {
+  logId: string;
+  meta: NpcInteractionLogMeta;
+  npcName: string;
+  createdAt: number;
+  playerName?: string;
+}): DialogueEntry[] {
+  const { logId, meta, npcName, createdAt, playerName = "你" } = params;
+  if (!meta.playerLine && !meta.npcLine) return [];
+
+  const entries: DialogueEntry[] = [];
+  if (meta.playerLine) {
+    entries.push({
+      id: `${logId}-p`,
+      role: "player",
+      speaker: playerName,
+      text: meta.playerLine,
+      npcId: meta.npcId,
+      interaction: meta.interaction,
+      createdAt,
+    });
+  }
+  if (meta.npcLine) {
+    entries.push({
+      id: `${logId}-n`,
+      role: "npc",
+      speaker: npcName,
+      text: meta.npcLine,
+      npcId: meta.npcId,
+      interaction: meta.interaction,
+      createdAt: createdAt + 1,
+    });
+  }
+  return entries;
+}
+
+export function parseNpcInteractionLogMeta(raw: string | null | undefined): NpcInteractionLogMeta | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as NpcInteractionLogMeta;
+    if (!parsed.locationId || !parsed.npcId || !parsed.interaction) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
 export function buildDialogueEntriesFromInteraction(params: {
   npc: SandtableNpcRef;
@@ -142,6 +218,7 @@ export function buildDialogueEntriesFromInteraction(params: {
         role: "system",
         speaker: "系统",
         text: params.result.reason ?? "互动失败",
+        npcId: params.npc.npcId,
         createdAt: Date.now(),
       },
     ];
@@ -157,6 +234,7 @@ export function buildDialogueEntriesFromInteraction(params: {
       role: "player",
       speaker: params.playerName ?? "你",
       text: params.result.playerLine,
+      npcId: params.npc.npcId,
       interaction: params.interaction,
       createdAt: now,
     },
@@ -165,6 +243,7 @@ export function buildDialogueEntriesFromInteraction(params: {
       role: "npc",
       speaker: npcName,
       text: params.result.npcLine,
+      npcId: params.npc.npcId,
       interaction: params.interaction,
       createdAt: now + 1,
     },

@@ -18,13 +18,8 @@ import { cn } from "@/lib/utils";
 import { resolveNodeLocationId } from "@/lib/resolveNodeLocationId";
 import type { SandtableLocationNode } from "@/game/locationSandtablePresentationEngine";
 import type { LocationActionDisplayItem } from "@/game/locationPresentationEngine";
-import type { SandtableNpcRef } from "@/game/sandtableNpcResolver";
-import {
-  buildDialogueEntriesFromInteraction,
-  resolveNpcInteraction,
-  type DialogueEntry,
-  type NpcInteractionType,
-} from "@/game/npcInteractionEngine";
+import type { DialogueEntry, NpcInteractionType } from "@/game/npcInteractionEngine";
+import { LocationNpcMainCard } from "./LocationNpcMainCard";
 import { SandtableNpcList } from "./SandtableNpcList";
 import { NpcTaskRequirementList } from "./NpcTaskRequirementList";
 import { NpcTaskActionList } from "./NpcTaskActionList";
@@ -44,6 +39,7 @@ type WorkspacePayload = {
   stageName: string;
   actionItems: LocationActionDisplayItem[];
   logs: { id: string; content: string; createdAt: string }[];
+  npcDialogueHistory?: DialogueEntry[];
   user: {
     stamina: number;
     spirit: number;
@@ -129,7 +125,11 @@ export function LocationSceneOverlay({
       setWorkspace(null);
       return;
     }
-    setWorkspace(data as WorkspacePayload);
+    const next = data as WorkspacePayload;
+    setWorkspace(next);
+    if (next.npcDialogueHistory) {
+      setDialogueEntries(next.npcDialogueHistory);
+    }
     setError(null);
   }, []);
 
@@ -190,58 +190,81 @@ export function LocationSceneOverlay({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  const visibleDialogueEntries = useMemo(() => {
+    if (!selectedNpcId) return dialogueEntries;
+    return dialogueEntries.filter((entry) => !entry.npcId || entry.npcId === selectedNpcId);
+  }, [dialogueEntries, selectedNpcId]);
+
+  const otherNpcCount = useMemo(
+    () => node.relatedNpcs.filter((npc) => npc.npcId !== selectedNpcId).length,
+    [node.relatedNpcs, selectedNpcId],
+  );
+
   const handleNpcInteract = useCallback(
-    async (npc: SandtableNpcRef, interaction: NpcInteractionType) => {
-      setSelectedNpcId(npc.npcId);
+    async (interaction: NpcInteractionType) => {
+      if (!locationId || !selectedNpc) return;
+
       setPendingInteraction(interaction);
 
-      const result = resolveNpcInteraction({
-        npc,
-        interaction,
-        locationName: node.name,
-      });
-      const entries = buildDialogueEntriesFromInteraction({ npc, interaction, result });
-      setDialogueEntries((current) => [...current, ...entries].slice(-24));
-
-      if (result.ok && result.logContent) {
-        setWorkspace((current) => {
-          if (!current) return current;
-          return {
-            ...current,
-            logs: [
-              {
-                id: `local-${Date.now()}`,
-                content: result.logContent,
-                createdAt: new Date().toISOString(),
-              },
-              ...current.logs,
-            ].slice(0, 8),
-          };
-        });
-
-        void fetch("/api/locations/npc-interaction", {
+      try {
+        const res = await fetch("/api/locations/npc-interaction", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ logContent: result.logContent }),
-        }).then(async (res) => {
-          if (!res.ok) throw new Error("save failed");
-        }).catch(() => {
+          body: JSON.stringify({
+            locationId,
+            npcId: selectedNpc.npcId,
+            interaction,
+          }),
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          entries?: DialogueEntry[];
+          log?: { id: string; content: string; createdAt: string };
+          message?: string;
+        };
+
+        if (data.entries?.length) {
+          setDialogueEntries((current) => [...current, ...data.entries!].slice(-24));
+        }
+
+        if (data.log) {
+          setWorkspace((current) => {
+            if (!current) return current;
+            return {
+              ...current,
+              logs: [data.log!, ...current.logs.filter((log) => log.id !== data.log!.id)].slice(0, 8),
+            };
+          });
+        } else if (!res.ok && !data.entries?.length) {
           setDialogueEntries((current) => [
             ...current,
             {
               id: `sys-err-${Date.now()}`,
               role: "system",
               speaker: "系统",
-              text: "互动记录保存失败，请稍后重试。",
+              text: data.message ?? "互动失败，请稍后重试。",
+              npcId: selectedNpc.npcId,
               createdAt: Date.now(),
             },
           ]);
-        });
+        }
+      } catch {
+        setDialogueEntries((current) => [
+          ...current,
+          {
+            id: `sys-err-${Date.now()}`,
+            role: "system",
+            speaker: "系统",
+            text: "网络错误，互动记录保存失败。",
+            npcId: selectedNpc.npcId,
+            createdAt: Date.now(),
+          },
+        ]);
+      } finally {
+        setPendingInteraction(null);
       }
-
-      setPendingInteraction(null);
     },
-    [node.name],
+    [locationId, selectedNpc],
   );
 
   const riskItems = node.impactLabels?.length ? node.impactLabels : node.riskTags;
@@ -327,40 +350,41 @@ export function LocationSceneOverlay({
 
         {!loading && !error ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-            {/* 左栏：NPC 互动 */}
+            {/* 左栏：当前 NPC + 对话 + 其他 NPC */}
             <WorkspaceColumn
               icon={Users}
               title="NPC 互动"
-              subtitle="交谈、请示、协调与催办"
-              className="min-h-[240px] shrink-0 lg:w-[30%] lg:min-h-0 lg:shrink"
+              subtitle="选中 NPC · 对话反馈 · 切换对象"
+              className="min-h-[280px] shrink-0 lg:w-[32%] lg:min-h-0 lg:shrink"
+              scrollBody={false}
+              bodyClassName="flex flex-col gap-3 overflow-hidden p-3"
             >
-              <SandtableNpcList
-                npcs={node.relatedNpcs}
-                maxItems={12}
-                interactive
-                selectedNpcId={selectedNpcId ?? undefined}
-                onSelectNpc={(npc) => setSelectedNpcId(npc.npcId)}
-                onInteract={(npc, interaction) => void handleNpcInteract(npc, interaction)}
+              {selectedNpc ? <LocationNpcMainCard npc={selectedNpc} /> : null}
+
+              <LocationNpcDialoguePanel
+                className="min-h-0 flex-1"
+                selectedNpc={selectedNpc}
+                entries={visibleDialogueEntries}
                 pendingInteraction={pendingInteraction}
+                onInteract={(interaction) => void handleNpcInteract(interaction)}
               />
-              <div className="mt-3">
-                <LocationNpcDialoguePanel
-                  selectedNpc={selectedNpc}
-                  entries={dialogueEntries}
-                  pendingInteraction={pendingInteraction}
-                  onInteract={(interaction) => {
-                    if (selectedNpc) void handleNpcInteract(selectedNpc, interaction);
-                  }}
-                />
-              </div>
-              <div className="mt-4 border-t border-cyan-400/10 pt-4">
-                <NpcTaskActionList
-                  node={node}
-                  project={project}
-                  tasks={tasks}
-                  completedActionIds={completedActionIds}
-                />
-              </div>
+
+              {otherNpcCount > 0 ? (
+                <div className="shrink-0 border-t border-cyan-400/10 pt-3">
+                  <p className="mb-2 text-[10px] font-medium text-slate-500">
+                    其他 NPC（{otherNpcCount}）
+                  </p>
+                  <SandtableNpcList
+                    npcs={node.relatedNpcs}
+                    maxItems={8}
+                    variant="compact"
+                    excludeNpcId={selectedNpcId ?? undefined}
+                    selectedNpcId={selectedNpcId ?? undefined}
+                    onSelectNpc={(npc) => setSelectedNpcId(npc.npcId)}
+                    empty="暂无其他 NPC"
+                  />
+                </div>
+              ) : null}
             </WorkspaceColumn>
 
             <WorkspaceColumn
@@ -387,6 +411,13 @@ export function LocationSceneOverlay({
 
               <div className="mt-3 space-y-3">
                 <NpcTaskRequirementList node={node} project={project} tasks={tasks} />
+
+                <NpcTaskActionList
+                  node={node}
+                  project={project}
+                  tasks={tasks}
+                  completedActionIds={completedActionIds}
+                />
 
                 <div>
                   <h4 className="mb-1.5 flex items-center gap-2 text-[10px] font-medium text-slate-500">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -17,6 +18,7 @@ type LocationNpcDialoguePanelProps = {
   entries: DialogueEntry[];
   pendingInteraction?: NpcInteractionType | null;
   onInteract: (interaction: NpcInteractionType) => void;
+  className?: string;
 };
 
 function formatTime(ts: number) {
@@ -31,13 +33,26 @@ export function LocationNpcDialoguePanel({
   entries,
   pendingInteraction,
   onInteract,
+  className,
 }: LocationNpcDialoguePanelProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const profile = selectedNpc ? getNpcProfileById(selectedNpc.npcId) : undefined;
   const npcName = profile?.name ?? selectedNpc?.name;
   const available = selectedNpc ? getAvailableNpcInteractions(selectedNpc) : [];
 
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [entries.length, pendingInteraction]);
+
   return (
-    <div className="flex min-h-[200px] flex-col border border-cyan-400/15 bg-slate-950/45">
+    <div
+      className={cn(
+        "flex min-h-[220px] flex-col border border-cyan-400/20 bg-slate-950/50",
+        className,
+      )}
+    >
       <header className="shrink-0 border-b border-cyan-400/10 px-3 py-2">
         <div className="flex items-center gap-2 text-[11px] font-medium text-cyan-100">
           <MessageSquare className="size-3.5 text-cyan-400" />
@@ -45,16 +60,21 @@ export function LocationNpcDialoguePanel({
           {npcName ? <span className="font-normal text-slate-400">· {npcName}</span> : null}
         </div>
         {!selectedNpc ? (
-          <p className="mt-1 text-[10px] text-slate-500">选择 NPC 卡片或使用下方动作开始对话</p>
-        ) : null}
+          <p className="mt-1 text-[10px] text-slate-500">请从下方选择 NPC 开始互动</p>
+        ) : (
+          <p className="mt-1 text-[10px] text-slate-500">点击下方动作发起互动，回复会即时显示在这里</p>
+        )}
       </header>
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {entries.length === 0 ? (
           <p className="text-[11px] leading-5 text-slate-500">
             {selectedNpc
-              ? `与${npcName}的交谈记录会显示在这里。`
-              : "点击 NPC 卡片上的动作按钮发起互动。"}
+              ? `与 ${npcName} 的交谈记录会显示在这里。`
+              : "选择 NPC 后，可使用底部动作开始对话。"}
           </p>
         ) : (
           entries.map((entry) => (
@@ -79,7 +99,7 @@ export function LocationNpcDialoguePanel({
       </div>
 
       {selectedNpc ? (
-        <footer className="shrink-0 border-t border-cyan-400/10 p-2">
+        <footer className="shrink-0 border-t border-cyan-400/10 bg-slate-950/70 p-2">
           <div className="flex flex-wrap gap-1">
             {NPC_INTERACTION_ORDER.map((type) => {
               const enabled = available.includes(type);

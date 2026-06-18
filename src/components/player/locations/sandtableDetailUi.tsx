@@ -58,12 +58,16 @@ export function WorkspaceColumn({
   subtitle,
   children,
   className,
+  bodyClassName,
+  scrollBody = true,
 }: {
   icon: LucideIcon;
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   className?: string;
+  bodyClassName?: string;
+  scrollBody?: boolean;
 }) {
   return (
     <section
@@ -79,7 +83,15 @@ export function WorkspaceColumn({
         </h3>
         {subtitle ? <p className="mt-1 pl-5 text-[10px] text-slate-500">{subtitle}</p> : null}
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        className={cn(
+          "min-h-0 flex-1 p-3",
+          scrollBody
+            ? "overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            : "flex flex-col overflow-hidden",
+          bodyClassName,
+        )}
+      >
         {children}
       </div>
     </section>
