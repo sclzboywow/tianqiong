@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowRight, ClipboardList, MapPin, Radio } from "lucide-react";
 import type { RecommendedTaskBoardItem, TaskBoardData } from "@/game/taskPresentationEngine";
 import {
-  taskHudButtonPrimary,
-  taskHudButtonSecondary,
+  taskHudButtonDetailPrimary,
+  taskHudButtonDetailSecondary,
   taskHudMetric,
   taskHudPanel,
   taskHudTag,
@@ -16,13 +16,13 @@ type TaskBoardRecommendedCardProps = {
 export function TaskBoardRecommendedCard({ item }: TaskBoardRecommendedCardProps) {
   const settlementLabel = item.task.type === "emergency" ? "进入结算" : "查看任务";
   const locationLabel = item.task.sourceLocationName
-    ? `前往 ${item.task.sourceLocationName}`
+    ? `前往地点：${item.task.sourceLocationName}`
     : "前往协同地图";
 
   return (
     <section className={`${taskHudPanel} relative border-cyan-400/35 bg-cyan-950/20`}>
       <div className="absolute inset-y-0 left-0 w-0.5 bg-cyan-400/70" />
-      <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:p-5">
+      <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:p-5">
         <div className="min-w-0 pl-1">
           <p className="inline-flex items-center gap-2 text-[11px] font-medium text-cyan-300">
             <Radio className="size-3.5" />
@@ -44,20 +44,20 @@ export function TaskBoardRecommendedCard({ item }: TaskBoardRecommendedCardProps
           </div>
         </div>
 
-        <div className={`${taskHudPanel} flex flex-col justify-between p-3`}>
+        <div className="flex flex-col justify-between lg:pl-1">
           <p className="text-[11px] leading-5 text-slate-500">
             先在协同地图处理现场，需要提交方案时再进入任务结算。
           </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row lg:flex-col">
+          <div className="mt-3 flex flex-col gap-2">
             {item.task.locationHref ? (
-              <Link href={item.task.locationHref} className={taskHudButtonPrimary}>
-                <MapPin className="size-3.5 shrink-0" />
+              <Link href={item.task.locationHref} className={`${taskHudButtonDetailPrimary} w-full`}>
+                <MapPin className="size-4 shrink-0" />
                 {locationLabel}
               </Link>
             ) : null}
-            <Link href={item.task.href} className={taskHudButtonSecondary}>
+            <Link href={item.task.href} className={`${taskHudButtonDetailSecondary} w-full`}>
               {settlementLabel}
-              <ArrowRight className="size-3.5 shrink-0" />
+              <ArrowRight className="size-4 shrink-0" />
             </Link>
           </div>
         </div>

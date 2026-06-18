@@ -1,48 +1,42 @@
 import type { ReactNode } from "react";
+import { taskHudShell } from "../tasks/taskBoardUi";
 
 type ProfilePageLayoutProps = {
-  pageHeader: ReactNode;
   identity: ReactNode;
+  resources: ReactNode;
+  roleAbility: ReactNode;
+  contribution: ReactNode;
   growth: ReactNode;
   careerRank: ReactNode;
-  resources: ReactNode;
-  jobAbility: ReactNode;
-  careerTrack: ReactNode;
-  contribution: ReactNode;
   recentGrowth: ReactNode;
 };
 
 export function ProfilePageLayout({
-  pageHeader,
   identity,
+  resources,
+  roleAbility,
+  contribution,
   growth,
   careerRank,
-  resources,
-  jobAbility,
-  careerTrack,
-  contribution,
   recentGrowth,
 }: ProfilePageLayoutProps) {
   return (
-    <div className="space-y-4 lg:space-y-5">
-      {pageHeader}
+    <div className={taskHudShell}>
+      {identity}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5">
-        <main className="min-w-0 space-y-4 lg:space-y-5">
-          {identity}
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-            {resources}
-            {jobAbility}
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-            {careerTrack}
+      <div className="grid grid-cols-1 gap-0 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <main className="min-w-0 space-y-2.5 border-cyan-400/10 p-3 xl:border-r">
+          <div className="xl:hidden">{growth}</div>
+          {resources}
+          <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+            {roleAbility}
             {contribution}
           </div>
+          <div className="xl:hidden">{careerRank}</div>
+          <div className="xl:hidden">{recentGrowth}</div>
         </main>
 
-        <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+        <aside className="hidden space-y-2.5 p-3 xl:sticky xl:top-4 xl:block xl:self-start">
           {growth}
           {careerRank}
           {recentGrowth}
