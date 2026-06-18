@@ -1665,22 +1665,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_material_yard",
-    "npcId": "contractor_material_equipment_lead",
-    "level": "B",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "孙泽在【施工现场·幕墙材料堆场】围绕「材料计划/进场验收/设备管理」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_material_yard",
-    "npcId": "contractor_safety_quality_lead",
-    "level": "A",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "谢安在【施工现场·幕墙材料堆场】围绕「安全检查/隐患整改/应急演练」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_material_yard",
     "npcId": "finishing_team_lead",
     "level": "B",
     "role": "primary",
@@ -2113,14 +2097,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_transformer_room",
-    "npcId": "site_mep_processing_lead",
-    "level": "A",
-    "role": "primary",
-    "regionId": "construction_site",
-    "note": "余成电在【机电·柴油发电机房】围绕「机电安装/管线综合/系统调试」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_transformer_room",
     "npcId": "site_equipment_yard_manager",
     "level": "B",
     "role": "support",
@@ -2158,14 +2134,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "role": "regulator",
     "regionId": "construction_site",
     "note": "梁瑜在【机电·消防泵房】围绕「消防验收/联动测试/整改销项」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "site_fire_pump_room",
-    "npcId": "mep_system_lead",
-    "level": "A",
-    "role": "primary",
-    "regionId": "construction_site",
-    "note": "江防在【机电·消防水池】围绕「消防系统/水电调试/联动整改」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "site_fire_pump_room",
@@ -2209,14 +2177,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "hvac_room_engineer",
-    "level": "B",
-    "role": "primary",
-    "regionId": "construction_site",
-    "note": "黄暖在【机电·暖通机房】围绕「暖通安装/风量调试/设备运行」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_hvac_room",
     "npcId": "site_mep_processing_lead",
     "level": "A",
     "role": "support",
@@ -2241,35 +2201,11 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_hvac_room",
-    "npcId": "site_mep_processing_lead",
-    "level": "A",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "余成电在【机电·电梯机房】围绕「机电安装/管线综合/系统调试」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_hvac_room",
-    "npcId": "supervisor_engineer",
-    "level": "B",
-    "role": "regulator",
-    "regionId": "construction_site",
-    "note": "叶宁在【机电·电梯机房】围绕「专业巡查/见证取样/工序验收」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_hvac_room",
     "npcId": "quality_supervision_officer",
     "level": "B",
     "role": "primary",
     "regionId": "construction_site",
     "note": "温泉在【机电·生活水泵房】围绕「给水接入/试压/水压问题」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_hvac_room",
-    "npcId": "site_temp_road_officer",
-    "level": "B",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "王水在【机电·生活水泵房】围绕「临水排水/防汛/沉淀池」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_site_hvac_room",
@@ -2369,14 +2305,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "area_site_temp_power",
-    "npcId": "contractor_safety_quality_lead",
-    "level": "A",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "谢安在【室外·燃气接驳点】围绕「安全检查/隐患整改/应急演练」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_temp_power",
     "npcId": "site_realname_officer",
     "level": "B",
     "role": "primary",
@@ -2390,38 +2318,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "role": "support",
     "regionId": "construction_site",
     "note": "罗智在【室外·通信接入点】围绕「智能化运维/弱电中控/系统联调」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_temp_power",
-    "npcId": "site_mep_processing_lead",
-    "level": "A",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "余成电在【室外·通信接入点】围绕「机电安装/管线综合/系统调试」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_fire_lane",
-    "npcId": "site_fire_lane_officer",
-    "level": "C",
-    "role": "primary",
-    "regionId": "construction_site",
-    "note": "严保在【室外·消防车道】围绕「消防车道/通道清障/安全巡查」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_fire_lane",
-    "npcId": "fire_acceptance_officer",
-    "level": "A",
-    "role": "regulator",
-    "regionId": "construction_site",
-    "note": "梁瑜在【室外·消防车道】围绕「消防验收/联动测试/整改销项」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_fire_lane",
-    "npcId": "contractor_safety_quality_lead",
-    "level": "A",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "谢安在【室外·消防车道】围绕「安全检查/隐患整改/应急演练」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_site_atrium",
@@ -2496,30 +2392,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "note": "何机在【室外·卸货区】围绕「车辆调度/机械协调/物流冲突」提出请求、设置条件或触发冲突。"
   },
   {
-    "locationId": "area_site_unloading_zone",
-    "npcId": "logistics_lane_coordinator",
-    "level": "C",
-    "role": "primary",
-    "regionId": "construction_site",
-    "note": "牛清在【室外·垃圾房】围绕「垃圾清运/文明施工/环保投诉」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_unloading_zone",
-    "npcId": "site_living_area_manager",
-    "level": "B",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "温洁在【室外·垃圾房】围绕「保洁环境/垃圾协调/品质巡查」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_site_unloading_zone",
-    "npcId": "logistics_receiving_coordinator",
-    "level": "B",
-    "role": "support",
-    "regionId": "construction_site",
-    "note": "孙后在【室外·垃圾房】围绕「后勤收货/垃圾清运/路线协调」提出请求、设置条件或触发冲突。"
-  },
-  {
     "locationId": "area_site_logistics_lane",
     "npcId": "logistics_receiving_coordinator",
     "level": "B",
@@ -2545,27 +2417,11 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
   },
   {
     "locationId": "owner_operation_prep_office",
-    "npcId": "owner_operation_prep_lead",
-    "level": "A",
-    "role": "primary",
-    "regionId": "opening_prep",
-    "note": "陆宁在【运营筹备办公室】围绕「开业筹备/商户进场/运营移交」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "owner_operation_prep_office",
     "npcId": "floor_supervision_engineer",
     "level": "A",
     "role": "support",
     "regionId": "opening_prep",
     "note": "唐检在【运营筹备办公室】围绕「开业联检/问题派单/整改销项」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "owner_operation_prep_office",
-    "npcId": "property_engineering_manager",
-    "level": "A",
-    "role": "support",
-    "regionId": "opening_prep",
-    "note": "郝工在【运营筹备办公室】围绕「物业接管/设备移交/缺陷销项」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_opening_leasing_center",
@@ -2686,30 +2542,6 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "role": "support",
     "regionId": "opening_prep",
     "note": "罗智在【物业工程部】围绕「智能化运维/弱电中控/系统联调」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_fire_control_room",
-    "npcId": "fire_control_room_officer",
-    "level": "A",
-    "role": "primary",
-    "regionId": "opening_prep",
-    "note": "叶青在【消防控制室】围绕「消防值守/报警处理/联动测试」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_fire_control_room",
-    "npcId": "mep_system_lead",
-    "level": "A",
-    "role": "support",
-    "regionId": "opening_prep",
-    "note": "江防在【消防控制室】围绕「消防系统/水电调试/联动整改」提出请求、设置条件或触发冲突。"
-  },
-  {
-    "locationId": "area_fire_control_room",
-    "npcId": "fire_acceptance_officer",
-    "level": "A",
-    "role": "regulator",
-    "regionId": "opening_prep",
-    "note": "梁瑜在【消防控制室】围绕「消防验收/联动测试/整改销项」提出请求、设置条件或触发冲突。"
   },
   {
     "locationId": "area_security_roster_room",
@@ -2904,7 +2736,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "note": "裴车在【导视美陈工作室】围绕「停车系统/道闸调试/车流组织」提出请求、设置条件或触发冲突。"
   },
   {
-    "locationId": "area_logistics_dispatch",
+    "locationId": "area_logistics_waste_dispatch",
     "npcId": "logistics_receiving_coordinator",
     "level": "B",
     "role": "primary",
@@ -2912,7 +2744,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "note": "孙后在【后勤收货 / 垃圾清运协调点】围绕「后勤收货/垃圾清运/路线协调」提出请求、设置条件或触发冲突。"
   },
   {
-    "locationId": "area_logistics_dispatch",
+    "locationId": "area_logistics_waste_dispatch",
     "npcId": "site_canteen_manager",
     "level": "C",
     "role": "support",
@@ -2920,7 +2752,7 @@ export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = [
     "note": "邱卸在【后勤收货 / 垃圾清运协调点】围绕「卸货调度/物流排队/临堆管理」提出请求、设置条件或触发冲突。"
   },
   {
-    "locationId": "area_logistics_dispatch",
+    "locationId": "area_logistics_waste_dispatch",
     "npcId": "site_living_area_manager",
     "level": "B",
     "role": "support",

@@ -164,6 +164,11 @@ function MapNodePill({
       {isCompleted && !isRecommended ? <CheckCircle2 className="size-3 shrink-0 text-emerald-300" /> : null}
       {isLocked ? <Lock className="size-3 shrink-0" /> : null}
       <span className="min-w-0 truncate whitespace-nowrap">{node.name}</span>
+      {(node.presentNpcCount ?? 0) > 0 ? (
+        <span className="shrink-0 border border-emerald-400/35 bg-emerald-400/10 px-1 text-[9px] text-emerald-200">
+          NPC {node.presentNpcCount}
+        </span>
+      ) : null}
       {active ? (
         <span className="shrink-0 border border-cyan-300/40 px-1 text-[9px] text-cyan-200">当前</span>
       ) : null}

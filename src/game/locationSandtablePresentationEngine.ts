@@ -13,9 +13,14 @@ import {
   STAGE_LOCATION_RECOMMENDATIONS,
 } from "./locationEngine";
 import { getStageDisplayName, normalizeStageId, type ProjectStageId } from "./projectStages";
+import { hasReachedStage } from "./projectStageOrder";
 import type { EventTemplateData } from "./types";
 import type { RecommendedAction } from "./playerGuidanceEngine";
-import { buildSandtableNpcRefs, type SandtableNpcRef } from "./sandtableNpcResolver";
+import {
+  buildSandtableNpcRefs,
+  countNpcPresence,
+  type SandtableNpcRef,
+} from "./sandtableNpcResolver";
 
 export type { SandtableNpcRef };
 
@@ -57,6 +62,9 @@ export type SandtableLocationNode = {
   relatedTaskTitles?: string[];
   availableActionLabels?: string[];
   impactLabels?: string[];
+  presentNpcCount?: number;
+  reachableNpcCount?: number;
+  awayNpcCount?: number;
 };
 
 export type SandtableRegion = {
@@ -251,7 +259,10 @@ function buildRealNode(params: {
     regionId: placement.regionId,
     zoneId: placement.zoneId,
     fallbackNpcNames: location.relatedNpcNames,
+    project,
+    tasks,
   });
+  const presenceCounts = countNpcPresence(npcRefs.relatedNpcs);
 
   return {
     id: location.id,
@@ -275,21 +286,8 @@ function buildRealNode(params: {
     relatedTaskTitles: relatedTasks.map((task) => task.title).slice(0, 4),
     availableActionLabels: getActionLabels(location.id, actions),
     impactLabels: (location.riskTags || []).slice(0, 4).map(getRiskTagLabel),
+    ...presenceCounts,
   };
-}
-
-function hasReachedSyntheticStage(project: ProjectState, requiredStage: ProjectStageId): boolean {
-  const currentId = normalizeStageId(project.currentStage);
-  const order: ProjectStageId[] = [
-    "INITIATION",
-    "APPROVAL",
-    "DESIGN",
-    "PROCUREMENT",
-    "CONSTRUCTION",
-    "ACCEPTANCE",
-    "OPENING",
-  ];
-  return order.indexOf(currentId) >= order.indexOf(requiredStage);
 }
 
 function resolveSyntheticDisplayName(seed: SyntheticNodeSeed, locations: MapLocation[]): string {
@@ -304,8 +302,9 @@ function buildSyntheticNode(
   seed: SyntheticNodeSeed,
   project: ProjectState,
   locations: MapLocation[],
+  tasks: Task[],
 ): SandtableLocationNode {
-  const unlocked = hasReachedSyntheticStage(project, seed.unlockStage);
+  const unlocked = hasReachedStage(normalizeStageId(project.currentStage), seed.unlockStage);
   const status = getNodeStatus({
     unlocked,
     recommended: false,
@@ -325,7 +324,10 @@ function buildSyntheticNode(
     regionId: seed.regionId,
     zoneId: seed.zoneId,
     fallbackNpcNames: seed.relatedNpcNames,
+    project,
+    tasks,
   });
+  const presenceCounts = countNpcPresence(npcRefs.relatedNpcs);
 
   return {
     id: seed.id,
@@ -347,6 +349,7 @@ function buildSyntheticNode(
     href: seed.relatedLocationSlugs?.[0] ? `/locations/${seed.relatedLocationSlugs[0]}` : undefined,
     canEnter: Boolean(seed.relatedLocationSlugs?.[0]),
     impactLabels: (seed.riskTags || []).slice(0, 4).map(getRiskTagLabel),
+    ...presenceCounts,
   };
 }
 
@@ -395,7 +398,7 @@ export async function buildLocationSandtableViewData(params: {
     const linked = seed.relatedLocationSlugs ?? [];
     if (linked.length === 0) return true;
     return !linked.some((slug) => realLocationIds.has(slug));
-  }).map((seed) => buildSyntheticNode(seed, project, locations));
+  }).map((seed) => buildSyntheticNode(seed, project, locations, tasks));
 
   const nodes = [...realNodes, ...syntheticNodes];
 

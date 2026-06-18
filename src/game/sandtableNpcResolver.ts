@@ -1,3 +1,4 @@
+import type { ProjectState, Task } from "@prisma/client";
 import type { LocationRegionId } from "./locationSandtablePresentationEngine";
 import {
   getNpcProfileById,
@@ -9,8 +10,10 @@ import {
   type LocationNpcRole,
 } from "@/data/locationNpcAssignments";
 import { getDefaultNpcIdsByRegion } from "@/data/regionNpcDefaults";
+import { getNpcPresenceRule } from "@/data/npcPresenceRules";
+import { resolveNpcPresence, type NpcPresenceStatus } from "./npcPresenceResolver";
 
-export type { LocationNpcRole };
+export type { LocationNpcRole, NpcPresenceStatus };
 
 export type SandtableNpcRef = {
   npcId: string;
@@ -19,6 +22,11 @@ export type SandtableNpcRef = {
   level: NpcLevel;
   role: LocationNpcRole;
   agenda?: string;
+  presenceStatus?: NpcPresenceStatus;
+  currentLocationId?: string;
+  homeLocationId?: string;
+  presenceReason?: string;
+  presenceHint?: string;
 };
 
 export const NPC_ROLE_LABELS: Record<LocationNpcRole, string> = {
@@ -42,6 +50,13 @@ const ROLE_ORDER: Record<LocationNpcRole, number> = {
   support: 2,
   blocker: 3,
   temporary: 4,
+};
+
+const PRESENCE_ORDER: Record<NpcPresenceStatus, number> = {
+  present: 0,
+  reachable: 1,
+  away: 2,
+  locked: 3,
 };
 
 function slugifyLegacyName(name: string): string {
@@ -87,8 +102,41 @@ function fallbackNameToRef(name: string): SandtableNpcRef {
   };
 }
 
+function applyPresence(
+  ref: SandtableNpcRef,
+  params: {
+    locationId: string;
+    project: ProjectState;
+    tasks: Task[];
+    activeEventSlugs?: string[];
+  },
+): SandtableNpcRef {
+  if (!getNpcPresenceRule(ref.npcId)) return ref;
+
+  const presence = resolveNpcPresence({
+    npcId: ref.npcId,
+    currentLocationId: params.locationId,
+    project: params.project,
+    tasks: params.tasks,
+    activeEventSlugs: params.activeEventSlugs,
+  });
+
+  return {
+    ...ref,
+    presenceStatus: presence.status,
+    currentLocationId: presence.currentLocationId,
+    homeLocationId: presence.homeLocationId,
+    presenceReason: presence.reason,
+    presenceHint: presence.hint,
+  };
+}
+
 function sortNpcRefs(refs: SandtableNpcRef[]): SandtableNpcRef[] {
   return [...refs].sort((a, b) => {
+    const presenceA = a.presenceStatus ? PRESENCE_ORDER[a.presenceStatus] : 99;
+    const presenceB = b.presenceStatus ? PRESENCE_ORDER[b.presenceStatus] : 99;
+    if (presenceA !== presenceB) return presenceA - presenceB;
+
     const levelDiff = LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level];
     if (levelDiff !== 0) return levelDiff;
     return ROLE_ORDER[a.role] - ROLE_ORDER[b.role];
@@ -112,8 +160,11 @@ export function buildSandtableNpcRefs(params: {
   regionId: LocationRegionId;
   zoneId: string;
   fallbackNpcNames?: string[];
+  project?: ProjectState;
+  tasks?: Task[];
+  activeEventSlugs?: string[];
 }): { relatedNpcs: SandtableNpcRef[]; relatedNpcNames: string[] } {
-  const { locationId, regionId, fallbackNpcNames = [] } = params;
+  const { locationId, regionId, fallbackNpcNames = [], project, tasks, activeEventSlugs } = params;
   let refs: SandtableNpcRef[] = [];
 
   const assignments = getNpcAssignmentsByLocationId(locationId);
@@ -132,8 +183,32 @@ export function buildSandtableNpcRefs(params: {
     refs = fallbackNpcNames.map(fallbackNameToRef);
   }
 
+  if (project && tasks) {
+    refs = refs.map((ref) =>
+      applyPresence(ref, { locationId, project, tasks, activeEventSlugs }),
+    );
+  }
+
   const relatedNpcs = sortNpcRefs(dedupeRefs(refs));
   const relatedNpcNames = relatedNpcs.map((ref) => ref.name);
 
   return { relatedNpcs, relatedNpcNames };
+}
+
+export function countNpcPresence(npcs: SandtableNpcRef[]): {
+  presentNpcCount: number;
+  reachableNpcCount: number;
+  awayNpcCount: number;
+} {
+  let presentNpcCount = 0;
+  let reachableNpcCount = 0;
+  let awayNpcCount = 0;
+
+  for (const npc of npcs) {
+    if (npc.presenceStatus === "present") presentNpcCount += 1;
+    else if (npc.presenceStatus === "reachable") reachableNpcCount += 1;
+    else if (npc.presenceStatus === "away") awayNpcCount += 1;
+  }
+
+  return { presentNpcCount, reachableNpcCount, awayNpcCount };
 }

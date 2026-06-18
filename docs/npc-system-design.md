@@ -111,6 +111,24 @@ npm run sync:npcs
 
 转换逻辑见 `src/lib/npcProfilePayload.ts`。
 
+## 数据质检
+
+```bash
+# Excel ↔ npcProfiles.ts 逐字段一致
+npm run verify:npcs
+
+# 角色库完整性 + 挂载合法性 + 沙盘六大区 NPC 覆盖率
+npm run verify:npc-qa
+```
+
+`verify:npc-qa` 检查项：
+
+- profile 唯一 id / excelId、必填字段、单位→category/type 映射
+- assignment 的 `npcId` / `locationId` 合法性
+- 区域默认 NPC、LEGACY 别名是否可解析
+- 全部沙盘节点（真实地点 + synthetic）经 `buildSandtableNpcRefs` 后 **不得为空**
+- 六大区专属挂载率摘要；legacy 兜底、仅区域默认会输出警告
+
 ## UI 展示
 
 `/locations` 右侧详情使用 `SandtableNpcList` 组件，每条卡片展示：

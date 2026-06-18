@@ -343,7 +343,7 @@ function buildPlaceToLocationIdMap(): Map<string, string> {
     "室外·雨污水管网": "area_site_rain_sewage_pipe",
     "保洁 / 环境管理办公室": "area_security_roster_room",
     "停车场管理中心": "area_parking_management_center",
-    "后勤收货 / 垃圾清运协调点": "area_logistics_dispatch",
+    "后勤收货 / 垃圾清运协调点": "area_logistics_waste_dispatch",
     "机电·水管井": "area_site_hvac_room",
     "机电·风管区": "area_site_hvac_room",
     "机电·柴油发电机房": "area_site_transformer_room",
@@ -454,6 +454,14 @@ function main() {
       note: row["剧情/事件钩子"] || undefined,
     });
   }
+
+  const seenAssignment = new Set<string>();
+  const dedupedAssignments = assignments.filter((row) => {
+    const key = `${row.locationId}::${row.npcId}::${row.role}`;
+    if (seenAssignment.has(key)) return false;
+    seenAssignment.add(key);
+    return true;
+  });
 
   if (unresolvedPlaces.size > 0) {
     console.warn("Unresolved places:", [...unresolvedPlaces].slice(0, 20), "count", unresolvedPlaces.size);
@@ -566,7 +574,7 @@ export type LocationNpcAssignment = {
   note?: string;
 };
 
-export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = ${JSON.stringify(assignments, null, 2)};
+export const LOCATION_NPC_ASSIGNMENTS: LocationNpcAssignment[] = ${JSON.stringify(dedupedAssignments, null, 2)};
 
 export function getNpcAssignmentsByLocationId(locationId: string): LocationNpcAssignment[] {
   return LOCATION_NPC_ASSIGNMENTS.filter((item) => item.locationId === locationId);
@@ -595,7 +603,7 @@ export function getDefaultNpcIdsByRegion(regionId: LocationRegionId): string[] {
     JSON.stringify(
       {
         profiles: profiles.length,
-        assignments: assignments.length,
+        assignments: dedupedAssignments.length,
         unresolvedPlaces: unresolvedPlaces.size,
       },
       null,
