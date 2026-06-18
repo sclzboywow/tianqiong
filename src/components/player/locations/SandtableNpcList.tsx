@@ -1,6 +1,12 @@
 import { cn } from "@/lib/utils";
 import { getNpcProfileById } from "@/data/npcProfiles";
 import {
+  NPC_INTERACTION_LABELS,
+  NPC_INTERACTION_ORDER,
+  getAvailableNpcInteractions,
+  type NpcInteractionType,
+} from "@/game/npcInteractionEngine";
+import {
   NPC_ROLE_LABELS,
   type SandtableNpcRef,
 } from "@/game/sandtableNpcResolver";
@@ -36,6 +42,11 @@ type SandtableNpcListProps = {
   npcs?: SandtableNpcRef[];
   maxItems?: number;
   empty?: string;
+  interactive?: boolean;
+  selectedNpcId?: string;
+  onSelectNpc?: (npc: SandtableNpcRef) => void;
+  onInteract?: (npc: SandtableNpcRef, interaction: NpcInteractionType) => void;
+  pendingInteraction?: NpcInteractionType | null;
 };
 
 function resolveLocationLabel(npc: SandtableNpcRef, preferCurrent = false): string | undefined {
@@ -56,14 +67,36 @@ function resolveNpcDisplay(npc: SandtableNpcRef) {
   };
 }
 
-function NpcCard({ npc }: { npc: SandtableNpcRef }) {
+function NpcCard({
+  npc,
+  interactive,
+  selected,
+  onSelect,
+  onInteract,
+  pendingInteraction,
+}: {
+  npc: SandtableNpcRef;
+  interactive?: boolean;
+  selected?: boolean;
+  onSelect?: (npc: SandtableNpcRef) => void;
+  onInteract?: (npc: SandtableNpcRef, interaction: NpcInteractionType) => void;
+  pendingInteraction?: NpcInteractionType | null;
+}) {
   const display = resolveNpcDisplay(npc);
   const presence = npc.presenceStatus;
   const homeLabel = resolveLocationLabel(npc);
   const currentLabel = resolveLocationLabel(npc, true);
+  const available = getAvailableNpcInteractions(npc);
 
   return (
-    <li className="border border-cyan-400/10 bg-slate-950/50 p-2.5">
+    <li
+      className={cn(
+        "border bg-slate-950/50 p-2.5 transition",
+        selected ? "border-cyan-400/45 bg-cyan-950/20" : "border-cyan-400/10",
+        interactive && "cursor-pointer hover:border-cyan-400/30",
+      )}
+      onClick={() => interactive && onSelect?.(npc)}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[13px] font-medium text-cyan-50">{display.name}</p>
@@ -95,12 +128,8 @@ function NpcCard({ npc }: { npc: SandtableNpcRef }) {
       ) : null}
       {presence === "away" || presence === "reachable" ? (
         <div className="mt-1.5 space-y-0.5 text-[11px] leading-5 text-slate-500">
-          {presence === "away" ? (
-            <p className="text-slate-400">当前不在此处</p>
-          ) : null}
-          {presence === "reachable" && currentLabel ? (
-            <p>当前在：{currentLabel}</p>
-          ) : null}
+          {presence === "away" ? <p className="text-slate-400">当前不在此处</p> : null}
+          {presence === "reachable" && currentLabel ? <p>当前在：{currentLabel}</p> : null}
           {presence === "away" && homeLabel ? <p>通常在：{homeLabel}</p> : null}
           {npc.presenceReason ? <p>事由：{npc.presenceReason}</p> : null}
           {npc.presenceHint ? <p>线索：{npc.presenceHint}</p> : null}
@@ -114,6 +143,35 @@ function NpcCard({ npc }: { npc: SandtableNpcRef }) {
       ) : null}
       {display.agenda && presence && presence !== "locked" ? (
         <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-600">{display.agenda}</p>
+      ) : null}
+
+      {interactive ? (
+        <div
+          className="mt-2 flex flex-wrap gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {NPC_INTERACTION_ORDER.map((type) => {
+            const enabled = available.includes(type);
+            const isPending = pendingInteraction === type && selected;
+            return (
+              <button
+                key={type}
+                type="button"
+                disabled={!enabled || Boolean(pendingInteraction)}
+                onClick={() => onInteract?.(npc, type)}
+                className={cn(
+                  "border px-1.5 py-0.5 text-[10px] transition",
+                  enabled
+                    ? "border-cyan-400/20 text-cyan-100 hover:border-cyan-400/45 hover:bg-cyan-950/40"
+                    : "cursor-not-allowed border-slate-700/30 text-slate-600",
+                  isPending && "opacity-60",
+                )}
+              >
+                {NPC_INTERACTION_LABELS[type]}
+              </button>
+            );
+          })}
+        </div>
       ) : null}
     </li>
   );
@@ -155,6 +213,11 @@ export function SandtableNpcList({
   npcs = [],
   maxItems = 5,
   empty = "暂无明确 NPC",
+  interactive = false,
+  selectedNpcId,
+  onSelectNpc,
+  onInteract,
+  pendingInteraction,
 }: SandtableNpcListProps) {
   if (npcs.length === 0) {
     return <p className="text-[11px] text-slate-600">{empty}</p>;
@@ -186,7 +249,15 @@ export function SandtableNpcList({
           ) : null}
           <ul className="space-y-2">
             {section.items.map((npc) => (
-              <NpcCard key={`${npc.npcId}-${npc.role}`} npc={npc} />
+              <NpcCard
+                key={`${npc.npcId}-${npc.role}`}
+                npc={npc}
+                interactive={interactive}
+                selected={selectedNpcId === npc.npcId}
+                onSelect={onSelectNpc}
+                onInteract={onInteract}
+                pendingInteraction={selectedNpcId === npc.npcId ? pendingInteraction : null}
+              />
             ))}
           </ul>
         </div>

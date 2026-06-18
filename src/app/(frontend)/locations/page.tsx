@@ -8,7 +8,7 @@ import { listTasks } from "@/game/taskEngine";
 import { getMapLocations } from "@/game/locationLoader";
 import { getLocationActions } from "@/game/locationActionLoader";
 import { buildLocationSandtableViewData } from "@/game/locationSandtablePresentationEngine";
-import { ensureMergedNpcProfiles, getNpcProfileRevision } from "@/game/npcProfileLoader";
+import { ensureMergedNpcProfiles } from "@/game/npcProfileLoader";
 import { getNpcTaskActionProgress } from "@/game/npcTaskActionProgressEngine";
 import {
   getChapterInfo,
@@ -41,6 +41,8 @@ export default async function LocationsPage() {
   const pendingCount =
     pendingGroups.mainline.length + pendingGroups.emergency.length;
 
+  const { profiles: npcProfiles, revision: npcProfileRevision } = await ensureMergedNpcProfiles();
+
   const sandtableData = await buildLocationSandtableViewData({
     project,
     tasks,
@@ -48,9 +50,6 @@ export default async function LocationsPage() {
     actions,
     recommendedAction,
   });
-
-  const npcProfiles = await ensureMergedNpcProfiles();
-  const npcProfileRevision = await getNpcProfileRevision();
 
   const completedNpcTaskActionIds = await getNpcTaskActionProgress({
     taskSlugs: tasks.map((task) => task.templateId),

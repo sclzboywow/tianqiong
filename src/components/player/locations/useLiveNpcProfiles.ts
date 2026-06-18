@@ -21,6 +21,10 @@ export function useLiveNpcProfiles(
   const [syncTick, setSyncTick] = useState(0);
 
   useLayoutEffect(() => {
+    setRuntimeNpcProfileOverrides(initialProfiles);
+  }, [initialProfiles]);
+
+  useLayoutEffect(() => {
     setRuntimeNpcProfileOverrides(profiles);
   }, [profiles, syncTick]);
 

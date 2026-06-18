@@ -78,7 +78,20 @@ export async function GET(
     select: { id: true, content: true, createdAt: true },
   });
 
-  const logs = [...mapLogs, ...npcActionLogs]
+  const npcInteractionLogs = await prisma.gameLog.findMany({
+    where: {
+      seasonId: SEASON_ID,
+      AND: [
+        { content: { startsWith: "【NPC互动】" } },
+        { content: { contains: overview.location.name } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: { id: true, content: true, createdAt: true },
+  });
+
+  const logs = [...mapLogs, ...npcActionLogs, ...npcInteractionLogs]
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 8)
     .map((log) => ({

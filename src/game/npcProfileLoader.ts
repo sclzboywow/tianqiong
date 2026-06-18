@@ -51,6 +51,37 @@ function mapPayloadDocToNpcProfile(
   };
 }
 
+function mergeStaticWithPayloadDocs(docs: Record<string, unknown>[]): Record<string, NpcProfile> {
+  const merged = new Map<string, NpcProfile>();
+  for (const profile of NPC_PROFILES) {
+    merged.set(profile.id, { ...profile });
+  }
+
+  for (const doc of docs) {
+    const slug = doc.slug as string | undefined;
+    if (!slug) continue;
+    const profile = mapPayloadDocToNpcProfile(doc, merged.get(slug));
+    if (profile) merged.set(slug, profile);
+  }
+
+  return Object.fromEntries(merged);
+}
+
+function computeRevisionFromDocs(docs: Record<string, unknown>[]): string {
+  let maxUpdated = 0;
+  for (const doc of docs) {
+    const raw = doc.updatedAt;
+    if (!raw) continue;
+    const ts = new Date(raw as string).getTime();
+    if (Number.isFinite(ts) && ts > maxUpdated) maxUpdated = ts;
+  }
+  return `${docs.length}-${maxUpdated}`;
+}
+
+function staticOnlyRecord(): Record<string, NpcProfile> {
+  return Object.fromEntries(NPC_PROFILES.map((profile) => [profile.id, { ...profile }]));
+}
+
 async function fetchPayloadNpcDocs(): Promise<Record<string, unknown>[]> {
   const { getPayload } = await import("payload");
   const config = (await import("@payload-config")).default;
@@ -63,58 +94,45 @@ async function fetchPayloadNpcDocs(): Promise<Record<string, unknown>[]> {
   return result.docs as Record<string, unknown>[];
 }
 
-/** 合并静态 npcProfiles 与 Payload 后台数据，后台同 slug 记录优先 */
+async function loadNpcProfilesFromPayload(): Promise<{
+  profiles: Record<string, NpcProfile>;
+  revision: string;
+}> {
+  try {
+    const docs = await fetchPayloadNpcDocs();
+    const profiles = mergeStaticWithPayloadDocs(docs);
+    return { profiles, revision: computeRevisionFromDocs(docs) };
+  } catch {
+    const profiles = staticOnlyRecord();
+    return { profiles, revision: "static-0" };
+  }
+}
+
+/** 必须先于沙盘构建调用，确保 getNpcProfileById 读到 Payload 合并结果 */
+export async function ensureMergedNpcProfiles(): Promise<{
+  profiles: Record<string, NpcProfile>;
+  revision: string;
+}> {
+  const payload = await loadNpcProfilesFromPayload();
+  setRuntimeNpcProfileOverrides(payload.profiles);
+  return payload;
+}
+
 export async function buildMergedNpcProfileRecord(): Promise<Record<string, NpcProfile>> {
-  const merged = new Map<string, NpcProfile>();
-  for (const profile of NPC_PROFILES) {
-    merged.set(profile.id, { ...profile });
-  }
-
-  try {
-    const docs = await fetchPayloadNpcDocs();
-    for (const doc of docs) {
-      const slug = doc.slug as string | undefined;
-      if (!slug) continue;
-      const profile = mapPayloadDocToNpcProfile(doc, merged.get(slug));
-      if (profile) merged.set(slug, profile);
-    }
-  } catch {
-    // Payload 不可用时沿用静态配置
-  }
-
-  return Object.fromEntries(merged);
+  const { profiles } = await loadNpcProfilesFromPayload();
+  return profiles;
 }
 
-/** 服务端请求内缓存：构建沙盘等场景前先调用，使 getNpcProfileById 读到后台最新值 */
 export async function getNpcProfileRevision(): Promise<string> {
-  try {
-    const docs = await fetchPayloadNpcDocs();
-    let maxUpdated = 0;
-    for (const doc of docs) {
-      const raw = doc.updatedAt;
-      if (!raw) continue;
-      const ts = new Date(raw as string).getTime();
-      if (Number.isFinite(ts) && ts > maxUpdated) maxUpdated = ts;
-    }
-    return `${docs.length}-${maxUpdated}`;
-  } catch {
-    return "static-0";
-  }
-}
-
-export async function ensureMergedNpcProfiles(): Promise<Record<string, NpcProfile>> {
-  const record = await buildMergedNpcProfileRecord();
-  setRuntimeNpcProfileOverrides(record);
-  return record;
+  const { revision } = await loadNpcProfilesFromPayload();
+  return revision;
 }
 
 export async function loadFreshNpcProfilesPayload(): Promise<{
   revision: string;
   profiles: Record<string, NpcProfile>;
 }> {
-  const [profiles, revision] = await Promise.all([
-    buildMergedNpcProfileRecord(),
-    getNpcProfileRevision(),
-  ]);
-  return { revision, profiles };
+  const payload = await loadNpcProfilesFromPayload();
+  setRuntimeNpcProfileOverrides(payload.profiles);
+  return { revision: payload.revision, profiles: payload.profiles };
 }

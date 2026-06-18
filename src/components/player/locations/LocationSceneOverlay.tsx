@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ProjectState, Task } from "@prisma/client";
 import {
   AlertTriangle,
@@ -9,10 +9,8 @@ import {
   ClipboardList,
   ExternalLink,
   Loader2,
-  MessageSquare,
   ScrollText,
   ShieldAlert,
-  Sparkles,
   Users,
   Zap,
 } from "lucide-react";
@@ -20,10 +18,18 @@ import { cn } from "@/lib/utils";
 import { resolveNodeLocationId } from "@/lib/resolveNodeLocationId";
 import type { SandtableLocationNode } from "@/game/locationSandtablePresentationEngine";
 import type { LocationActionDisplayItem } from "@/game/locationPresentationEngine";
+import type { SandtableNpcRef } from "@/game/sandtableNpcResolver";
+import {
+  buildDialogueEntriesFromInteraction,
+  resolveNpcInteraction,
+  type DialogueEntry,
+  type NpcInteractionType,
+} from "@/game/npcInteractionEngine";
 import { SandtableNpcList } from "./SandtableNpcList";
 import { NpcTaskRequirementList } from "./NpcTaskRequirementList";
 import { NpcTaskActionList } from "./NpcTaskActionList";
 import { LocationActionExecutePanel } from "./LocationActionExecutePanel";
+import { LocationNpcDialoguePanel } from "./LocationNpcDialoguePanel";
 import {
   SandtableTokenList,
   SANDTABLE_STATUS_LABELS,
@@ -105,6 +111,16 @@ export function LocationSceneOverlay({
   const [error, setError] = useState<string | null>(
     missingLocation ? "该沙盘节点暂无地点工作台" : null,
   );
+  const [selectedNpcId, setSelectedNpcId] = useState<string | null>(
+    node.relatedNpcs[0]?.npcId ?? null,
+  );
+  const [dialogueEntries, setDialogueEntries] = useState<DialogueEntry[]>([]);
+  const [pendingInteraction, setPendingInteraction] = useState<NpcInteractionType | null>(null);
+
+  const selectedNpc = useMemo(
+    () => node.relatedNpcs.find((npc) => npc.npcId === selectedNpcId) ?? node.relatedNpcs[0],
+    [node.relatedNpcs, selectedNpcId],
+  );
 
   const applyWorkspaceResponse = useCallback((res: Response, data: unknown) => {
     const payload = data as { error?: string };
@@ -117,20 +133,26 @@ export function LocationSceneOverlay({
     setError(null);
   }, []);
 
-  const refreshWorkspace = useCallback(async () => {
+  const refreshWorkspace = useCallback(async (options?: { silent?: boolean }) => {
     if (!locationId) return;
 
-    setLoading(true);
-    setError(null);
+    if (!options?.silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
-      const res = await fetch(`/api/locations/${locationId}/workspace`);
+      const res = await fetch(`/api/locations/${locationId}/workspace`, { cache: "no-store" });
       const data = await res.json();
       applyWorkspaceResponse(res, data);
     } catch {
-      setError("网络错误，请稍后重试");
-      setWorkspace(null);
+      if (!options?.silent) {
+        setError("网络错误，请稍后重试");
+        setWorkspace(null);
+      }
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   }, [applyWorkspaceResponse, locationId]);
 
@@ -168,9 +190,64 @@ export function LocationSceneOverlay({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  const recommendedAction = workspace?.actionItems.find((action) => action.isRecommended);
+  const handleNpcInteract = useCallback(
+    async (npc: SandtableNpcRef, interaction: NpcInteractionType) => {
+      setSelectedNpcId(npc.npcId);
+      setPendingInteraction(interaction);
+
+      const result = resolveNpcInteraction({
+        npc,
+        interaction,
+        locationName: node.name,
+      });
+      const entries = buildDialogueEntriesFromInteraction({ npc, interaction, result });
+      setDialogueEntries((current) => [...current, ...entries].slice(-24));
+
+      if (result.ok && result.logContent) {
+        setWorkspace((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            logs: [
+              {
+                id: `local-${Date.now()}`,
+                content: result.logContent,
+                createdAt: new Date().toISOString(),
+              },
+              ...current.logs,
+            ].slice(0, 8),
+          };
+        });
+
+        void fetch("/api/locations/npc-interaction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ logContent: result.logContent }),
+        }).then(async (res) => {
+          if (!res.ok) throw new Error("save failed");
+        }).catch(() => {
+          setDialogueEntries((current) => [
+            ...current,
+            {
+              id: `sys-err-${Date.now()}`,
+              role: "system",
+              speaker: "系统",
+              text: "互动记录保存失败，请稍后重试。",
+              createdAt: Date.now(),
+            },
+          ]);
+        });
+      }
+
+      setPendingInteraction(null);
+    },
+    [node.name],
+  );
+
   const riskItems = node.impactLabels?.length ? node.impactLabels : node.riskTags;
   const taskItems = node.relatedTaskTitles?.length ? node.relatedTaskTitles : node.relatedTaskSlugs;
+  const otherActionsCount =
+    workspace?.actionItems.filter((action) => !action.isRecommended).length ?? 0;
 
   return (
     <div className="absolute inset-0 z-40 flex items-stretch justify-center lg:items-center lg:p-3">
@@ -254,10 +331,28 @@ export function LocationSceneOverlay({
             <WorkspaceColumn
               icon={Users}
               title="NPC 互动"
-              subtitle="联络、协同与对话"
+              subtitle="交谈、请示、协调与催办"
               className="min-h-[240px] shrink-0 lg:w-[30%] lg:min-h-0 lg:shrink"
             >
-              <SandtableNpcList npcs={node.relatedNpcs} maxItems={12} />
+              <SandtableNpcList
+                npcs={node.relatedNpcs}
+                maxItems={12}
+                interactive
+                selectedNpcId={selectedNpcId ?? undefined}
+                onSelectNpc={(npc) => setSelectedNpcId(npc.npcId)}
+                onInteract={(npc, interaction) => void handleNpcInteract(npc, interaction)}
+                pendingInteraction={pendingInteraction}
+              />
+              <div className="mt-3">
+                <LocationNpcDialoguePanel
+                  selectedNpc={selectedNpc}
+                  entries={dialogueEntries}
+                  pendingInteraction={pendingInteraction}
+                  onInteract={(interaction) => {
+                    if (selectedNpc) void handleNpcInteract(selectedNpc, interaction);
+                  }}
+                />
+              </div>
               <div className="mt-4 border-t border-cyan-400/10 pt-4">
                 <NpcTaskActionList
                   node={node}
@@ -266,64 +361,57 @@ export function LocationSceneOverlay({
                   completedActionIds={completedActionIds}
                 />
               </div>
-              <div className="mt-4 border border-cyan-400/10 bg-slate-950/40 p-3">
-                <div className="mb-2 flex items-center gap-2 text-[11px] font-medium text-cyan-100">
-                  <MessageSquare className="size-3.5 text-cyan-400" />
-                  对话
-                </div>
-                <p className="text-[11px] leading-5 text-slate-500">
-                  对话系统筹备中。可先通过上方 NPC 卡片与推进动作完成协同。
-                </p>
-              </div>
             </WorkspaceColumn>
 
-            {/* 中栏：任务 / 地点行动 */}
             <WorkspaceColumn
               icon={Zap}
               title="任务与行动"
-              subtitle="推进条件、地点行动与推荐动作"
+              subtitle="推荐动作优先，其余行动折叠展示"
               className="min-h-[280px] shrink-0 lg:min-w-0 lg:flex-1 lg:min-h-0 lg:shrink"
             >
-              {recommendedAction ? (
-                <div className="mb-4 border border-cyan-400/35 bg-cyan-950/25 p-3">
-                  <div className="mb-1 flex items-center gap-1.5 text-[10px] text-cyan-300">
-                    <Sparkles className="size-3" />
-                    推荐动作
-                  </div>
-                  <p className="text-sm font-medium text-cyan-50">{recommendedAction.label}</p>
-                  {recommendedAction.description ? (
-                    <p className="mt-1 text-[11px] leading-5 text-slate-400">
-                      {recommendedAction.description}
-                    </p>
-                  ) : null}
+              {workspace && workspace.unlocked ? (
+                <LocationActionExecutePanel
+                  locationId={workspace.locationId}
+                  actions={workspace.actionItems}
+                  user={workspace.user}
+                  unlocked={workspace.unlocked}
+                  appearance="sandtable"
+                  layout="workspace-hero"
+                  onExecuted={() => void refreshWorkspace({ silent: true })}
+                />
+              ) : (
+                <p className="mb-3 border border-cyan-400/10 bg-slate-950/40 p-3 text-[11px] text-slate-500">
+                  {node.locked ? "地点尚未解锁，暂不可执行行动。" : "暂无可执行地点行动。"}
+                </p>
+              )}
+
+              <div className="mt-3 space-y-3">
+                <NpcTaskRequirementList node={node} project={project} tasks={tasks} />
+
+                <div>
+                  <h4 className="mb-1.5 flex items-center gap-2 text-[10px] font-medium text-slate-500">
+                    <ClipboardList className="size-3 text-cyan-400" />
+                    当前相关任务
+                  </h4>
+                  <SandtableTokenList items={taskItems} empty="暂无关联任务" />
                 </div>
-              ) : null}
 
-              <NpcTaskRequirementList node={node} project={project} tasks={tasks} />
-
-              <div className="mt-4">
-                <h4 className="mb-2 flex items-center gap-2 text-[11px] font-medium text-cyan-100">
-                  <ClipboardList className="size-3.5 text-cyan-400" />
-                  当前相关任务
-                </h4>
-                <SandtableTokenList items={taskItems} empty="暂无关联任务" />
-              </div>
-
-              <div className="mt-4">
-                {workspace && workspace.unlocked ? (
-                  <LocationActionExecutePanel
-                    locationId={workspace.locationId}
-                    actions={workspace.actionItems}
-                    user={workspace.user}
-                    unlocked={workspace.unlocked}
-                    appearance="sandtable"
-                    onExecuted={() => void refreshWorkspace()}
-                  />
-                ) : (
-                  <p className="border border-cyan-400/10 bg-slate-950/40 p-3 text-[11px] text-slate-500">
-                    {node.locked ? "地点尚未解锁，暂不可执行行动。" : "暂无可执行地点行动。"}
-                  </p>
-                )}
+                {workspace && workspace.unlocked && otherActionsCount > 0 ? (
+                  <div>
+                    <h4 className="mb-1.5 text-[10px] font-medium text-slate-500">
+                      其他地点行动（{otherActionsCount}）
+                    </h4>
+                    <LocationActionExecutePanel
+                      locationId={workspace.locationId}
+                      actions={workspace.actionItems}
+                      user={workspace.user}
+                      unlocked={workspace.unlocked}
+                      appearance="sandtable"
+                      layout="workspace-compact"
+                      onExecuted={() => void refreshWorkspace({ silent: true })}
+                    />
+                  </div>
+                ) : null}
               </div>
             </WorkspaceColumn>
 
