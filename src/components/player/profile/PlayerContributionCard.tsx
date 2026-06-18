@@ -35,7 +35,7 @@ export function PlayerContributionCard({ contribution }: PlayerContributionCardP
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <div className="flex shrink-0 flex-col justify-center bg-slate-950/20 px-3 py-2 sm:w-[38%]">
             <p className="text-[10px] text-slate-600">累计贡献值</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums text-cyan-50/90">
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-cyan-100">
               {contributionDisplay}
             </p>
           </div>

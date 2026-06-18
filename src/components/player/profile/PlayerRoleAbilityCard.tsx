@@ -99,7 +99,7 @@ export function PlayerRoleAbilityCard({ jobAbility, track }: PlayerRoleAbilityCa
             />
           ) : null}
           <Link href="/tasks" className={`${taskDetailExpandButton} mt-1.5 inline-block`}>
-            查看适配任务 →
+            前往任务调度台 →
           </Link>
         </div>
       </div>

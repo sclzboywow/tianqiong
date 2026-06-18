@@ -24,7 +24,7 @@ export function ProfilePageLayout({
     <div className={taskHudShell}>
       {identity}
 
-      <div className="grid grid-cols-1 gap-0 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-0 xl:grid-cols-[minmax(0,1fr)_320px]">
         <main className="min-w-0 space-y-2.5 border-cyan-400/10 p-3 xl:border-r">
           <div className="xl:hidden">{growth}</div>
           {resources}

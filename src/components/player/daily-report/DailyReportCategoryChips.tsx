@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { DailyReportCategory, DailyReportCategoryId } from "@/game/dailyReportPresentationEngine";
+import { taskHudChip, taskHudChipActive, taskHudChipIdle } from "../tasks/taskBoardUi";
 
 type DailyReportCategoryChipsProps = {
   categories: DailyReportCategory[];
@@ -15,7 +16,7 @@ export function DailyReportCategoryChips({
   onSelect,
 }: DailyReportCategoryChipsProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex flex-wrap gap-1.5">
       {categories.map((category) => {
         const active = category.id === activeId;
         return (
@@ -23,14 +24,10 @@ export function DailyReportCategoryChips({
             key={category.id}
             type="button"
             onClick={() => onSelect(category.id)}
-            className={cn(
-              "shrink-0 rounded-full border px-3 py-1.5 text-xs transition-colors",
-              active
-                ? "border-[#2EA8FF] bg-[rgba(30,136,255,0.15)] text-[#2EA8FF]"
-                : "border-[rgba(60,160,255,0.18)] text-[#8EA3B8]",
-            )}
+            className={cn(taskHudChip, active ? taskHudChipActive : taskHudChipIdle)}
           >
-            {category.label} ({category.count})
+            {category.label}
+            <span className="tabular-nums text-[10px] opacity-70">{category.count}</span>
           </button>
         );
       })}

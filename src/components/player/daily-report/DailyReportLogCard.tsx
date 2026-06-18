@@ -1,119 +1,63 @@
-import {
-  AlertTriangle,
-  ClipboardList,
-  MapPin,
-  Sparkles,
-  TrendingUp,
-  Zap,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LogItem } from "@/game/dailyReportPresentationEngine";
+import { taskDetailTag } from "../tasks/taskBoardUi";
+
+const EFFECT_PREVIEW_LIMIT = 3;
 
 type DailyReportLogCardProps = {
   item: LogItem;
 };
 
-function LogTypeIcon({
-  iconType,
-  className,
-}: {
-  iconType: LogItem["iconType"];
-  className?: string;
-}) {
-  switch (iconType) {
-    case "map":
-      return <MapPin className={className} />;
-    case "event":
-      return <Zap className={className} />;
-    case "task":
-      return <ClipboardList className={className} />;
-    case "growth":
-      return <Sparkles className={className} />;
-    case "risk":
-      return <AlertTriangle className={className} />;
+function toneAccentClass(tone: LogItem["tone"]) {
+  switch (tone) {
+    case "positive":
+      return "bg-emerald-400/70";
+    case "negative":
+      return "bg-rose-400/70";
+    case "info":
+      return "bg-cyan-400/60";
     default:
-      return <TrendingUp className={className} />;
+      return "bg-slate-600/50";
   }
-}
-
-function toneClasses(tone: LogItem["tone"]) {
-  if (tone === "positive") {
-    return {
-      border: "border-[rgba(34,197,94,0.25)]",
-      accent: "bg-[#22C55E]",
-      icon: "text-[#22C55E]",
-      chip: "border-[rgba(34,197,94,0.18)] bg-[rgba(34,197,94,0.08)] text-[#86EFAC]",
-    };
-  }
-  if (tone === "negative") {
-    return {
-      border: "border-[rgba(239,68,68,0.28)]",
-      accent: "bg-[#EF4444]",
-      icon: "text-[#EF4444]",
-      chip: "border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.08)] text-[#FCA5A5]",
-    };
-  }
-  if (tone === "info") {
-    return {
-      border: "border-[rgba(46,168,255,0.22)]",
-      accent: "bg-[#2EA8FF]",
-      icon: "text-[#2EA8FF]",
-      chip: "border-[rgba(46,168,255,0.18)] bg-[rgba(30,136,255,0.08)] text-[#93C5FD]",
-    };
-  }
-  return {
-    border: "border-[rgba(60,160,255,0.12)]",
-    accent: "bg-[#8EA3B8]",
-    icon: "text-[#8EA3B8]",
-    chip: "border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.45)] text-[#8EA3B8]",
-  };
 }
 
 function effectToneClass(tone: LogItem["effectLines"][number]["tone"]) {
-  if (tone === "positive") return "text-[#22C55E]";
-  if (tone === "negative") return "text-[#EF4444]";
-  return "text-[#8EA3B8]";
+  if (tone === "positive") return "text-emerald-400/85";
+  if (tone === "negative") return "text-rose-400/85";
+  return "text-slate-500";
 }
 
 export function DailyReportLogCard({ item }: DailyReportLogCardProps) {
-  const tone = toneClasses(item.tone);
+  const visibleEffects = item.effectLines.slice(0, EFFECT_PREVIEW_LIMIT);
+  const hiddenEffectCount = Math.max(0, item.effectLines.length - EFFECT_PREVIEW_LIMIT);
 
   return (
-    <article className={cn("relative overflow-hidden rounded-xl border bg-[rgba(10,24,40,0.78)] p-4", tone.border)}>
-      <div className={cn("absolute inset-y-0 left-0 w-1", tone.accent)} />
+    <article className="relative flex min-h-[64px] max-h-[96px] gap-2 py-2 pl-2 pr-1">
+      <span
+        className={cn("mt-1.5 w-0.5 shrink-0 self-stretch max-h-10", toneAccentClass(item.tone))}
+      />
 
-      <div className="flex items-start gap-3 pl-2">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[rgba(60,160,255,0.18)] bg-[rgba(5,11,20,0.55)]">
-          <LogTypeIcon iconType={item.iconType} className={cn("size-4", tone.icon)} />
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="text-[10px] tabular-nums text-slate-600">{item.timeLabel}</span>
+          <span className={cn(taskDetailTag, "text-slate-400")}>{item.typeLabel}</span>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] tabular-nums text-[#8EA3B8]">{item.timeLabel}</span>
-            <span className={cn("rounded-md border px-1.5 py-0.5 text-[10px]", tone.chip)}>
-              {item.typeLabel}
-            </span>
+        <h4 className="mt-0.5 truncate text-[12px] font-medium text-slate-200">{item.title}</h4>
+        <p className="line-clamp-2 text-[11px] leading-[1.4] text-slate-500">{item.content}</p>
+
+        {visibleEffects.length > 0 ? (
+          <div className="mt-0.5 flex flex-wrap items-center gap-1">
+            {visibleEffects.map((line) => (
+              <span key={line.text} className={cn("text-[10px]", effectToneClass(line.tone))}>
+                {line.text}
+              </span>
+            ))}
+            {hiddenEffectCount > 0 ? (
+              <span className="text-[10px] text-slate-600">+{hiddenEffectCount}</span>
+            ) : null}
           </div>
-
-          <h4 className="mt-1.5 text-sm font-semibold text-[#EAF3FF]">{item.title}</h4>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-[#EAF3FF]/85">{item.content}</p>
-
-          {item.effectLines.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {item.effectLines.map((line) => (
-                <span
-                  key={line.text}
-                  className={cn(
-                    "rounded-md border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.45)] px-2 py-0.5 text-[11px] font-medium",
-                    effectToneClass(line.tone),
-                  )}
-                >
-                  {line.text}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     </article>
   );

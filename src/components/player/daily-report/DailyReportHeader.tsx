@@ -1,38 +1,73 @@
-import { FileClock, Radio } from "lucide-react";
+import { FileClock } from "lucide-react";
+import type { DailyReportSummary } from "@/game/dailyReportPresentationEngine";
+import {
+  taskDetailMetric,
+  taskDetailMetricAccent,
+  taskDetailPanelHeader,
+  taskDetailTag,
+} from "../tasks/taskBoardUi";
 
 type DailyReportHeaderProps = {
-  title?: string;
-  subtitle?: string;
+  summary: DailyReportSummary;
 };
 
-export function DailyReportHeader({
-  title = "项目战报",
-  subtitle = "按时间线复盘今日项目动态、任务结算、角色成长与风险变化。",
-}: DailyReportHeaderProps) {
-  return (
-    <header className="relative overflow-hidden rounded-2xl border border-[rgba(60,160,255,0.16)] bg-[radial-gradient(circle_at_top_left,rgba(30,136,255,0.16),rgba(5,11,20,0.75)_42%,rgba(5,11,20,0.92))] p-4 lg:p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div className="mb-2 flex items-center gap-2 text-[#2EA8FF]">
-            <FileClock className="size-5" />
-            <p className="text-xs font-medium">项目日志 / 当日复盘</p>
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#EAF3FF] lg:text-3xl">
-            {title}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#8EA3B8]">
-            {subtitle}
-          </p>
-        </div>
+export function DailyReportHeader({ summary }: DailyReportHeaderProps) {
+  const isEmpty = summary.totalLogs === 0;
 
-        <div className="rounded-xl border border-[rgba(60,160,255,0.16)] bg-[rgba(5,11,20,0.42)] px-4 py-3">
-          <div className="flex items-center gap-2 text-xs text-[#8EA3B8]">
-            <Radio className="size-4 text-[#2EA8FF]" />
-            今日同步
-          </div>
-          <p className="mt-1 text-sm font-semibold text-[#EAF3FF]">项目动态已归档</p>
+  return (
+    <header className="border-b border-cyan-400/8">
+      <div className={taskDetailPanelHeader}>
+        <div className="mb-1 flex items-center gap-2 text-cyan-400/80">
+          <FileClock className="size-4" />
+          <p className="text-[11px] font-medium">项目归档 / 当日复盘</p>
+        </div>
+        <h1 className="text-lg font-semibold tracking-wide text-cyan-50">项目复盘台</h1>
+        <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-slate-500">
+          自动归档今日项目动态、任务结算、角色成长与风险变化。
+        </p>
+        <div className="mt-2">
+          <span
+            className={`${taskDetailTag} ${isEmpty ? "text-slate-500" : "text-emerald-300/80"}`}
+          >
+            {isEmpty ? "今日暂无新归档" : "今日动态已归档"}
+          </span>
         </div>
       </div>
+
+      {!isEmpty ? (
+        <div className="grid grid-cols-2 gap-1.5 p-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className={taskDetailMetricAccent}>
+            <p className="text-[10px] text-cyan-400/60">今日记录</p>
+            <p className="mt-0.5 text-[12px] font-semibold tabular-nums text-cyan-100">
+              {summary.totalLogs}
+            </p>
+          </div>
+          <div className={taskDetailMetric}>
+            <p className="text-[10px] text-slate-600">任务记录</p>
+            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-slate-400">
+              {summary.taskLogs}
+            </p>
+          </div>
+          <div className={taskDetailMetricAccent}>
+            <p className="text-[10px] text-cyan-400/55">任务结算</p>
+            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-cyan-200">
+              {summary.completedTaskLogs}
+            </p>
+          </div>
+          <div className={taskDetailMetric}>
+            <p className="text-[10px] text-slate-600">角色成长</p>
+            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-slate-400">
+              {summary.growthLogs}
+            </p>
+          </div>
+          <div className={taskDetailMetricAccent}>
+            <p className="text-[10px] text-cyan-400/55">风险变化</p>
+            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-amber-200/90">
+              {summary.riskLogs}
+            </p>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

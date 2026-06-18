@@ -1,34 +1,40 @@
 import Link from "next/link";
 import { ArrowRight, Crosshair } from "lucide-react";
 import type { DailyReportNextSuggestion } from "@/game/dailyReportPresentationEngine";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
+import {
+  taskDetailPanel,
+  taskDetailPanelHeader,
+  taskHudButtonDetailPrimary,
+} from "../tasks/taskBoardUi";
 
 type DailyReportNextSuggestionCardProps = {
   suggestion: DailyReportNextSuggestion;
 };
 
+function resolveButtonLabel(suggestion: DailyReportNextSuggestion): string {
+  if (suggestion.href.startsWith("/tasks/")) return "前往任务处理";
+  if (suggestion.href.startsWith("/locations")) return "前往地点处理";
+  return suggestion.buttonLabel;
+}
+
 export function DailyReportNextSuggestionCard({ suggestion }: DailyReportNextSuggestionCardProps) {
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <div className="flex items-center gap-2">
-          <Crosshair className="size-4 text-[#2EA8FF]" />
-          <h3 className="text-base font-semibold text-[#EAF3FF]">{suggestion.headline}</h3>
-        </div>
+    <section className={taskDetailPanel}>
+      <div className={taskDetailPanelHeader}>
+        <h3 className="flex items-center gap-2 text-[12px] font-medium text-cyan-100">
+          <Crosshair className="size-3.5 text-cyan-400/80" />
+          {suggestion.headline}
+        </h3>
       </div>
-      <div className={playerCardBodyClass}>
-        <p className="text-[13px] font-medium leading-relaxed text-[#EAF3FF] lg:text-sm">
-          {suggestion.title}
-        </p>
+
+      <div className="space-y-2 p-3">
+        <p className="text-[12px] font-medium leading-[1.45] text-slate-200">{suggestion.title}</p>
         {suggestion.description ? (
-          <p className="mt-2 text-xs leading-relaxed text-[#8EA3B8]">{suggestion.description}</p>
+          <p className="text-[11px] leading-[1.45] text-slate-500">{suggestion.description}</p>
         ) : null}
-        <Link
-          href={suggestion.href}
-          className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#1E88FF] px-4 text-sm font-medium text-white transition-colors hover:bg-[#2EA8FF]"
-        >
-          {suggestion.buttonLabel}
-          <ArrowRight className="size-4" />
+        <Link href={suggestion.href} className={`${taskHudButtonDetailPrimary} w-full`}>
+          {resolveButtonLabel(suggestion)}
+          <ArrowRight className="size-4 shrink-0" />
         </Link>
       </div>
     </section>

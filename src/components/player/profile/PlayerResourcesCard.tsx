@@ -13,6 +13,11 @@ type PlayerResourcesCardProps = {
   profile: Pick<ProfileViewData, "stamina" | "spirit" | "gold" | "reputation">;
 };
 
+function spiritHint(spirit: number): string {
+  const pct = Math.round((spirit / PLAYER_SPIRIT_MAX) * 100);
+  return `精神 ${spirit}/${PLAYER_SPIRIT_MAX}（${pct}%）`;
+}
+
 function resolveActionStatus(stamina: number, spirit: number) {
   const staminaPct = stamina / PLAYER_STAMINA_MAX;
   const spiritPct = spirit / PLAYER_SPIRIT_MAX;
@@ -28,14 +33,14 @@ function resolveActionStatus(stamina: number, spirit: number) {
   if (minPct >= 0.35) {
     return {
       label: spiritLow
-        ? "状态一般，精神偏低，建议优先处理低消耗任务"
+        ? `${spiritHint(spirit)}，注意力偏弱，建议优先处理低消耗任务或先在协同地图休整`
         : "状态一般，建议优先处理低消耗任务",
       className: "text-amber-300/90",
     };
   }
   return {
     label: spiritLow
-      ? "状态偏低，精神偏低，建议谨慎处理高风险任务"
+      ? `${spiritHint(spirit)}，暂不宜接高风险或多人协作任务，建议休整后再提交方案`
       : "状态偏低，建议谨慎处理高风险任务",
     className: "text-rose-400/85",
   };
