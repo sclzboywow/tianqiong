@@ -671,14 +671,11 @@ export function LocationSandTablePage({
           />
         </div>
 
-        <div className="hidden w-[340px] shrink-0 lg:block">
+        <div className="hidden w-[300px] shrink-0 lg:block">
           <LocationDetailPanel
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
-            project={project}
-            tasks={tasks}
-            completedNpcTaskActionIds={completedNpcTaskActionIds}
             onEnter={handleEnterScene}
           />
         </div>
@@ -690,9 +687,6 @@ export function LocationSandTablePage({
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
-            project={project}
-            tasks={tasks}
-            completedNpcTaskActionIds={completedNpcTaskActionIds}
             onEnter={handleEnterScene}
           />
         </div>

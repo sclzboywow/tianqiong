@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { LocationNodeStatus } from "@/game/locationSandtablePresentationEngine";
 
 export const SANDTABLE_STATUS_LABELS: Record<LocationNodeStatus, string> = {
@@ -48,5 +49,51 @@ export function SandtableTokenList({ items, empty }: { items?: string[]; empty: 
         </span>
       ))}
     </div>
+  );
+}
+
+export function WorkspaceColumn({
+  icon: Icon,
+  title,
+  subtitle,
+  children,
+  className,
+}: {
+  icon: LucideIcon;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        "flex min-h-0 flex-col border-cyan-400/10 lg:border-r lg:last:border-r-0",
+        className,
+      )}
+    >
+      <header className="shrink-0 border-b border-cyan-400/10 bg-slate-950/40 px-3 py-2.5">
+        <h3 className="flex items-center gap-2 text-xs font-medium text-cyan-100">
+          <Icon className="size-3.5 shrink-0 text-cyan-400" />
+          {title}
+        </h3>
+        {subtitle ? <p className="mt-1 pl-5 text-[10px] text-slate-500">{subtitle}</p> : null}
+      </header>
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+export function statusBadgeClass(status: LocationNodeStatus): string {
+  return cn(
+    "shrink-0 border px-2 py-0.5 text-[10px] whitespace-nowrap",
+    status === "recommended" && "border-yellow-400/40 text-yellow-100",
+    status === "has_task" && "border-amber-400/40 text-amber-100",
+    status === "has_event" && "border-rose-400/40 text-rose-100",
+    status === "completed" && "border-emerald-400/40 text-emerald-100",
+    status === "locked" && "border-slate-600/30 text-slate-500",
+    status === "normal" && "border-cyan-400/25 text-cyan-100",
   );
 }
