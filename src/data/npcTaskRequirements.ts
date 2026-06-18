@@ -25,7 +25,7 @@ export const NPC_TASK_REQUIREMENTS: NpcTaskRequirement[] = [
       "design_lead",
     ],
     requiredPrimaryPresence: "present",
-    requiredSupportPresence: "reachable",
+    requiredSupportPresence: "any",
     hintWhenBlocked: "需要先确认业主项目负责人到场，并联络总包、监理和设计负责人参会。",
   },
   {
