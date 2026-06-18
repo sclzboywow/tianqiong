@@ -14,7 +14,6 @@ function formatPendingCount(count: number): string {
 }
 
 function ProjectLocationNodeComponent({ data }: NodeProps<ProjectLocationFlowNode>) {
-  const displayName = data.name.includes("·") ? data.name.split("·").pop()!.trim() : data.name;
   const isHub = HUB_NODE_IDS.has(data.id);
   const hasRisk = data.riskTagLabels.length > 0;
   const showPendingBadge = data.unlocked && data.pendingTaskCount > 0;
@@ -26,7 +25,7 @@ function ProjectLocationNodeComponent({ data }: NodeProps<ProjectLocationFlowNod
       <Handle type="target" position={Position.Top} className="!opacity-0 !w-1 !h-1" />
       <div
         className={cn(
-          "relative w-[220px] rounded-xl border px-3 py-2.5 shadow-lg transition-shadow",
+          "relative w-[248px] rounded-xl border px-3 py-2.5 shadow-lg transition-shadow",
           data.unlocked
             ? "border-[rgba(60,160,255,0.28)] bg-[rgba(10,24,40,0.92)]"
             : "border-[rgba(60,160,255,0.12)] bg-[rgba(10,24,40,0.55)] opacity-50 grayscale",
@@ -81,7 +80,9 @@ function ProjectLocationNodeComponent({ data }: NodeProps<ProjectLocationFlowNod
           </span>
         ) : null}
 
-        <p className="pr-6 text-[13px] font-semibold leading-snug text-[#EAF3FF]">{displayName}</p>
+        <p className="line-clamp-2 pr-6 text-[13px] font-semibold leading-snug text-[#EAF3FF]">
+          {data.name}
+        </p>
         <p className="mt-0.5 text-[11px] text-[#8EA3B8]">
           {data.typeLabel} · {data.group}
         </p>

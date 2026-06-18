@@ -1,5 +1,6 @@
 ﻿import type { ProjectState, Task } from "@prisma/client";
 import type { LocationAction } from "@/data/locationActions";
+import { BUILDING_STACK_DISPLAY_NAMES } from "@/data/buildingStackFloors";
 import type { MapLocation } from "@/data/locations";
 import { LOCATION_SANDTABLE_AREAS } from "@/data/locationSandtableAreas";
 import { getRiskTagLabel } from "@/data/riskTagLabels";
@@ -321,11 +322,24 @@ function countEventsForLocation(
   return events.filter((event) => matchesEventForLocation(event, location, project)).length;
 }
 
-function getShortName(location: MapLocation, fallback?: string): string {
-  if (fallback) return fallback;
-  const parts = location.name.split("·");
-  const name = parts.at(-1) || location.name;
-  return name.length > 4 ? name.slice(0, 4) : name;
+function getShortName(location: MapLocation): string {
+  return location.name;
+}
+
+const OWNER_HUB_NAME_PREFIX = /^建设主体[\s·]+/u;
+
+function formatOwnerHubNodeName(name: string): string {
+  return name.replace(OWNER_HUB_NAME_PREFIX, "").trim();
+}
+
+function getSandtableNodeName(name: string, regionId: LocationRegionId, nodeId?: string): string {
+  if (regionId === "owner_hub") {
+    return formatOwnerHubNodeName(name);
+  }
+  if (nodeId && BUILDING_STACK_DISPLAY_NAMES[nodeId]) {
+    return BUILDING_STACK_DISPLAY_NAMES[nodeId];
+  }
+  return name;
 }
 
 function getActionLabels(locationId: string, actions: LocationAction[]): string[] {
@@ -413,8 +427,8 @@ function buildRealNode(params: {
 
   return {
     id: location.id,
-    name: location.name,
-    shortName: getShortName(location, placement.shortName),
+    name: getSandtableNodeName(location.name, placement.regionId, location.id),
+    shortName: getShortName(location),
     regionId: placement.regionId,
     zoneId: placement.zoneId,
     status,
@@ -449,9 +463,18 @@ function hasReachedSyntheticStage(project: ProjectState, requiredStage: ProjectS
   return order.indexOf(currentId) >= order.indexOf(requiredStage);
 }
 
+function resolveSyntheticDisplayName(seed: SyntheticNodeSeed, locations: MapLocation[]): string {
+  for (const slug of seed.relatedLocationSlugs ?? []) {
+    const linked = locations.find((location) => location.id === slug);
+    if (linked) return linked.name;
+  }
+  return seed.name;
+}
+
 function buildSyntheticNode(
   seed: SyntheticNodeSeed,
   project: ProjectState,
+  locations: MapLocation[],
 ): SandtableLocationNode {
   const unlocked = hasReachedSyntheticStage(project, seed.unlockStage);
   const status = getNodeStatus({
@@ -462,11 +485,16 @@ function buildSyntheticNode(
     completedTaskCount: 0,
     fallback: seed.statusWhenUnlocked,
   });
+  const displayName = getSandtableNodeName(
+    resolveSyntheticDisplayName(seed, locations),
+    seed.regionId,
+    seed.id,
+  );
 
   return {
     id: seed.id,
-    name: seed.name,
-    shortName: seed.shortName,
+    name: displayName,
+    shortName: displayName,
     regionId: seed.regionId,
     zoneId: seed.zoneId,
     status,
@@ -496,7 +524,7 @@ function compareNodes(a: SandtableLocationNode, b: SandtableLocationNode): numbe
   };
   const rankDiff = rank(a) - rank(b);
   if (rankDiff !== 0) return rankDiff;
-  return a.shortName.localeCompare(b.shortName, "zh-CN");
+  return a.name.localeCompare(b.name, "zh-CN");
 }
 
 export async function buildLocationSandtableViewData(params: {
@@ -515,19 +543,24 @@ export async function buildLocationSandtableViewData(params: {
     recommendedAction,
   });
 
-  const nodes = [
-    ...locations.map((location) =>
-      buildRealNode({
-        location,
-        project,
-        tasks,
-        actions,
-        events,
-        recommendedLocationId,
-      }),
-    ),
-    ...SYNTHETIC_NODES.map((seed) => buildSyntheticNode(seed, project)),
-  ];
+  const realNodes = locations.map((location) =>
+    buildRealNode({
+      location,
+      project,
+      tasks,
+      actions,
+      events,
+      recommendedLocationId,
+    }),
+  );
+  const realLocationIds = new Set(locations.map((location) => location.id));
+  const syntheticNodes = SYNTHETIC_NODES.filter((seed) => {
+    const linked = seed.relatedLocationSlugs ?? [];
+    if (linked.length === 0) return true;
+    return !linked.some((slug) => realLocationIds.has(slug));
+  }).map((seed) => buildSyntheticNode(seed, project, locations));
+
+  const nodes = [...realNodes, ...syntheticNodes];
 
   const nodeByRegion = new Map<LocationRegionId, SandtableLocationNode[]>();
   for (const node of nodes) {
