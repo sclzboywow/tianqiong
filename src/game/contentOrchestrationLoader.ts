@@ -21,13 +21,15 @@ import { PROJECT_STAGES, type ProjectStageId } from "./projectStages";
 import type { TaskTemplateData, EventTemplateData, StoryEntryData } from "./types";
 import type { ArtifactDefinitionData } from "./types";
 
-const MAINLINE_STAGES: ProjectStageId[] = [
+export const ORCHESTRATION_MAINLINE_STAGES: ProjectStageId[] = [
   "INITIATION",
   "APPROVAL",
   "DESIGN",
   "PROCUREMENT",
   "CONSTRUCTION",
 ];
+
+const MAINLINE_STAGES = ORCHESTRATION_MAINLINE_STAGES;
 
 const GENERIC_INK_FILES = [
   "project_document_task",
@@ -239,7 +241,7 @@ function detectTaskMismatch(seed: TaskTemplateData, payload: TaskTemplateData): 
   return fields;
 }
 
-function buildTaskRow(
+export function buildTaskRow(
   seed: TaskTemplateData,
   studio: ContentStudioData,
   actionIndex: Map<string, string[]>,
@@ -296,7 +298,7 @@ function detectArtifactMismatch(
   return fields;
 }
 
-function buildArtifactRow(
+export function buildArtifactRow(
   seed: ArtifactDefinitionData,
   studio: ContentStudioData,
   artifactProducers: Map<string, string[]>,
@@ -384,6 +386,98 @@ function collectStageArtifactSlugs(tasks: OrchestrationTask[]): Set<string> {
     for (const ref of task.outputArtifacts) slugs.add(parseArtifactSlug(ref));
   }
   return slugs;
+}
+
+export type ContentOrchestrationOverview = {
+  overview: ContentOrchestrationData["overview"];
+  stages: Array<{
+    stageId: string;
+    stageName: string;
+    requiredMilestones: string[];
+    mainlineCount: number;
+    correctionCount: number;
+    stageProgressSum: number;
+    stageGateReady: boolean;
+  }>;
+  cleanup: {
+    clean: boolean;
+    issueCount: number;
+  };
+  health: {
+    summary: string;
+    errorCount: number;
+    warningCount: number;
+  };
+};
+
+export function buildOrchestrationCleanup(input: {
+  taskTemplates: TaskTemplateData[];
+  eventTemplates: EventTemplateData[];
+  storyEntries: StoryEntryData[];
+  locationActions: import("@/data/locationActions").LocationAction[];
+}): ContentOrchestrationData["cleanup"] {
+  const taskSlugSet = new Set(input.taskTemplates.map((t) => t.slug));
+  const taskCategoryMap = new Map(
+    input.taskTemplates.map((t) => [t.slug, t.category || ""]),
+  );
+  const eventSlugSet = new Set(input.eventTemplates.map((e) => e.slug));
+  const storySlugSet = new Set(input.storyEntries.map((s) => s.slug));
+  const actionSlugSet = new Set(input.locationActions.map((a) => a.id));
+
+  const oldStageTasks: CleanupItem[] = LEGACY_STAGE_MAINLINE_TASK_SLUGS.map((slug) => {
+    const exists = taskSlugSet.has(slug);
+    const category = taskCategoryMap.get(slug);
+    return {
+      slug,
+      kind: "legacy-stage-task",
+      source: "payload" as const,
+      found: exists,
+      detail:
+        exists && category === "mainline"
+          ? "仍作为 mainline 存在"
+          : exists
+            ? `存在但 category=${category || "?"}`
+            : undefined,
+    };
+  });
+
+  const cleanup = {
+    oldTasks: buildCleanupItems(LEGACY_CHAPTER1_TASK_SLUGS, "chapter1-task", taskSlugSet),
+    oldEvents: buildCleanupItems(LEGACY_CHAPTER1_EVENT_SLUGS, "chapter1-event", eventSlugSet),
+    oldStoryEntries: buildCleanupItems(
+      LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
+      "chapter1-story",
+      storySlugSet,
+    ),
+    oldLocationActions: buildCleanupItems(
+      LEGACY_CHAPTER1_LOCATION_ACTION_SLUGS,
+      "chapter1-action",
+      actionSlugSet,
+    ),
+    oldInkFiles: LEGACY_CHAPTER1_INK_FILES.map((slug) => ({
+      slug,
+      kind: "ink",
+      source: "filesystem" as const,
+      found: inkExists(slug) || inkCompiled(slug),
+    })),
+    oldStageTasks,
+    oldStageStoryEntries: buildCleanupItems(
+      LEGACY_STAGE_STORY_ENTRY_SLUGS,
+      "legacy-stage-story",
+      storySlugSet,
+    ),
+    clean: false,
+  };
+  cleanup.clean = ![
+    ...cleanup.oldTasks,
+    ...cleanup.oldEvents,
+    ...cleanup.oldStoryEntries,
+    ...cleanup.oldLocationActions,
+    ...cleanup.oldInkFiles,
+    ...cleanup.oldStageTasks.filter((item) => item.found),
+    ...cleanup.oldStageStoryEntries,
+  ].some((item) => item.found);
+  return cleanup;
 }
 
 export async function loadContentOrchestrationData(): Promise<ContentOrchestrationData> {
@@ -653,67 +747,12 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
     };
   });
 
-  const taskSlugSet = new Set(studio.taskTemplates.map((t) => t.slug));
-  const taskCategoryMap = new Map(
-    studio.taskTemplates.map((t) => [t.slug, t.category || ""]),
-  );
-  const eventSlugSet = new Set(studio.eventTemplates.map((e) => e.slug));
-  const storySlugSet = new Set(studio.storyEntries.map((s) => s.slug));
-  const actionSlugSet = new Set(studio.locationActions.map((a) => a.id));
-
-  const oldStageTasks: CleanupItem[] = LEGACY_STAGE_MAINLINE_TASK_SLUGS.map((slug) => {
-    const exists = taskSlugSet.has(slug);
-    const category = taskCategoryMap.get(slug);
-    return {
-      slug,
-      kind: "legacy-stage-task",
-      source: "payload" as const,
-      found: exists,
-      detail:
-        exists && category === "mainline"
-          ? "仍作为 mainline 存在"
-          : exists
-            ? `存在但 category=${category || "?"}`
-            : undefined,
-    };
+  const cleanup = buildOrchestrationCleanup({
+    taskTemplates: studio.taskTemplates,
+    eventTemplates: studio.eventTemplates,
+    storyEntries: studio.storyEntries,
+    locationActions: studio.locationActions,
   });
-
-  const cleanup = {
-    oldTasks: buildCleanupItems(LEGACY_CHAPTER1_TASK_SLUGS, "chapter1-task", taskSlugSet),
-    oldEvents: buildCleanupItems(LEGACY_CHAPTER1_EVENT_SLUGS, "chapter1-event", eventSlugSet),
-    oldStoryEntries: buildCleanupItems(
-      LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
-      "chapter1-story",
-      storySlugSet,
-    ),
-    oldLocationActions: buildCleanupItems(
-      LEGACY_CHAPTER1_LOCATION_ACTION_SLUGS,
-      "chapter1-action",
-      actionSlugSet,
-    ),
-    oldInkFiles: LEGACY_CHAPTER1_INK_FILES.map((slug) => ({
-      slug,
-      kind: "ink",
-      source: "filesystem" as const,
-      found: inkExists(slug) || inkCompiled(slug),
-    })),
-    oldStageTasks,
-    oldStageStoryEntries: buildCleanupItems(
-      LEGACY_STAGE_STORY_ENTRY_SLUGS,
-      "legacy-stage-story",
-      storySlugSet,
-    ),
-    clean: false,
-  };
-  cleanup.clean = ![
-    ...cleanup.oldTasks,
-    ...cleanup.oldEvents,
-    ...cleanup.oldStoryEntries,
-    ...cleanup.oldLocationActions,
-    ...cleanup.oldInkFiles,
-    ...cleanup.oldStageTasks.filter((item) => item.found),
-    ...cleanup.oldStageStoryEntries,
-  ].some((item) => item.found);
 
   const terminalTask =
     allTasks.find((t) => t.slug === "submit_construction_permit_application") || null;

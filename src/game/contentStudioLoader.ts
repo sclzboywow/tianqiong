@@ -82,58 +82,8 @@ export type ContentStudioData = {
 };
 
 async function loadPayloadDocIdMaps() {
-  const mapLocationDocIds: Record<string, string | number> = {};
-  const locationActionDocIds: Record<string, string | number> = {};
-  const taskTemplateDocIds: Record<string, string | number> = {};
-  const eventTemplateDocIds: Record<string, string | number> = {};
-  const storyEntryDocIds: Record<string, string | number> = {};
-  const artifactDefinitionDocIds: Record<string, string | number> = {};
-
-  try {
-    const { getPayload } = await import("payload");
-    const config = (await import("@payload-config")).default;
-    const payload = await getPayload({ config });
-
-    const [mapLocations, locationActions, taskTemplates, eventTemplates, storyEntries, artifactDefinitions] =
-      await Promise.all([
-        payload.find({ collection: "map-locations", limit: 500 }),
-        payload.find({ collection: "location-actions", limit: 500 }),
-        payload.find({ collection: "task-templates", limit: 500 }),
-        payload.find({ collection: "event-templates", limit: 500 }),
-        payload.find({ collection: "story-entries", limit: 500 }),
-        payload.find({ collection: "artifact-definitions", limit: 500 }),
-      ]);
-
-    for (const doc of mapLocations.docs) {
-      if (doc.slug) mapLocationDocIds[String(doc.slug)] = doc.id;
-    }
-    for (const doc of locationActions.docs) {
-      if (doc.slug) locationActionDocIds[String(doc.slug)] = doc.id;
-    }
-    for (const doc of taskTemplates.docs) {
-      if (doc.slug) taskTemplateDocIds[String(doc.slug)] = doc.id;
-    }
-    for (const doc of eventTemplates.docs) {
-      if (doc.slug) eventTemplateDocIds[String(doc.slug)] = doc.id;
-    }
-    for (const doc of storyEntries.docs) {
-      if (doc.slug) storyEntryDocIds[String(doc.slug)] = doc.id;
-    }
-    for (const doc of artifactDefinitions.docs) {
-      if (doc.slug) artifactDefinitionDocIds[String(doc.slug)] = doc.id;
-    }
-  } catch {
-    // 静态回退时无 Payload 文档 ID
-  }
-
-  return {
-    mapLocationDocIds,
-    locationActionDocIds,
-    taskTemplateDocIds,
-    eventTemplateDocIds,
-    storyEntryDocIds,
-    artifactDefinitionDocIds,
-  };
+  const { loadPayloadDocIdMaps: loadDocIds } = await import("./contentOrchestrationPayload");
+  return loadDocIds();
 }
 
 export type ArtifactUsageIndex = {
