@@ -50,7 +50,7 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "project_meeting_room",
         reason: "现场协调会",
-        taskSlugs: ["hold_project_kickoff_meeting", "organize_drawing_review"],
+        taskSlugs: ["hold_project_kickoff_meeting", "hold_scheme_review_meeting"],
         priority: 2,
       },
     ],
@@ -80,7 +80,7 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "project_document_room",
         reason: "核查验收资料",
-        taskSlugs: ["hidden_acceptance_missing", "complete_archive"],
+        taskSlugs: ["hidden_acceptance_missing", "prepare_master_control_plan"],
         priority: 1,
       },
     ],
@@ -95,7 +95,7 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "project_meeting_room",
         reason: "参加图纸会审",
-        taskSlugs: ["organize_drawing_review", "close_design_issues"],
+        taskSlugs: ["hold_scheme_review_meeting", "submit_drawing_review"],
         priority: 1,
       },
     ],
@@ -110,7 +110,7 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "site_fire_pump_room",
         reason: "消防验收现场复核",
-        taskSlugs: ["pass_fire_acceptance", "fire_pump_sign_missing"],
+        taskSlugs: ["fire_pump_sign_missing"],
         priority: 1,
       },
     ],
@@ -146,7 +146,7 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "site_property_handover",
         reason: "物业移交检查",
-        taskSlugs: ["property_key_handover", "complete_property_handover"],
+        taskSlugs: ["property_key_handover", "opening_joint_inspection"],
         priority: 1,
       },
       {
@@ -158,7 +158,7 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "area_fire_control_room",
         reason: "消防系统移交检查",
-        taskSlugs: ["property_key_handover", "complete_property_handover"],
+        taskSlugs: ["property_key_handover", "opening_joint_inspection"],
         priority: 2,
       },
     ],

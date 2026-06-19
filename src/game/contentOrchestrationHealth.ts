@@ -36,8 +36,16 @@ export function buildOrchestrationHealth(input: HealthInput): {
       ...input.cleanup.oldStoryEntries,
       ...input.cleanup.oldLocationActions,
       ...input.cleanup.oldInkFiles,
+      ...input.cleanup.oldStageTasks,
+      ...input.cleanup.oldStageStoryEntries,
     ].filter((item: CleanupItem) => item.found);
-    errors.push(`旧 Chapter1 数据残留 ${remaining.length} 项`);
+    errors.push(`旧主线数据残留 ${remaining.length} 项`);
+  }
+
+  for (const item of input.cleanup.oldStageTasks) {
+    if (item.found) {
+      errors.push(`旧阶段主线任务仍存在: ${item.slug}${item.detail ? ` (${item.detail})` : ""}`);
+    }
   }
 
   for (const stage of input.stages) {
@@ -116,7 +124,7 @@ export function countStageStats(stage: OrchestrationStage) {
   return {
     tasks: stage.tasks.length,
     corrections: stage.correctionTasks.length,
-    artifacts: stage.artifacts.filter((a) => a.usedByMainline).length,
+    artifacts: stage.artifacts.length,
     actions: stage.actions.length,
     events: stage.events.filter((e) => e.kind === "construction").length,
   };

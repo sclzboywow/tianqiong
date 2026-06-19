@@ -1,5 +1,5 @@
 import type { ProjectState } from "@prisma/client";
-import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
+import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
 import { parseMilestones } from "./projectEngine";
 import { MILESTONE_LABELS } from "./projectStages";
 import {
@@ -10,7 +10,7 @@ import {
 import { inferCareerTrackFromJob, type CareerTrackConfig } from "./careerTrackConfig";
 
 const MAINLINE_TEMPLATE_IDS = new Set(
-  STAGE_TASK_TEMPLATES.filter((t) => t.category === "mainline").map((t) => t.slug),
+  CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter((t) => t.category === "mainline").map((t) => t.slug),
 );
 
 export type CareerUserInput = {

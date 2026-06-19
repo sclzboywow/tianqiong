@@ -6,12 +6,14 @@ import { createClient } from "@libsql/client";
 import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "../src/data/constructionProjectMainlineTasks";
 import { CONSTRUCTION_PROJECT_EVENTS } from "../src/data/constructionProjectEvents";
 import { CONSTRUCTION_PROJECT_LOCATION_ACTIONS } from "../src/data/constructionProjectLocationActions";
+import { SITE_EVENT_TASK_TEMPLATES } from "../src/data/taskTemplates";
 import {
   LEGACY_CHAPTER1_EVENT_SLUGS,
   LEGACY_CHAPTER1_LOCATION_ACTION_SLUGS,
   LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
   LEGACY_CHAPTER1_TASK_SLUGS,
 } from "../src/data/legacyChapter1Slugs";
+import { LEGACY_STAGE_MAINLINE_TASK_SLUGS } from "../src/data/legacyStageTaskSlugs";
 import { ARTIFACT_DEFINITIONS } from "../src/data/artifactDefinitions";
 
 const INK_FILES = [
@@ -50,6 +52,22 @@ function missingSlugs(expected: string[], actual: Set<string>): string[] {
   return expected.filter((slug) => !actual.has(slug));
 }
 
+async function mainlineCategorySlugs(
+  client: ReturnType<typeof createClient>,
+  slugs: readonly string[],
+): Promise<string[]> {
+  const hits: string[] = [];
+  for (const slug of slugs) {
+    const r = await client.execute({
+      sql: "SELECT category FROM task_templates WHERE slug = ?",
+      args: [slug],
+    });
+    const row = r.rows[0];
+    if (row && String(row.category) === "mainline") hits.push(slug);
+  }
+  return hits;
+}
+
 async function main() {
   const client = createClient({ url: databaseUrl });
   const checks: Check[] = [];
@@ -60,6 +78,8 @@ async function main() {
   const correctionSlugs = CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter(
     (t) => t.category === "correction",
   ).map((t) => t.slug);
+  const siteSlugs = SITE_EVENT_TASK_TEMPLATES.map((t) => t.slug);
+  const expectedTaskCount = mainlineSlugs.length + correctionSlugs.length + siteSlugs.length;
   const eventSlugs = CONSTRUCTION_PROJECT_EVENTS.map((e) => String(e.slug)).filter(Boolean);
   const actionIds = CONSTRUCTION_PROJECT_LOCATION_ACTIONS.map((a) => a.id);
 
@@ -73,9 +93,9 @@ async function main() {
   const taskSlugs = await slugsWhere(client, "task_templates");
   const taskCount = taskSlugs.size;
   checks.push({
-    name: "task-templates.total",
-    ok: taskCount >= 70,
-    detail: `${taskCount} (期望 ≥ 70)`,
+    name: "task-templates.count",
+    ok: taskCount === expectedTaskCount,
+    detail: `${taskCount} (期望 ${expectedTaskCount} = 24 主线 + 6 补正 + ${siteSlugs.length} 现场支线)`,
   });
   checks.push({
     name: "task-templates.mainline",
@@ -87,12 +107,34 @@ async function main() {
     ok: missingSlugs(correctionSlugs, taskSlugs).length === 0,
     detail: `6 补正，缺失: ${missingSlugs(correctionSlugs, taskSlugs).join(", ") || "无"}`,
   });
+  checks.push({
+    name: "task-templates.site-events",
+    ok: missingSlugs(siteSlugs, taskSlugs).length === 0,
+    detail: `${siteSlugs.length} 现场支线，缺失: ${missingSlugs(siteSlugs, taskSlugs).join(", ") || "无"}`,
+  });
 
   const legacyInTasks = LEGACY_CHAPTER1_TASK_SLUGS.filter((slug) => taskSlugs.has(slug));
   checks.push({
     name: "legacy-chapter1.tasks-absent",
     ok: legacyInTasks.length === 0,
     detail: legacyInTasks.length ? `仍含: ${legacyInTasks.join(", ")}` : "无旧任务",
+  });
+
+  const legacyStageInTasks = LEGACY_STAGE_MAINLINE_TASK_SLUGS.filter((slug) => taskSlugs.has(slug));
+  checks.push({
+    name: "legacy-stage-mainline.absent",
+    ok: legacyStageInTasks.length === 0,
+    detail: legacyStageInTasks.length ? `仍含: ${legacyStageInTasks.join(", ")}` : "无旧阶段主线",
+  });
+
+  const legacyStageAsMainline = await mainlineCategorySlugs(client, LEGACY_STAGE_MAINLINE_TASK_SLUGS);
+  checks.push({
+    name: "legacy-stage-mainline.not-mainline",
+    ok: legacyStageAsMainline.length === 0,
+    detail:
+      legacyStageAsMainline.length === 0
+        ? "无 category=mainline 的旧阶段任务"
+        : `仍含: ${legacyStageAsMainline.join(", ")}`,
   });
 
   const eventSlugsDb = await slugsWhere(client, "event_templates");

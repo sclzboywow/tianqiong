@@ -1,7 +1,7 @@
 import type { ProjectState, Task, TaskParticipant, User } from "@prisma/client";
 import type { MapLocation } from "@/data/locations";
 import type { LocationAction } from "@/data/locationActions";
-import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
+import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
 import { JOB_LABELS } from "@/utils/formatter";
 import type { Job } from "@/game/prisma-types";
 import type { GameLogSummary } from "./logEngine";
@@ -96,7 +96,7 @@ export type TaskBoardData = {
 };
 
 const MAINLINE_TEMPLATE_IDS = new Set(
-  STAGE_TASK_TEMPLATES.filter((template) => template.category === "mainline").map(
+  CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter((template) => template.category === "mainline").map(
     (template) => template.slug,
   ),
 );

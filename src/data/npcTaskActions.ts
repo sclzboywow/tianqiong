@@ -67,7 +67,7 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   // —— 闭合图纸会审问题 · 设计院 ——
   {
     id: "design_talk_at_institute",
-    taskSlug: "close_design_issues",
+    taskSlug: "hold_scheme_review_meeting",
     locationId: "third_design_institute",
     type: "contact_npc",
     label: "与设计负责人沟通",
@@ -77,7 +77,7 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   },
   {
     id: "design_prepare_bim_list",
-    taskSlug: "close_design_issues",
+    taskSlug: "hold_scheme_review_meeting",
     locationId: "third_design_institute",
     type: "complete_step",
     label: "整理 BIM 问题清单",
@@ -87,7 +87,7 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   },
   {
     id: "design_go_meeting_room",
-    taskSlug: "close_design_issues",
+    taskSlug: "hold_scheme_review_meeting",
     locationId: "third_design_institute",
     type: "go_to_location",
     label: "前往综合会议室闭合",
@@ -100,7 +100,7 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   // —— 闭合图纸会审问题 · 会议室 ——
   {
     id: "design_invite_lead",
-    taskSlug: "close_design_issues",
+    taskSlug: "hold_scheme_review_meeting",
     locationId: "project_meeting_room",
     type: "invite_npc",
     label: "邀请设计负责人到会议室",
@@ -110,7 +110,7 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   },
   {
     id: "design_close_issues",
-    taskSlug: "close_design_issues",
+    taskSlug: "hold_scheme_review_meeting",
     locationId: "project_meeting_room",
     type: "complete_step",
     label: "闭合设计问题清单",

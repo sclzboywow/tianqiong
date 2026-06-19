@@ -7,7 +7,6 @@ import {
   getProjectState,
 } from "./projectEngine";
 import { normalizeStageId } from "./projectStages";
-import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
 import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
 import { writeGameLog } from "./logEngine";
 import { calculateRewards, applySpiritCost } from "./rewardEngine";
@@ -627,17 +626,6 @@ export function filterTemplatesForCurrentStage(
       .map((slug) => templates.find((template) => template.slug === slug))
       .filter((template): template is TaskTemplateData => !!template);
     if (constructionMainline.length > 0) return constructionMainline;
-  }
-
-  const legacyMainlineSlugs = STAGE_TASK_TEMPLATES.filter(
-    (template) => template.stage === normalized,
-  ).map((template) => template.slug);
-
-  if (legacyMainlineSlugs.length > 0) {
-    const legacyMainline = legacyMainlineSlugs
-      .map((slug) => templates.find((template) => template.slug === slug))
-      .filter((template): template is TaskTemplateData => !!template);
-    if (legacyMainline.length === legacyMainlineSlugs.length) return legacyMainline;
   }
 
   const matched = templates.filter((template) => template.stage === normalized);

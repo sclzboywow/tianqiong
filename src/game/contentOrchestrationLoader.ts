@@ -13,9 +13,13 @@ import {
   LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
   LEGACY_CHAPTER1_TASK_SLUGS,
 } from "@/data/legacyChapter1Slugs";
+import {
+  LEGACY_STAGE_MAINLINE_TASK_SLUGS,
+  LEGACY_STAGE_STORY_ENTRY_SLUGS,
+} from "@/data/legacyStageTaskSlugs";
 import { PROJECT_STAGES, type ProjectStageId } from "./projectStages";
 import type { TaskTemplateData, EventTemplateData, StoryEntryData } from "./types";
-import type { LocationAction } from "@/data/locationActions";
+import type { ArtifactDefinitionData } from "./types";
 
 const MAINLINE_STAGES: ProjectStageId[] = [
   "INITIATION",
@@ -34,11 +38,14 @@ const GENERIC_INK_FILES = [
 
 const STORIES_DIR = path.join(process.cwd(), "src/ink/stories");
 
+export type ConfigSource = "payload" | "seedFallback" | "mismatch";
+
 export type CleanupItem = {
   slug: string;
   kind: string;
   source: "payload" | "filesystem";
   found: boolean;
+  detail?: string;
 };
 
 export type OrchestrationTask = {
@@ -58,7 +65,8 @@ export type OrchestrationTask = {
   enabled?: boolean;
   payloadDocId?: string | number;
   storyEntryDocId?: string | number;
-  seedOnly: boolean;
+  source: ConfigSource;
+  mismatchFields: string[];
 };
 
 export type OrchestrationArtifact = {
@@ -73,6 +81,9 @@ export type OrchestrationArtifact = {
   affectedByEvents: string[];
   undefinedRefs: string[];
   payloadDocId?: string | number;
+  source: ConfigSource;
+  mismatchFields: string[];
+  enabled?: boolean;
 };
 
 export type OrchestrationAction = {
@@ -152,6 +163,8 @@ export type ContentOrchestrationData = {
     oldStoryEntries: CleanupItem[];
     oldLocationActions: CleanupItem[];
     oldInkFiles: CleanupItem[];
+    oldStageTasks: CleanupItem[];
+    oldStageStoryEntries: CleanupItem[];
     clean: boolean;
   };
   artifacts: OrchestrationArtifact[];
@@ -175,37 +188,151 @@ function inkCompiled(name: string): boolean {
   return fs.existsSync(path.join(STORIES_DIR, `${name}.json`));
 }
 
+function sortedStrings(values: string[]): string[] {
+  return [...values].sort();
+}
+
+function sameStringArrays(a: string[], b: string[]): boolean {
+  return JSON.stringify(sortedStrings(a)) === JSON.stringify(sortedStrings(b));
+}
+
+function formatArtifactRefs(
+  refs: Array<{ artifactSlug: string; status?: string; minStatus?: string }> | undefined,
+): string[] {
+  return (refs || []).map((ref) => {
+    const status = ref.status || ref.minStatus;
+    return status ? `${ref.artifactSlug}:${status}` : ref.artifactSlug;
+  });
+}
+
+function detectTaskMismatch(seed: TaskTemplateData, payload: TaskTemplateData): string[] {
+  const fields: string[] = [];
+  if (seed.title !== payload.title) fields.push("title");
+  if ((seed.category || "mainline") !== (payload.category || "mainline")) fields.push("category");
+  if (seed.stage !== payload.stage) fields.push("stage");
+  if (seed.successEffects?.stageProgress !== payload.successEffects?.stageProgress) {
+    fields.push("stageProgress");
+  }
+  if (!sameStringArrays(formatArtifactRefs(seed.inputArtifacts), formatArtifactRefs(payload.inputArtifacts))) {
+    fields.push("inputArtifacts");
+  }
+  if (!sameStringArrays(formatArtifactRefs(seed.outputArtifacts), formatArtifactRefs(payload.outputArtifacts))) {
+    fields.push("outputArtifacts");
+  }
+  if (
+    !sameStringArrays(
+      Object.keys(seed.milestoneEffects || {}),
+      Object.keys(payload.milestoneEffects || {}),
+    )
+  ) {
+    fields.push("milestoneEffects");
+  }
+  if (!sameStringArrays(seed.prerequisiteTaskSlugs || [], payload.prerequisiteTaskSlugs || [])) {
+    fields.push("prerequisiteTaskSlugs");
+  }
+  if (!sameStringArrays(seed.requiredMilestones || [], payload.requiredMilestones || [])) {
+    fields.push("requiredMilestones");
+  }
+  const seedStory = seed.storySlug || `story_${seed.slug}`;
+  const payloadStory = payload.storySlug || `story_${payload.slug}`;
+  if (seedStory !== payloadStory) fields.push("storySlug");
+  return fields;
+}
+
 function buildTaskRow(
   seed: TaskTemplateData,
   studio: ContentStudioData,
-  allTaskSlugs: Set<string>,
   actionIndex: Map<string, string[]>,
   eventIndex: Map<string, string[]>,
 ): OrchestrationTask {
   const payload = studio.taskTemplates.find((t) => t.slug === seed.slug);
-  const storySlug = seed.storySlug || payload?.storySlug;
-  const storyEntry = storySlug
-    ? studio.storyEntries.find((s) => s.slug === storySlug)
-    : undefined;
+  const payloadDocId = studio.taskTemplateDocIds[seed.slug];
+  const merged: TaskTemplateData = payload ? { ...seed, ...payload } : seed;
+
+  const storySlug = merged.storySlug || `story_${merged.slug}`;
+  const mismatchFields = payload ? detectTaskMismatch(seed, payload) : [];
+  let source: ConfigSource = "seedFallback";
+  if (payload && payloadDocId != null) {
+    source = mismatchFields.length > 0 ? "mismatch" : "payload";
+  }
 
   return {
     slug: seed.slug,
-    title: seed.title,
-    category: seed.category || payload?.category,
-    stage: seed.stage || payload?.stage,
-    stageProgress: seed.successEffects?.stageProgress,
-    prerequisiteTaskSlugs: seed.prerequisiteTaskSlugs || [],
-    requiredMilestones: seed.requiredMilestones || [],
-    inputArtifacts: (seed.inputArtifacts || []).map((a) => a.artifactSlug),
-    outputArtifacts: (seed.outputArtifacts || []).map((a) => `${a.artifactSlug}:${a.status}`),
-    milestoneEffects: Object.keys(seed.milestoneEffects || {}),
+    title: merged.title,
+    category: merged.category,
+    stage: merged.stage,
+    stageProgress: merged.successEffects?.stageProgress,
+    prerequisiteTaskSlugs: merged.prerequisiteTaskSlugs || [],
+    requiredMilestones: merged.requiredMilestones || [],
+    inputArtifacts: (merged.inputArtifacts || []).map((a) => a.artifactSlug),
+    outputArtifacts: formatArtifactRefs(merged.outputArtifacts),
+    milestoneEffects: Object.keys(merged.milestoneEffects || {}),
     relatedActionSlugs: actionIndex.get(seed.slug) || [],
     relatedStorySlug: storySlug,
     relatedEventSlugs: eventIndex.get(seed.slug) || [],
-    enabled: (payload as { enabled?: boolean } | undefined)?.enabled ?? true,
-    payloadDocId: studio.taskTemplateDocIds[seed.slug],
-    storyEntryDocId: storySlug ? studio.storyEntryDocIds[storySlug] : undefined,
-    seedOnly: !payload,
+    enabled: (merged as { enabled?: boolean }).enabled ?? true,
+    payloadDocId,
+    storyEntryDocId: studio.storyEntryDocIds[storySlug],
+    source,
+    mismatchFields,
+  };
+}
+
+function detectArtifactMismatch(
+  seed: ArtifactDefinitionData,
+  payload: ArtifactDefinitionData,
+): string[] {
+  const fields: string[] = [];
+  if (seed.name !== payload.name) fields.push("name");
+  if (seed.stage !== payload.stage) fields.push("stage");
+  if (seed.defaultStatus !== payload.defaultStatus) fields.push("defaultStatus");
+  const seedStatuses = (seed.allowedStatuses || []).map((s) =>
+    typeof s === "string" ? s : s.status,
+  );
+  const payloadStatuses = (payload.allowedStatuses || []).map((s) =>
+    typeof s === "string" ? s : s.status,
+  );
+  if (!sameStringArrays(seedStatuses, payloadStatuses)) fields.push("allowedStatuses");
+  return fields;
+}
+
+function buildArtifactRow(
+  seed: ArtifactDefinitionData,
+  studio: ContentStudioData,
+  artifactProducers: Map<string, string[]>,
+  artifactConsumers: Map<string, string[]>,
+  artifactEventMap: Map<string, string[]>,
+  mainlineArtifactSlugs: Set<string>,
+): OrchestrationArtifact {
+  const payload = studio.artifactDefinitions.find((a) => a.slug === seed.slug);
+  const payloadDocId = studio.artifactDefinitionDocIds[seed.slug];
+  const merged = payload ? { ...seed, ...payload } : seed;
+  const mismatchFields = payload ? detectArtifactMismatch(seed, payload) : [];
+  const undefinedRefs: string[] = [];
+  if (!payloadDocId) undefinedRefs.push("后台未注册，请 seed");
+
+  let source: ConfigSource = "seedFallback";
+  if (payload && payloadDocId != null) {
+    source = mismatchFields.length > 0 ? "mismatch" : "payload";
+  }
+
+  return {
+    slug: seed.slug,
+    name: merged.name,
+    stage: merged.stage,
+    defaultStatus: merged.defaultStatus,
+    allowedStatuses: (merged.allowedStatuses || []).map((s) =>
+      typeof s === "string" ? s : s.status,
+    ),
+    usedByMainline: mainlineArtifactSlugs.has(seed.slug),
+    producedBy: artifactProducers.get(seed.slug) || [],
+    requiredBy: artifactConsumers.get(seed.slug) || [],
+    affectedByEvents: artifactEventMap.get(seed.slug) || [],
+    undefinedRefs,
+    payloadDocId,
+    source,
+    mismatchFields,
+    enabled: (merged as { enabled?: boolean }).enabled ?? true,
   };
 }
 
@@ -246,6 +373,19 @@ function buildCleanupItems(
   });
 }
 
+function parseArtifactSlug(ref: string): string {
+  return ref.split(":")[0];
+}
+
+function collectStageArtifactSlugs(tasks: OrchestrationTask[]): Set<string> {
+  const slugs = new Set<string>();
+  for (const task of tasks) {
+    for (const ref of task.inputArtifacts) slugs.add(parseArtifactSlug(ref));
+    for (const ref of task.outputArtifacts) slugs.add(parseArtifactSlug(ref));
+  }
+  return slugs;
+}
+
 export async function loadContentOrchestrationData(): Promise<ContentOrchestrationData> {
   const studio = await loadContentStudioData();
   const { buildOrchestrationHealth } = await import("./contentOrchestrationHealth");
@@ -278,21 +418,22 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
   }
 
   const allTasks = allSeedTasks.map((seed) =>
-    buildTaskRow(seed, studio, allTaskSlugs, actionIndex, eventIndex),
+    buildTaskRow(seed, studio, actionIndex, eventIndex),
   );
 
   const artifactProducers = new Map<string, string[]>();
   const artifactConsumers = new Map<string, string[]>();
-  for (const task of allSeedTasks) {
-    for (const out of task.outputArtifacts || []) {
-      const list = artifactProducers.get(out.artifactSlug) || [];
+  for (const task of allTasks) {
+    for (const ref of task.outputArtifacts) {
+      const slug = parseArtifactSlug(ref);
+      const list = artifactProducers.get(slug) || [];
       list.push(task.slug);
-      artifactProducers.set(out.artifactSlug, list);
+      artifactProducers.set(slug, list);
     }
-    for (const inp of task.inputArtifacts || []) {
-      const list = artifactConsumers.get(inp.artifactSlug) || [];
+    for (const slug of task.inputArtifacts) {
+      const list = artifactConsumers.get(slug) || [];
       list.push(task.slug);
-      artifactConsumers.set(inp.artifactSlug, list);
+      artifactConsumers.set(slug, list);
     }
   }
 
@@ -308,36 +449,27 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
   }
 
   const mainlineArtifactSlugs = new Set<string>();
-  for (const task of allSeedTasks) {
-    for (const out of task.outputArtifacts || []) mainlineArtifactSlugs.add(out.artifactSlug);
-    for (const inp of task.inputArtifacts || []) mainlineArtifactSlugs.add(inp.artifactSlug);
+  for (const task of allTasks) {
+    for (const ref of task.outputArtifacts) mainlineArtifactSlugs.add(parseArtifactSlug(ref));
+    for (const slug of task.inputArtifacts) mainlineArtifactSlugs.add(slug);
   }
 
-  const artifacts: OrchestrationArtifact[] = ARTIFACT_DEFINITIONS.map((def) => {
-    const payload = studio.artifactDefinitions.find((a) => a.slug === def.slug);
-    const undefinedRefs: string[] = [];
-    if (!studio.artifactDefinitionDocIds[def.slug] && !payload) {
-      undefinedRefs.push("payload 未注册");
-    }
-    return {
-      slug: def.slug,
-      name: def.name,
-      stage: def.stage,
-      defaultStatus: def.defaultStatus,
-      allowedStatuses: (def.allowedStatuses || []).map((s) =>
-        typeof s === "string" ? s : s.status,
-      ),
-      usedByMainline: mainlineArtifactSlugs.has(def.slug),
-      producedBy: artifactProducers.get(def.slug) || [],
-      requiredBy: artifactConsumers.get(def.slug) || [],
-      affectedByEvents: artifactEventMap.get(def.slug) || [],
-      undefinedRefs,
-      payloadDocId: studio.artifactDefinitionDocIds[def.slug],
-    };
-  });
+  const artifacts: OrchestrationArtifact[] = ARTIFACT_DEFINITIONS.map((def) =>
+    buildArtifactRow(
+      def,
+      studio,
+      artifactProducers,
+      artifactConsumers,
+      artifactEventMap,
+      mainlineArtifactSlugs,
+    ),
+  );
 
   const mapLocationIds = new Set(studio.mapLocations.map((l) => l.id));
-  const legacyTaskSet = new Set<string>(LEGACY_CHAPTER1_TASK_SLUGS);
+  const legacyTaskSet = new Set<string>([
+    ...LEGACY_CHAPTER1_TASK_SLUGS,
+    ...LEGACY_STAGE_MAINLINE_TASK_SLUGS,
+  ]);
 
   const allActions: OrchestrationAction[] = studio.locationActions.map((action) => {
     const seed = CONSTRUCTION_PROJECT_LOCATION_ACTIONS.find((a) => a.id === action.id);
@@ -348,7 +480,7 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
       risks.push("enabled 但无 triggerTaskSlugs");
     }
     for (const slug of triggers) {
-      if (legacyTaskSet.has(slug)) risks.push(`触发旧 Chapter1 任务 ${slug}`);
+      if (legacyTaskSet.has(slug)) risks.push(`触发旧主线任务 ${slug}`);
       if (!allTaskSlugs.has(slug) && !allSeedTasks.some((t) => t.slug === slug)) {
         risks.push(`触发不存在的任务 ${slug}`);
       }
@@ -435,6 +567,13 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
     ) {
       risks.push("旧 Chapter1 StoryEntry");
     }
+    if (
+      LEGACY_STAGE_STORY_ENTRY_SLUGS.includes(
+        entry.slug as (typeof LEGACY_STAGE_STORY_ENTRY_SLUGS)[number],
+      )
+    ) {
+      risks.push("旧阶段主线 StoryEntry");
+    }
     if (entry.inkFile && !inkCompiled(entry.inkFile)) {
       risks.push(`inkFile ${entry.inkFile} 无编译产物`);
     }
@@ -471,7 +610,10 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
     const correctionTasks = allTasks.filter(
       (t) => t.stage === stageId && t.category === "correction",
     );
-    const stageArtifacts = artifacts.filter((a) => a.stage === stageId || a.usedByMainline);
+    const stageArtifactSlugs = collectStageArtifactSlugs([...tasks, ...correctionTasks]);
+    const stageArtifacts = artifacts.filter(
+      (a) => a.stage === stageId || stageArtifactSlugs.has(a.slug),
+    );
     const actions = allActions.filter(
       (a) =>
         a.unlockStage === stageId ||
@@ -479,9 +621,7 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
           (s) => s.id === a.slug && s.unlockStage === stageId,
         ),
     );
-    const events = allEvents.filter(
-      (e) => e.triggerStage === stageId || (e.kind === "construction" && e.triggerStage === stageId),
-    );
+    const events = allEvents.filter((e) => e.triggerStage === stageId);
     const stageProgressSum = tasks.reduce((sum, t) => sum + (t.stageProgress || 0), 0);
     const warnings: string[] = [];
     if (Math.abs(stageProgressSum - 100) > 1 && tasks.length > 0) {
@@ -493,6 +633,9 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
       }
       if (!task.relatedStorySlug && !task.storyEntryDocId) {
         warnings.push(`主线任务 ${task.slug} 无 StoryEntry`);
+      }
+      if (task.source === "seedFallback") {
+        warnings.push(`主线任务 ${task.slug} 后台未同步（seedFallback）`);
       }
     }
     return {
@@ -511,21 +654,41 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
   });
 
   const taskSlugSet = new Set(studio.taskTemplates.map((t) => t.slug));
+  const taskCategoryMap = new Map(
+    studio.taskTemplates.map((t) => [t.slug, t.category || ""]),
+  );
   const eventSlugSet = new Set(studio.eventTemplates.map((e) => e.slug));
   const storySlugSet = new Set(studio.storyEntries.map((s) => s.slug));
   const actionSlugSet = new Set(studio.locationActions.map((a) => a.id));
 
+  const oldStageTasks: CleanupItem[] = LEGACY_STAGE_MAINLINE_TASK_SLUGS.map((slug) => {
+    const exists = taskSlugSet.has(slug);
+    const category = taskCategoryMap.get(slug);
+    return {
+      slug,
+      kind: "legacy-stage-task",
+      source: "payload" as const,
+      found: exists,
+      detail:
+        exists && category === "mainline"
+          ? "仍作为 mainline 存在"
+          : exists
+            ? `存在但 category=${category || "?"}`
+            : undefined,
+    };
+  });
+
   const cleanup = {
-    oldTasks: buildCleanupItems(LEGACY_CHAPTER1_TASK_SLUGS, "task", taskSlugSet),
-    oldEvents: buildCleanupItems(LEGACY_CHAPTER1_EVENT_SLUGS, "event", eventSlugSet),
+    oldTasks: buildCleanupItems(LEGACY_CHAPTER1_TASK_SLUGS, "chapter1-task", taskSlugSet),
+    oldEvents: buildCleanupItems(LEGACY_CHAPTER1_EVENT_SLUGS, "chapter1-event", eventSlugSet),
     oldStoryEntries: buildCleanupItems(
       LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
-      "story-entry",
+      "chapter1-story",
       storySlugSet,
     ),
     oldLocationActions: buildCleanupItems(
       LEGACY_CHAPTER1_LOCATION_ACTION_SLUGS,
-      "location-action",
+      "chapter1-action",
       actionSlugSet,
     ),
     oldInkFiles: LEGACY_CHAPTER1_INK_FILES.map((slug) => ({
@@ -534,6 +697,12 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
       source: "filesystem" as const,
       found: inkExists(slug) || inkCompiled(slug),
     })),
+    oldStageTasks,
+    oldStageStoryEntries: buildCleanupItems(
+      LEGACY_STAGE_STORY_ENTRY_SLUGS,
+      "legacy-stage-story",
+      storySlugSet,
+    ),
     clean: false,
   };
   cleanup.clean = ![
@@ -542,6 +711,8 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
     ...cleanup.oldStoryEntries,
     ...cleanup.oldLocationActions,
     ...cleanup.oldInkFiles,
+    ...cleanup.oldStageTasks.filter((item) => item.found),
+    ...cleanup.oldStageStoryEntries,
   ].some((item) => item.found);
 
   const terminalTask =

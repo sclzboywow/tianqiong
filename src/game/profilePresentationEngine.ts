@@ -5,7 +5,7 @@ import { getChapterInfo } from "@/game/playerGuidanceEngine";
 import { getRecentUserGrowthLogs, type GameLogSummary } from "@/game/logEngine";
 import { getNextLevelExp } from "@/game/playerProgressEngine";
 import { sanitizeTaskLogContent } from "@/game/taskEffectPlayerDisplay";
-import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
+import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
 import { JOB_LABELS } from "@/utils/formatter";
 import {
   buildCareerRankView,
@@ -14,7 +14,7 @@ import {
 } from "@/game/careerRankEngine";
 
 const MAINLINE_TEMPLATE_IDS = new Set(
-  STAGE_TASK_TEMPLATES.filter((t) => t.category === "mainline").map((t) => t.slug),
+  CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter((t) => t.category === "mainline").map((t) => t.slug),
 );
 
 export type ProfileJobAbility = {

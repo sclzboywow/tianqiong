@@ -21,16 +21,16 @@ export type LocationAction = {
   sortOrder?: number;
 };
 
-/** 旧阶段/chapter1 入口，默认不暴露给玩家 */
+/** 兼容旧地点入口（触发建设项目主线，非旧阶段主线） */
 export const LEGACY_LOCATION_ACTIONS: LocationAction[] = [
   {
     id: "action_pre_approval_push",
     locationId: "owner_pre_approval_office",
     label: "推进前期报批",
-    description: "明确报批路径并准备报批资料包。",
+    description: "梳理报批路径并准备报批资料包。",
     unlockStage: "APPROVAL",
     unlockMilestones: ["masterPlanDone"],
-    triggerTaskSlugs: ["confirm_approval_path", "prepare_approval_docs"],
+    triggerTaskSlugs: ["commission_project_proposal", "prepare_approval_application_package"],
     relatedNpcNames: ["甲方代表"],
     riskTags: ["approval", "document"],
     spiritCost: 12,
@@ -44,7 +44,7 @@ export const LEGACY_LOCATION_ACTIONS: LocationAction[] = [
     description: "前往政务服务中心办理前期审批相关事项。",
     unlockStage: "APPROVAL",
     unlockMilestones: ["approvalPathConfirmed"],
-    triggerTaskSlugs: ["confirm_approval_path", "prepare_approval_docs"],
+    triggerTaskSlugs: ["submit_approval_application", "obtain_approval_reply"],
     riskTags: ["approval"],
     spiritCost: 12,
     minLevel: 2,
@@ -57,7 +57,7 @@ export const LEGACY_LOCATION_ACTIONS: LocationAction[] = [
     description: "与自然资源和规划局对接，确认规划条件与许可路径。",
     unlockStage: "APPROVAL",
     unlockMilestones: ["approvalPathConfirmed"],
-    triggerTaskSlugs: ["confirm_planning_condition"],
+    triggerTaskSlugs: ["consult_planning_condition"],
     riskTags: ["planning", "approval"],
     spiritCost: 14,
     minLevel: 2,
@@ -69,7 +69,7 @@ export const LEGACY_LOCATION_ACTIONS: LocationAction[] = [
     label: "推进设计会审",
     description: "组织图纸会审并推动设计问题闭合。",
     unlockStage: "DESIGN",
-    triggerTaskSlugs: ["organize_drawing_review", "close_design_issues"],
+    triggerTaskSlugs: ["hold_scheme_review_meeting", "submit_drawing_review"],
     relatedNpcNames: ["设计院"],
     riskTags: ["design", "quality"],
     spiritCost: 15,
@@ -126,7 +126,7 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     label: "物业钥匙移交",
     description: "在物业交接区办理钥匙移交与接管协调。",
     unlockStage: "ACCEPTANCE",
-    triggerTaskSlugs: ["property_key_handover", "complete_property_handover"],
+    triggerTaskSlugs: ["property_key_handover", "opening_joint_inspection"],
     relatedNpcNames: ["物业公司"],
     riskTags: ["handover", "document"],
     spiritCost: 15,

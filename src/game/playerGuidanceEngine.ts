@@ -7,7 +7,6 @@ import {
 } from "@/data/constructionProjectMainlineTasks";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import { MAP_LOCATIONS } from "@/data/locations";
-import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
 import { parseMilestones, getStageDisplayInfo, getRiskList } from "./projectEngine";
 import {
   MILESTONE_LABELS,
@@ -64,10 +63,9 @@ export type PendingTaskItem = {
   urgency?: "高" | "中" | "低";
 };
 
-const MAINLINE_TEMPLATE_IDS = new Set([
-  ...STAGE_TASK_TEMPLATES.filter((t) => t.category === "mainline").map((t) => t.slug),
-  ...CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter((t) => t.category === "mainline").map((t) => t.slug),
-]);
+const MAINLINE_TEMPLATE_IDS = new Set(
+  CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter((t) => t.category === "mainline").map((t) => t.slug),
+);
 
 const INITIATION_CHAPTER_GOALS: Array<{
   key: string;
@@ -118,9 +116,7 @@ function getLocationName(locationId: string): string {
 }
 
 function getTaskTitle(taskSlug: string): string {
-  const template =
-    CONSTRUCTION_PROJECT_MAINLINE_TASKS.find((t) => t.slug === taskSlug) ||
-    STAGE_TASK_TEMPLATES.find((t) => t.slug === taskSlug);
+  const template = CONSTRUCTION_PROJECT_MAINLINE_TASKS.find((t) => t.slug === taskSlug);
   return template?.title || taskSlug;
 }
 

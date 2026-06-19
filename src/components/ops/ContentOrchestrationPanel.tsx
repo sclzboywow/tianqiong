@@ -51,6 +51,16 @@ function adminLink(
   };
 }
 
+function sourceBadge(source: ContentOrchestrationData["allTasks"][number]["source"]) {
+  if (source === "payload") {
+    return <Badge className="text-xs">payload</Badge>;
+  }
+  if (source === "mismatch") {
+    return <Badge variant="outline" className="border-amber-600 text-amber-300 text-xs">mismatch</Badge>;
+  }
+  return <Badge variant="outline" className="text-xs text-zinc-400">seedFallback</Badge>;
+}
+
 function TaskRow({
   task,
   showStage,
@@ -66,6 +76,12 @@ function TaskRow({
       <td className="py-2 pr-3 align-top">
         <p className="font-medium text-zinc-100">{task.title}</p>
         <p className="font-mono text-xs text-zinc-500">{task.slug}</p>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {sourceBadge(task.source)}
+          {task.mismatchFields.length > 0 ? (
+            <span className="text-xs text-amber-400">{task.mismatchFields.join(", ")}</span>
+          ) : null}
+        </div>
       </td>
       {showStage ? (
         <td className="py-2 pr-3 text-zinc-400">{task.stage || "—"}</td>
@@ -117,8 +133,8 @@ function TaskRow({
         {taskLink.missing ? (
           <p className="mt-1 text-xs text-amber-400">后台记录缺失，请先 payload:seed:local</p>
         ) : null}
-        {task.seedOnly ? (
-          <p className="mt-1 text-xs text-amber-400">仅 seed 基准，Payload 未同步</p>
+        {task.source === "seedFallback" && !taskLink.missing ? (
+          <p className="mt-1 text-xs text-amber-400">使用 seed 基准，后台未同步</p>
         ) : null}
       </td>
     </tr>
@@ -353,6 +369,12 @@ export function ContentOrchestrationPanel({ data, healthReport }: ContentOrchest
                     <td className="p-2">
                       <p className="text-zinc-100">{art.name}</p>
                       <p className="font-mono text-xs text-zinc-500">{art.slug}</p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {sourceBadge(art.source)}
+                        {art.undefinedRefs.length > 0 ? (
+                          <span className="text-xs text-amber-400">{art.undefinedRefs.join("; ")}</span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="p-2 text-zinc-400">{art.stage || "—"}</td>
                     <td className="p-2 font-mono text-xs text-zinc-500">
@@ -557,10 +579,12 @@ export function ContentOrchestrationPanel({ data, healthReport }: ContentOrchest
               ) : null}
               {(
                 [
-                  ["旧任务", data.cleanup.oldTasks],
-                  ["旧事件", data.cleanup.oldEvents],
-                  ["旧 StoryEntry", data.cleanup.oldStoryEntries],
-                  ["旧地点行动", data.cleanup.oldLocationActions],
+                  ["旧 Chapter1 任务", data.cleanup.oldTasks],
+                  ["旧 Chapter1 事件", data.cleanup.oldEvents],
+                  ["旧 Chapter1 StoryEntry", data.cleanup.oldStoryEntries],
+                  ["旧 Chapter1 地点行动", data.cleanup.oldLocationActions],
+                  ["旧阶段主线任务", data.cleanup.oldStageTasks],
+                  ["旧阶段 StoryEntry", data.cleanup.oldStageStoryEntries],
                   ["旧 Ink", data.cleanup.oldInkFiles],
                 ] as const
               ).map(([label, items]) => (
@@ -571,7 +595,8 @@ export function ContentOrchestrationPanel({ data, healthReport }: ContentOrchest
                       .filter((i) => i.found)
                       .map((i) => (
                         <li key={i.slug} className="text-amber-300">
-                          {i.slug} ({i.source})
+                          {i.slug}
+                          {"detail" in i && i.detail ? ` — ${i.detail}` : ""} ({i.source})
                         </li>
                       ))}
                     {items.every((i) => !i.found) ? (

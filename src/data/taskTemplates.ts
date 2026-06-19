@@ -1,5 +1,5 @@
 import type { TaskTemplateData } from "@/game/types";
-import { STAGE_TASK_TEMPLATES, LEGACY_TASK_STAGES } from "@/data/stageTaskTemplates";
+import { LEGACY_TASK_STAGES } from "@/data/stageTaskTemplates";
 import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
 
 const baseTemplates: TaskTemplateData[] = [
@@ -345,8 +345,9 @@ const mappedBaseTemplates: TaskTemplateData[] = baseTemplates.map((t) => {
   return stage ? { ...template, stage } : template;
 });
 
+export const SITE_EVENT_TASK_TEMPLATES: TaskTemplateData[] = mappedBaseTemplates;
+
 export const TASK_TEMPLATES: TaskTemplateData[] = [
-  ...STAGE_TASK_TEMPLATES,
   ...CONSTRUCTION_PROJECT_MAINLINE_TASKS,
   ...mappedBaseTemplates,
 ];

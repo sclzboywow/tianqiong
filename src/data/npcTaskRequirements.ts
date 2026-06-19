@@ -29,8 +29,8 @@ export const NPC_TASK_REQUIREMENTS: NpcTaskRequirement[] = [
     hintWhenBlocked: "需要先确认业主项目负责人到场，并联络总包、监理和设计负责人参会。",
   },
   {
-    taskSlug: "close_design_issues",
-    taskTitle: "闭合图纸会审问题",
+    taskSlug: "hold_scheme_review_meeting",
+    taskTitle: "组织方案/图纸会审",
     locationId: "project_meeting_room",
     hintLocationIds: ["third_design_institute"],
     primaryNpcId: "design_lead",

@@ -8,6 +8,8 @@ import { getTaskTemplates } from "../src/game/contentLoader";
 import { TASK_TEMPLATES } from "../src/data/taskTemplates";
 import { normalizeStageId } from "../src/game/projectStages";
 import { seedPayloadCollections } from "../src/lib/payloadSeed";
+
+async function main() {
   const overwrite = process.env.SEED_OVERWRITE === "true";
   console.log("Payload seed starting...", { overwrite });
 
