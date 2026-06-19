@@ -249,13 +249,17 @@ function buildStoryEntryPayloadData(template: TaskTemplateData, storyType: "task
   };
 }
 
-function buildManualEventPayloadData(event: Partial<EventTemplateData>) {
+function buildManualEventPayloadData(
+  event: Partial<EventTemplateData>,
+  options: { forceDisabled?: boolean } = {},
+) {
   const triggerAreaNames = event.area && areaNames.has(event.area) ? [event.area] : [];
+  const enabled = options.forceDisabled ? false : (event.enabled ?? true);
   return {
     slug: event.slug,
     title: event.title,
     description: event.description,
-    category: "mainline",
+    category: options.forceDisabled ? "legacy" : "mainline",
     rarity: event.rarity || "R",
     area: event.area,
     inkFile: event.inkFile,
@@ -268,7 +272,7 @@ function buildManualEventPayloadData(event: Partial<EventTemplateData>) {
     weight: event.weight ?? 10,
     onceOnly: event.onceOnly ?? false,
     cooldownDays: event.cooldownDays ?? 0,
-    enabled: event.enabled ?? true,
+    enabled,
     artifactEffects: (event.artifactEffects || []).map((item) => ({
       artifactSlug: item.artifactSlug,
       status: item.status,
@@ -443,7 +447,7 @@ export async function seedPayloadCollections(
 
   for (const event of CHAPTER1_EVENTS) {
     if (!event.slug) continue;
-    const data = buildManualEventPayloadData(event);
+    const data = buildManualEventPayloadData(event, { forceDisabled: true });
     const existing = await payload.find({
       collection: "event-templates",
       where: { slug: { equals: event.slug } },
