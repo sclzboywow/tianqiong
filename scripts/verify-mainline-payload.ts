@@ -13,7 +13,7 @@ import {
   LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
   LEGACY_CHAPTER1_TASK_SLUGS,
 } from "../src/data/legacyChapter1Slugs";
-import { LEGACY_STAGE_MAINLINE_TASK_SLUGS } from "../src/data/legacyStageTaskSlugs";
+import { LEGACY_STAGE_MAINLINE_TASK_SLUGS, LEGACY_STAGE_STORY_ENTRY_SLUGS } from "../src/data/legacyStageTaskSlugs";
 import { ARTIFACT_DEFINITIONS } from "../src/data/artifactDefinitions";
 
 const INK_FILES = [
@@ -186,6 +186,22 @@ async function main() {
     name: "legacy-chapter1.stories-absent",
     ok: legacyInStories.length === 0,
     detail: legacyInStories.length ? `仍含: ${legacyInStories.join(", ")}` : "无旧 StoryEntry",
+  });
+
+  const legacyStageStorySlugs = [
+    ...LEGACY_STAGE_STORY_ENTRY_SLUGS,
+    ...LEGACY_STAGE_MAINLINE_TASK_SLUGS,
+  ];
+  const legacyStageInStories = [...new Set(legacyStageStorySlugs)].filter((slug) =>
+    storySlugs.has(slug),
+  );
+  checks.push({
+    name: "legacy-stage.stories-absent",
+    ok: legacyStageInStories.length === 0,
+    detail:
+      legacyStageInStories.length === 0
+        ? "无旧阶段 StoryEntry"
+        : `仍含: ${legacyStageInStories.join(", ")}`,
   });
 
   const mapCount = await countTable(client, "map_locations");
