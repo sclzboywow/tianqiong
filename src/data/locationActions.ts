@@ -1,5 +1,5 @@
 import type { ProjectStageId } from "@/game/projectStages";
-import { CHAPTER1_LOCATION_ACTIONS } from "@/data/chapter1Content";
+import { CONSTRUCTION_PROJECT_LOCATION_ACTIONS } from "@/data/constructionProjectLocationActions";
 
 export type LocationAction = {
   id: string;
@@ -22,7 +22,7 @@ export type LocationAction = {
 };
 
 export const LOCATION_ACTIONS: LocationAction[] = [
-  ...CHAPTER1_LOCATION_ACTIONS,
+  ...CONSTRUCTION_PROJECT_LOCATION_ACTIONS,
   {
     id: "action_pre_approval_push",
     locationId: "owner_pre_approval_office",

@@ -82,6 +82,16 @@ export const MAP_LOCATION_SANDTABLE_PLACEMENT: Record<string, MapLocationSandtab
     zoneId: "professional_testing",
     shortName: "检测",
   },
+  third_drawing_review_agency: {
+    regionId: "professional_service",
+    zoneId: "professional_design",
+    shortName: "审图",
+  },
+  third_tendering_agency: {
+    regionId: "professional_service",
+    zoneId: "professional_design",
+    shortName: "招标",
+  },
   site_l1_commercial_street: {
     regionId: "construction_site",
     zoneId: "site_building_stack",

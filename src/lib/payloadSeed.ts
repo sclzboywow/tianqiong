@@ -9,6 +9,7 @@ import { MAP_LOCATIONS } from "@/data/locations";
 import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import { CHAPTER1_EVENTS } from "@/data/chapter1Content";
+import { CONSTRUCTION_PROJECT_EVENTS } from "@/data/constructionProjectEvents";
 import type { TaskTemplateData, EventTemplateData, ArtifactDefinitionData } from "@/game/types";
 import {
   choiceEffectsToRows,
@@ -238,7 +239,7 @@ function buildStoryEntryPayloadData(template: TaskTemplateData, storyType: "task
   };
 }
 
-function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
+function buildManualEventPayloadData(event: Partial<EventTemplateData>) {
   const triggerAreaNames = event.area && areaNames.has(event.area) ? [event.area] : [];
   return {
     slug: event.slug,
@@ -412,7 +413,24 @@ export async function seedPayloadCollections(
 
   for (const event of CHAPTER1_EVENTS) {
     if (!event.slug) continue;
-    const data = buildChapter1EventPayloadData(event);
+    const data = buildManualEventPayloadData(event);
+    const existing = await payload.find({
+      collection: "event-templates",
+      where: { slug: { equals: event.slug } },
+    });
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.eventTemplates,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "event-templates", data }),
+      () => payload.update({ collection: "event-templates", id: doc.id, data }),
+    );
+  }
+
+  for (const event of CONSTRUCTION_PROJECT_EVENTS) {
+    if (!event.slug) continue;
+    const data = buildManualEventPayloadData(event);
     const existing = await payload.find({
       collection: "event-templates",
       where: { slug: { equals: event.slug } },
