@@ -1,9 +1,6 @@
-import { canAccessOpsWorkspace } from "@/lib/opsDebugAccess";
 import "./ProjectOrchestrationNavLink.scss";
 
-export default async function ProjectOrchestrationNavLink() {
-  if (!(await canAccessOpsWorkspace())) return null;
-
+export default function ProjectOrchestrationNavLink() {
   return (
     <nav className="orchestration-nav" aria-label="内容编排">
       <p className="orchestration-nav__label">内容编排</p>
