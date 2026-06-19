@@ -1,0 +1,35 @@
+.orchestration-nav {
+  margin-bottom: calc(var(--base) * 0.75);
+  padding: 0 calc(var(--base) * 0.75);
+
+  &__label {
+    margin: 0 0 calc(var(--base) * 0.35);
+    padding: 0 calc(var(--base) * 0.5);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--theme-elevation-400);
+  }
+
+  &__link {
+    display: block;
+    padding: calc(var(--base) * 0.35) calc(var(--base) * 0.5);
+    border-radius: 4px;
+    color: var(--theme-elevation-800);
+    font-size: 13px;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: background 120ms ease;
+
+    &:hover {
+      background: var(--theme-elevation-100);
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--theme-elevation-400);
+      outline-offset: 2px;
+    }
+  }
+}

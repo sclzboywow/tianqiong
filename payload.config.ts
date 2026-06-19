@@ -33,6 +33,9 @@ export default buildConfig({
     meta: {
       titleSuffix: "- 天穹综合体",
     },
+    components: {
+      beforeNavLinks: ["payload/admin/ProjectOrchestrationNavLink"],
+    },
     importMap: {
       baseDir: path.resolve(dirname, "src"),
     },

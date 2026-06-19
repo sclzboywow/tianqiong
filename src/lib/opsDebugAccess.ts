@@ -23,4 +23,12 @@ export async function requireOpsDebugAccess() {
   return { userId };
 }
 
+/** 与 requireOpsAccess 一致：production 仅 GAME_ADMIN；非 production 任意已登录玩家 */
+export async function canAccessOpsWorkspace(): Promise<boolean> {
+  const userId = await getCurrentUserId();
+  if (!userId) return false;
+  if (process.env.NODE_ENV !== "production") return true;
+  return configuredAdminUserIds().includes(userId);
+}
+
 export const requireOpsAccess = requireOpsDebugAccess;
