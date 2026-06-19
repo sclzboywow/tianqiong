@@ -10,6 +10,7 @@ import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import { CHAPTER1_EVENTS } from "@/data/chapter1Content";
 import { CONSTRUCTION_PROJECT_EVENTS } from "@/data/constructionProjectEvents";
+import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
 import type { TaskTemplateData, EventTemplateData, ArtifactDefinitionData } from "@/game/types";
 import {
   choiceEffectsToRows,
@@ -25,6 +26,15 @@ import {
   inferMapLocationCategory,
   inferTaskCategory,
 } from "@/payload/contentCategories";
+
+/** chapter1 + 旧 STAGE_TASK_TEMPLATES：不自动生成可触发事件，避免空 location 约束下漏回事件池 */
+const LEGACY_AUTO_EVENT_TASK_SLUGS = new Set(
+  STAGE_TASK_TEMPLATES.map((template) => template.slug),
+);
+
+function isLegacyAutoEventTask(template: TaskTemplateData): boolean {
+  return LEGACY_AUTO_EVENT_TASK_SLUGS.has(template.slug);
+}
 
 export type CollectionSeedStats = {
   created: number;
@@ -396,6 +406,26 @@ export async function seedPayloadCollections(
   }
 
   for (const template of templates) {
+    const eventSlug = `evt_${template.slug}`;
+
+    if (isLegacyAutoEventTask(template)) {
+      const existing = await payload.find({
+        collection: "event-templates",
+        where: { slug: { equals: eventSlug } },
+        limit: 1,
+      });
+      const doc = existing.docs[0];
+      if (doc) {
+        await payload.update({
+          collection: "event-templates",
+          id: doc.id,
+          data: { enabled: false },
+        });
+        stats.eventTemplates.updated += 1;
+      }
+      continue;
+    }
+
     const data = buildEventTemplatePayloadData(template);
     const existing = await payload.find({
       collection: "event-templates",

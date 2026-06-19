@@ -27,6 +27,38 @@ function req(slug: string, minStatus: string): ArtifactRequirement {
   return { artifactSlug: slug, minStatus };
 }
 
+const MAINLINE_STAGE_PROGRESS: Record<string, number> = {
+  // INITIATION（34 + 33 + 33 = 100）
+  confirm_project_need: 34,
+  hold_project_kickoff_meeting: 33,
+  prepare_master_control_plan: 33,
+  // APPROVAL（13×4 + 12×4 = 100）
+  commission_project_proposal: 13,
+  prepare_funding_source_statement: 13,
+  prepare_feasibility_report: 13,
+  prepare_approval_application_package: 12,
+  submit_approval_application: 12,
+  obtain_approval_reply: 13,
+  consult_planning_condition: 12,
+  obtain_land_pre_review_opinion: 12,
+  // DESIGN（25 × 4 = 100）
+  organize_scheme_design: 25,
+  hold_scheme_review_meeting: 25,
+  prepare_construction_drawing: 25,
+  submit_drawing_review: 25,
+  // PROCUREMENT（17×4 + 16×2 = 100）
+  prepare_bidding_plan: 17,
+  prepare_tender_document: 17,
+  approve_tender_document: 17,
+  issue_bid_winning_notice: 17,
+  sign_construction_contract: 16,
+  sign_supervision_contract: 16,
+  // CONSTRUCTION 一期（34 + 33 + 33 = 100）
+  prepare_quality_safety_supervision: 34,
+  prepare_funding_certificate: 33,
+  submit_construction_permit_application: 33,
+};
+
 function constructionMainlineTask(
   slug: string,
   title: string,
@@ -34,25 +66,37 @@ function constructionMainlineTask(
   inkKind: InkKind,
   extra: Partial<TaskTemplateData> = {},
 ): TaskTemplateData {
+  const { successEffects: extraSuccessEffects, ...restExtra } = extra;
+  const isCorrection = restExtra.category === "correction";
+  const stageProgress =
+    extraSuccessEffects?.stageProgress ??
+    MAINLINE_STAGE_PROGRESS[slug] ??
+    (isCorrection ? 10 : 20);
+
   return {
     slug,
     title,
     stage,
     rarity: "R",
     sourceType: "system",
-    sourceName: extra.sourceName,
-    area: extra.area || "项目管理部",
-    category: extra.category || "mainline",
+    sourceName: restExtra.sourceName,
+    area: restExtra.area || "项目管理部",
+    category: restExtra.category || "mainline",
     requiredJobs: ["DOCUMENT_ASSISTANT", "CONSTRUCTION_ASSISTANT"],
     resolutionMode: "SOLO",
     inkFile: INK_FILES[inkKind],
     storySlug: `story_${slug}`,
     baseSuccessRate: 65,
     choiceEffects: MAINLINE_CHOICE_EFFECTS,
-    successEffects: { stageProgress: 20, dataIntegrity: 2, ownerTrust: 1 },
+    successEffects: {
+      stageProgress,
+      dataIntegrity: 2,
+      ownerTrust: 1,
+      ...extraSuccessEffects,
+    },
     failEffects: MAINLINE_FAIL_EFFECTS,
     blockPolicy: "hard_block",
-    ...extra,
+    ...restExtra,
   };
 }
 

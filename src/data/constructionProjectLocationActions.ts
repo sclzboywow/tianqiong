@@ -259,8 +259,8 @@ export const CONSTRUCTION_PROJECT_LOCATION_ACTIONS: LocationAction[] = [
   {
     id: "action_sign_supervision_contract",
     locationId: "owner_procurement_office",
-    label: "签订监理合同",
-    description: "与监理单位签订监理合同。",
+    label: "签订施工及监理合同",
+    description: "与施工总包及监理单位签订施工合同、监理合同。",
     unlockStage: "PROCUREMENT",
     unlockMilestones: ["mainContractorSelected"],
     triggerTaskSlugs: ["sign_supervision_contract", "sign_construction_contract"],
