@@ -18,7 +18,6 @@ import {
   buildArtifactStatusMap,
   getProjectArtifacts,
   upsertArtifactStatus,
-  applyArtifactEffects,
 } from "@/game/artifactEngine";
 import { getProjectOverview } from "@/game/projectOverview";
 import { loadArtifactDefinitions } from "@/game/artifactLoader";
@@ -205,28 +204,6 @@ export async function completeMainlineTaskBySlug(taskSlug: string, userId?: stri
       : Object.keys(template.choiceEffects || {})[0] || "immediate_fix";
 
   const result = await resolveChoice(task.id, debugUserId, choiceId);
-
-  const staticTemplate = CONSTRUCTION_PROJECT_MAINLINE_TASKS.find((item) => item.slug === taskSlug);
-  if (staticTemplate?.outputArtifacts?.length) {
-    await applyArtifactEffects(SEASON_ID, staticTemplate.outputArtifacts, {
-      sourceType: "task",
-      sourceId: task.id,
-      note: `mainline-debug 完成「${staticTemplate.title}」`,
-    });
-  }
-  if (staticTemplate) {
-    const { applyMilestoneEffects, applyStageProgress, advanceStageIfReady } = await import(
-      "@/game/projectEngine",
-    );
-    if (staticTemplate.milestoneEffects) {
-      await applyMilestoneEffects(staticTemplate.milestoneEffects, SEASON_ID);
-    }
-    const stageDelta = staticTemplate.successEffects?.stageProgress;
-    if (stageDelta) {
-      await applyStageProgress(stageDelta, SEASON_ID);
-    }
-    await advanceStageIfReady(SEASON_ID);
-  }
 
   let project = await getProjectState(SEASON_ID);
 

@@ -453,13 +453,13 @@ export async function seedPayloadCollections(
       where: { slug: { equals: event.slug } },
     });
     const doc = existing.docs[0];
-    await applySeedRecord(
-      stats.eventTemplates,
-      overwrite,
-      Boolean(doc),
-      () => payload.create({ collection: "event-templates", data }),
-      () => payload.update({ collection: "event-templates", id: doc.id, data }),
-    );
+    if (doc) {
+      await payload.update({ collection: "event-templates", id: doc.id, data });
+      stats.eventTemplates.updated++;
+    } else {
+      await payload.create({ collection: "event-templates", data });
+      stats.eventTemplates.created++;
+    }
   }
 
   for (const event of CONSTRUCTION_PROJECT_EVENTS) {

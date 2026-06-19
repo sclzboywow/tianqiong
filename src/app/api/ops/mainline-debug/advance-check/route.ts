@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserId } from "@/lib/session";
+import { requireOpsDebugAccess } from "@/lib/opsDebugAccess";
 import { getMainlineAdvanceCheck } from "@/game/mainlineDebugEngine";
 
 export async function GET() {
-  const userId = await getCurrentUserId();
-  if (!userId) return NextResponse.json({ error: "未登录" }, { status: 401 });
+  const auth = await requireOpsDebugAccess();
+  if ("error" in auth) return auth.error;
 
   try {
     const result = await getMainlineAdvanceCheck();

@@ -1,17 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserId } from "@/lib/session";
+import { requireOpsDebugAccess } from "@/lib/opsDebugAccess";
 import { getMainlineDebugStatus } from "@/game/mainlineDebugEngine";
 
-async function requireAuth() {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return { error: NextResponse.json({ error: "未登录" }, { status: 401 }) };
-  }
-  return { userId };
-}
-
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireOpsDebugAccess();
   if ("error" in auth) return auth.error;
 
   try {

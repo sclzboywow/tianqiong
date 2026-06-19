@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserId } from "@/lib/session";
+import { requireOpsDebugAccess } from "@/lib/opsDebugAccess";
 import { completeMainlineTaskBySlug } from "@/game/mainlineDebugEngine";
 
 export async function POST(request: Request) {
-  const userId = await getCurrentUserId();
-  if (!userId) return NextResponse.json({ error: "未登录" }, { status: 401 });
+  const auth = await requireOpsDebugAccess();
+  if ("error" in auth) return auth.error;
 
   try {
     const body = await request.json();
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "缺少 taskSlug" }, { status: 400 });
     }
 
-    const result = await completeMainlineTaskBySlug(taskSlug, userId);
+    const result = await completeMainlineTaskBySlug(taskSlug, auth.userId);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return NextResponse.json(
