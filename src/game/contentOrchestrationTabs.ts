@@ -27,6 +27,7 @@ import {
   type OrchestrationStoryEntry,
   type OrchestrationTask,
 } from "./contentOrchestrationLoader";
+import { loadOrchestrationCleanupPayload } from "./contentOrchestrationCleanupPayload";
 import { loadPayloadDocIds } from "./contentOrchestrationPayload";
 import { PROJECT_STAGES } from "./projectStages";
 import type { EventTemplateData, TaskTemplateData } from "./types";
@@ -144,40 +145,39 @@ function classifyEvent(event: EventTemplateData): OrchestrationEvent["kind"] {
   return "other";
 }
 
+function countCleanupIssues(cleanup: ReturnType<typeof buildOrchestrationCleanup>): number {
+  return [
+    ...cleanup.oldTasks,
+    ...cleanup.oldEvents,
+    ...cleanup.oldStoryEntries,
+    ...cleanup.oldLocationActions,
+    ...cleanup.oldInkFiles,
+    ...cleanup.oldStageTasks,
+    ...cleanup.oldStageStoryEntries,
+  ].filter((item) => item.found).length;
+}
+
+async function loadOrchestrationCleanupState(refresh = false) {
+  return withContentOrchestrationCache(
+    "orchestration:cleanup-state",
+    async () => {
+      const cleanupResult = await loadOrchestrationCleanupPayload();
+      return buildOrchestrationCleanup(cleanupResult.payload, {
+        payloadCheckAvailable: cleanupResult.payloadCheckAvailable,
+      });
+    },
+    { refresh },
+  );
+}
+
 export async function loadContentOrchestrationOverview(
   refresh = false,
 ): Promise<ContentOrchestrationOverview> {
   return withContentOrchestrationCache(
     "orchestration:overview",
     async () => {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const { getEventTemplates } = await import("./eventTemplateLoader");
-      const { getStoryEntries } = await import("./storyEntryLoader");
-      const { getLocationActions } = await import("./locationActionLoader");
-
-      const [taskTemplates, eventTemplates, storyEntries, locationActions] = await Promise.all([
-        getTaskTemplates(),
-        getEventTemplates(),
-        getStoryEntries(),
-        getLocationActions(),
-      ]);
-
-      const cleanup = buildOrchestrationCleanup({
-        taskTemplates,
-        eventTemplates,
-        storyEntries,
-        locationActions,
-      });
-
-      const issueCount = [
-        ...cleanup.oldTasks,
-        ...cleanup.oldEvents,
-        ...cleanup.oldStoryEntries,
-        ...cleanup.oldLocationActions,
-        ...cleanup.oldInkFiles,
-        ...cleanup.oldStageTasks,
-        ...cleanup.oldStageStoryEntries,
-      ].filter((item) => item.found).length;
+      const cleanup = await loadOrchestrationCleanupState(refresh);
+      const issueCount = countCleanupIssues(cleanup);
 
       const seedMainline = CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter(
         (t) => t.category === "mainline",
@@ -218,13 +218,20 @@ export async function loadContentOrchestrationOverview(
         cleanup: {
           clean: cleanup.clean,
           issueCount,
+          payloadCheckAvailable: cleanup.payloadCheckAvailable,
         },
         health: {
-          summary: cleanup.clean
-            ? "编排概览：旧数据已清理，详细健康检查请打开「健康检查」Tab"
-            : `编排概览：检测到 ${issueCount} 项旧数据残留，请打开「旧数据清理」Tab`,
-          errorCount: cleanup.clean ? 0 : issueCount,
-          warningCount: 0,
+          summary: !cleanup.payloadCheckAvailable
+            ? "编排概览：Payload cleanup 检查不可用，无法确认旧数据已清理"
+            : cleanup.clean
+              ? "编排概览：旧数据已清理，详细健康检查请打开「健康检查」Tab"
+              : `编排概览：检测到 ${issueCount} 项旧数据残留，请打开「旧数据清理」Tab`,
+          errorCount: !cleanup.payloadCheckAvailable
+            ? 1
+            : cleanup.clean
+              ? 0
+              : issueCount,
+          warningCount: !cleanup.payloadCheckAvailable ? 1 : 0,
         },
       };
     },
@@ -569,28 +576,9 @@ export async function loadOrchestrationStoriesTab(refresh = false) {
 export async function loadOrchestrationCleanupTab(refresh = false) {
   return withContentOrchestrationCache(
     "orchestration:cleanup",
-    async () => {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const { getEventTemplates } = await import("./eventTemplateLoader");
-      const { getStoryEntries } = await import("./storyEntryLoader");
-      const { getLocationActions } = await import("./locationActionLoader");
-
-      const [taskTemplates, eventTemplates, storyEntries, locationActions] = await Promise.all([
-        getTaskTemplates(),
-        getEventTemplates(),
-        getStoryEntries(),
-        getLocationActions(),
-      ]);
-
-      return {
-        cleanup: buildOrchestrationCleanup({
-          taskTemplates,
-          eventTemplates,
-          storyEntries,
-          locationActions,
-        }),
-      };
-    },
+    async () => ({
+      cleanup: await loadOrchestrationCleanupState(refresh),
+    }),
     { refresh },
   );
 }

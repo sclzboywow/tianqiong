@@ -151,10 +151,18 @@ export function ContentOrchestrationPanel({ initialOverview }: ContentOrchestrat
           <Badge variant="outline">主线 {overview.overview.mainlineTaskCount}</Badge>
           <Badge variant="outline">补正 {overview.overview.correctionTaskCount}</Badge>
           <Badge variant="outline">成果物 {overview.overview.artifactCount}</Badge>
-          <Badge variant={overview.cleanup.clean ? "default" : "outline"}>
-            {overview.cleanup.clean ? "旧数据已清理" : `旧数据 ${overview.cleanup.issueCount} 项`}
+          <Badge
+            variant={
+              overview.cleanup.payloadCheckAvailable && overview.cleanup.clean ? "default" : "outline"
+            }
+          >
+            {!overview.cleanup.payloadCheckAvailable
+              ? "cleanup 检查不可用"
+              : overview.cleanup.clean
+                ? "旧数据已清理"
+                : `旧数据 ${overview.cleanup.issueCount} 项`}
           </Badge>
-          {!overview.cleanup.clean ? (
+          {!overview.cleanup.payloadCheckAvailable || !overview.cleanup.clean ? (
             <button
               type="button"
               onClick={() => navigateTab("cleanup")}

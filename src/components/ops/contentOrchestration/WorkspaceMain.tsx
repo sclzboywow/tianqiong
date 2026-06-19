@@ -561,19 +561,31 @@ function CleanupView({
     .flatMap(([, items]) => items)
     .filter((item) => item.found).length;
 
+  const payloadUnavailable = data.cleanup.payloadCheckAvailable === false;
+  const showClean = data.cleanup.clean && !payloadUnavailable;
+
   return (
     <Card
       className={cn(
         "border-zinc-800",
-        data.cleanup.clean ? "bg-emerald-950/20" : "bg-amber-950/20",
+        showClean ? "bg-emerald-950/20" : "bg-amber-950/20",
       )}
     >
       <CardHeader>
         <CardTitle className="text-base text-zinc-100">
-          {data.cleanup.clean ? "旧数据已清理" : `旧数据残留（${issueCount} 项）`}
+          {payloadUnavailable
+            ? "Payload cleanup 检查不可用"
+            : showClean
+              ? "旧数据已清理"
+              : `旧数据残留（${issueCount} 项）`}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        {payloadUnavailable ? (
+          <p className="text-amber-200">
+            无法连接 Payload 全量检查（含 disabled 记录）。请确认 Payload 可用后刷新，避免误判为已清理。
+          </p>
+        ) : null}
         <div className="grid gap-2 sm:grid-cols-2">
           {groups.map(([label, items]) => {
             const found = items.filter((item) => item.found);
@@ -599,7 +611,7 @@ function CleanupView({
           })}
         </div>
 
-        {!data.cleanup.clean ? (
+        {!showClean ? (
           <details className="rounded-lg border border-amber-800/40 bg-amber-950/10">
             <summary className="cursor-pointer px-4 py-3 text-sm text-amber-200">
               展开残留详情

@@ -18,6 +18,7 @@ import {
   LEGACY_STAGE_STORY_ENTRY_SLUGS,
 } from "@/data/legacyStageTaskSlugs";
 import { PROJECT_STAGES, type ProjectStageId } from "./projectStages";
+import type { OrchestrationCleanupPayload } from "./contentOrchestrationCleanupPayload";
 import type { TaskTemplateData, EventTemplateData, StoryEntryData } from "./types";
 import type { ArtifactDefinitionData } from "./types";
 
@@ -168,6 +169,7 @@ export type ContentOrchestrationData = {
     oldStageTasks: CleanupItem[];
     oldStageStoryEntries: CleanupItem[];
     clean: boolean;
+    payloadCheckAvailable: boolean;
   };
   artifacts: OrchestrationArtifact[];
   allTasks: OrchestrationTask[];
@@ -357,20 +359,38 @@ function classifyEvent(event: EventTemplateData): "construction" | "site" | "oth
   return "other";
 }
 
+type CleanupRecordMeta = {
+  enabled: boolean;
+  category?: string;
+};
+
+function toCleanupRecordMap(
+  records: OrchestrationCleanupPayload[keyof OrchestrationCleanupPayload],
+): Map<string, CleanupRecordMeta> {
+  return new Map(records.map((record) => [record.slug, record]));
+}
+
+function cleanupDetailForRecord(record: CleanupRecordMeta): string | undefined {
+  if (record.enabled === false) return "已 disabled 但仍存在于 Payload";
+  return undefined;
+}
+
 function buildCleanupItems(
   slugs: readonly string[],
   kind: string,
-  studioSet: Set<string>,
+  recordMap: Map<string, CleanupRecordMeta>,
   fsCheck?: (slug: string) => boolean,
 ): CleanupItem[] {
   return slugs.map((slug) => {
-    const inPayload = studioSet.has(slug);
+    const record = recordMap.get(slug);
+    const inPayload = record != null;
     const inFs = fsCheck ? fsCheck(slug) : false;
     return {
       slug,
       kind,
       source: inPayload ? "payload" : inFs ? "filesystem" : "payload",
       found: inPayload || inFs,
+      detail: inPayload ? cleanupDetailForRecord(record) : undefined,
     };
   });
 }
@@ -402,6 +422,7 @@ export type ContentOrchestrationOverview = {
   cleanup: {
     clean: boolean;
     issueCount: number;
+    payloadCheckAvailable: boolean;
   };
   health: {
     summary: string;
@@ -410,49 +431,51 @@ export type ContentOrchestrationOverview = {
   };
 };
 
-export function buildOrchestrationCleanup(input: {
-  taskTemplates: TaskTemplateData[];
-  eventTemplates: EventTemplateData[];
-  storyEntries: StoryEntryData[];
-  locationActions: import("@/data/locationActions").LocationAction[];
-}): ContentOrchestrationData["cleanup"] {
-  const taskSlugSet = new Set(input.taskTemplates.map((t) => t.slug));
-  const taskCategoryMap = new Map(
-    input.taskTemplates.map((t) => [t.slug, t.category || ""]),
-  );
-  const eventSlugSet = new Set(input.eventTemplates.map((e) => e.slug));
-  const storySlugSet = new Set(input.storyEntries.map((s) => s.slug));
-  const actionSlugSet = new Set(input.locationActions.map((a) => a.id));
+export function buildOrchestrationCleanup(
+  input: OrchestrationCleanupPayload,
+  options: { payloadCheckAvailable: boolean },
+): ContentOrchestrationData["cleanup"] {
+  const taskRecordMap = toCleanupRecordMap(input.taskTemplates);
+  const eventRecordMap = toCleanupRecordMap(input.eventTemplates);
+  const storyRecordMap = toCleanupRecordMap(input.storyEntries);
+  const actionRecordMap = toCleanupRecordMap(input.locationActions);
 
   const oldStageTasks: CleanupItem[] = LEGACY_STAGE_MAINLINE_TASK_SLUGS.map((slug) => {
-    const exists = taskSlugSet.has(slug);
-    const category = taskCategoryMap.get(slug);
+    const record = taskRecordMap.get(slug);
+    const exists = record != null;
+    let detail: string | undefined;
+    if (exists && record.category === "mainline") {
+      detail = "仍作为 mainline 存在";
+    } else if (exists && record.enabled === false) {
+      detail = "已 disabled 但仍存在于 Payload";
+    } else if (exists) {
+      detail = `存在但 category=${record.category || "?"}`;
+    }
     return {
       slug,
       kind: "legacy-stage-task",
       source: "payload" as const,
       found: exists,
-      detail:
-        exists && category === "mainline"
-          ? "仍作为 mainline 存在"
-          : exists
-            ? `存在但 category=${category || "?"}`
-            : undefined,
+      detail,
     };
   });
 
+  const legacyStageStorySlugs = [
+    ...new Set([...LEGACY_STAGE_STORY_ENTRY_SLUGS, ...LEGACY_STAGE_MAINLINE_TASK_SLUGS]),
+  ];
+
   const cleanup = {
-    oldTasks: buildCleanupItems(LEGACY_CHAPTER1_TASK_SLUGS, "chapter1-task", taskSlugSet),
-    oldEvents: buildCleanupItems(LEGACY_CHAPTER1_EVENT_SLUGS, "chapter1-event", eventSlugSet),
+    oldTasks: buildCleanupItems(LEGACY_CHAPTER1_TASK_SLUGS, "chapter1-task", taskRecordMap),
+    oldEvents: buildCleanupItems(LEGACY_CHAPTER1_EVENT_SLUGS, "chapter1-event", eventRecordMap),
     oldStoryEntries: buildCleanupItems(
       LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
       "chapter1-story",
-      storySlugSet,
+      storyRecordMap,
     ),
     oldLocationActions: buildCleanupItems(
       LEGACY_CHAPTER1_LOCATION_ACTION_SLUGS,
       "chapter1-action",
-      actionSlugSet,
+      actionRecordMap,
     ),
     oldInkFiles: LEGACY_CHAPTER1_INK_FILES.map((slug) => ({
       slug,
@@ -462,13 +485,14 @@ export function buildOrchestrationCleanup(input: {
     })),
     oldStageTasks,
     oldStageStoryEntries: buildCleanupItems(
-      LEGACY_STAGE_STORY_ENTRY_SLUGS,
+      legacyStageStorySlugs,
       "legacy-stage-story",
-      storySlugSet,
+      storyRecordMap,
     ),
     clean: false,
+    payloadCheckAvailable: options.payloadCheckAvailable,
   };
-  cleanup.clean = ![
+  const hasResidual = [
     ...cleanup.oldTasks,
     ...cleanup.oldEvents,
     ...cleanup.oldStoryEntries,
@@ -477,6 +501,7 @@ export function buildOrchestrationCleanup(input: {
     ...cleanup.oldStageTasks.filter((item) => item.found),
     ...cleanup.oldStageStoryEntries,
   ].some((item) => item.found);
+  cleanup.clean = options.payloadCheckAvailable && !hasResidual;
   return cleanup;
 }
 
@@ -747,11 +772,10 @@ export async function loadContentOrchestrationData(): Promise<ContentOrchestrati
     };
   });
 
-  const cleanup = buildOrchestrationCleanup({
-    taskTemplates: studio.taskTemplates,
-    eventTemplates: studio.eventTemplates,
-    storyEntries: studio.storyEntries,
-    locationActions: studio.locationActions,
+  const { loadOrchestrationCleanupPayload } = await import("./contentOrchestrationCleanupPayload");
+  const cleanupResult = await loadOrchestrationCleanupPayload();
+  const cleanup = buildOrchestrationCleanup(cleanupResult.payload, {
+    payloadCheckAvailable: cleanupResult.payloadCheckAvailable,
   });
 
   const terminalTask =
