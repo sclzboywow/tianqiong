@@ -202,7 +202,7 @@ function buildEventTemplatePayloadData(template: TaskTemplateData) {
     npcList: template.sourceName ? [{ npc: template.sourceName }] : [],
     eventType: template.sourceType,
     inkFile: template.inkFile,
-    storySlug: template.inkFile,
+    storySlug: template.storySlug || template.inkFile,
     recommendedJobs: (template.requiredJobs || []).map((j) => ({ job: j })),
     baseSuccessRate: template.baseSuccessRate || 60,
     triggerBroadcast: template.triggerBroadcast || false,

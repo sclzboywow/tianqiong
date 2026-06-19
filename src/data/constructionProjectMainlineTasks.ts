@@ -285,7 +285,7 @@ export const CONSTRUCTION_PROJECT_MAINLINE_TASKS: TaskTemplateData[] = [
       area: "施工图审查机构",
       sourceName: "甲方代表",
       inputArtifacts: [req("construction_drawing", "in_review")],
-      milestoneEffects: { drawingReviewDone: true },
+      milestoneEffects: { drawingReviewDone: true, designIssuesClosed: true },
       outputArtifacts: [art("drawing_review_certificate", "approved")],
     },
   ),

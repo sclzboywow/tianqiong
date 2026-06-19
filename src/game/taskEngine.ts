@@ -8,6 +8,7 @@ import {
 } from "./projectEngine";
 import { normalizeStageId } from "./projectStages";
 import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
+import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
 import { writeGameLog } from "./logEngine";
 import { calculateRewards, applySpiritCost } from "./rewardEngine";
 import { applyExpWithLevelUp, CHARACTER_GROWTH_LOG_PREFIX } from "./playerProgressEngine";
@@ -609,15 +610,27 @@ export function filterTemplatesForCurrentStage(
   currentStage?: string | null,
 ) {
   const normalized = normalizeStageId(currentStage);
-  const mainlineSlugs = STAGE_TASK_TEMPLATES.filter((template) => template.stage === normalized).map(
-    (template) => template.slug,
-  );
 
-  if (mainlineSlugs.length > 0) {
-    const mainline = mainlineSlugs
+  const constructionMainlineSlugs = CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter(
+    (template) => template.stage === normalized && template.category === "mainline",
+  ).map((template) => template.slug);
+
+  if (constructionMainlineSlugs.length > 0) {
+    const constructionMainline = constructionMainlineSlugs
       .map((slug) => templates.find((template) => template.slug === slug))
       .filter((template): template is TaskTemplateData => !!template);
-    if (mainline.length === mainlineSlugs.length) return mainline;
+    if (constructionMainline.length > 0) return constructionMainline;
+  }
+
+  const legacyMainlineSlugs = STAGE_TASK_TEMPLATES.filter(
+    (template) => template.stage === normalized,
+  ).map((template) => template.slug);
+
+  if (legacyMainlineSlugs.length > 0) {
+    const legacyMainline = legacyMainlineSlugs
+      .map((slug) => templates.find((template) => template.slug === slug))
+      .filter((template): template is TaskTemplateData => !!template);
+    if (legacyMainline.length === legacyMainlineSlugs.length) return legacyMainline;
   }
 
   const matched = templates.filter((template) => template.stage === normalized);
