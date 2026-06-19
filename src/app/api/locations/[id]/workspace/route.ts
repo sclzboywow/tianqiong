@@ -6,6 +6,7 @@ import { getRecentLocationActionLogs, getRecentNpcInteractionLogs } from "@/game
 import { NPC_TASK_ACTION_LOG_PREFIX } from "@/game/npcTaskActionProgressEngine";
 import { loadNpcInteractionDialogueHistory } from "@/game/npcInteractionService";
 import { buildActionDisplayItems } from "@/game/locationPresentationEngine";
+import { buildLocationActionDependencyPreviews } from "@/game/locationActionPreviewEngine";
 import { getProjectState } from "@/game/projectEngine";
 import { getStageConfig } from "@/game/projectStages";
 import { getNextRecommendedAction } from "@/game/playerGuidanceEngine";
@@ -60,6 +61,13 @@ export async function GET(
     recommendedActionId,
   );
 
+  const actionDependencyPreviews = await buildLocationActionDependencyPreviews(
+    overview.availableActions.map((action) => ({
+      id: action.id,
+      triggerTaskSlugs: action.triggerTaskSlugs || [],
+    })),
+  );
+
   const mapLogs = await getRecentLocationActionLogs(
     { id: overview.location.id, name: overview.location.name },
     5,
@@ -105,6 +113,7 @@ export async function GET(
     unlocked: overview.unlocked,
     stageName: stageConfig?.name || project.currentStage,
     actionItems,
+    actionDependencyPreviews,
     logs,
     npcDialogueHistory,
     user: {

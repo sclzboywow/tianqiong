@@ -110,7 +110,7 @@ export const CONSTRUCTION_PROJECT_MAINLINE_TASKS: TaskTemplateData[] = [
     "document",
     {
       area: "项目管理部",
-      sourceName: "项目负责人",
+      sourceName: "林知远",
       description: "梳理建设规模、功能定位与建设必要性，形成需求说明。",
       milestoneEffects: { projectOrgDone: true },
       outputArtifacts: [art("project_need_statement", "confirmed")],
@@ -139,7 +139,7 @@ export const CONSTRUCTION_PROJECT_MAINLINE_TASKS: TaskTemplateData[] = [
     "document",
     {
       area: "项目管理部",
-      sourceName: "项目负责人",
+      sourceName: "林知远",
       description: "编制总控计划、资料台账与风险台账。",
       inputArtifacts: [
         req("kickoff_meeting_minutes", "confirmed"),
@@ -549,6 +549,10 @@ export const CONSTRUCTION_PROJECT_MAINLINE_TASKS: TaskTemplateData[] = [
     },
   ),
 ];
+
+export const CONSTRUCTION_MAINLINE_TASK_SLUGS = CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter(
+  (task) => task.category === "mainline",
+).map((task) => task.slug);
 
 export const CONSTRUCTION_PROJECT_MAINLINE_TASK_SLUGS = CONSTRUCTION_PROJECT_MAINLINE_TASKS.map(
   (task) => task.slug,

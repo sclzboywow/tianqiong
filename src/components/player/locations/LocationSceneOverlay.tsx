@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { resolveNodeLocationId } from "@/lib/resolveNodeLocationId";
 import type { SandtableLocationNode } from "@/game/locationSandtablePresentationEngine";
 import type { LocationActionDisplayItem } from "@/game/locationPresentationEngine";
+import type { ActionDependencyPreview } from "@/game/locationActionPreviewEngine";
+import { ActionDependencyPreviewPanel } from "./ActionDependencyPreview";
 import type { DialogueEntry, NpcInteractionType } from "@/game/npcInteractionEngine";
 import { LocationNpcMainCard } from "./LocationNpcMainCard";
 import { SandtableNpcList } from "./SandtableNpcList";
@@ -38,6 +40,7 @@ type WorkspacePayload = {
   unlocked: boolean;
   stageName: string;
   actionItems: LocationActionDisplayItem[];
+  actionDependencyPreviews?: Record<string, ActionDependencyPreview>;
   logs: { id: string; content: string; createdAt: string }[];
   npcDialogueHistory?: DialogueEntry[];
   user: {
@@ -272,6 +275,15 @@ export function LocationSceneOverlay({
   const otherActionsCount =
     workspace?.actionItems.filter((action) => !action.isRecommended).length ?? 0;
 
+  const blockedActionItems =
+    workspace?.actionItems.filter(
+      (action) => workspace.actionDependencyPreviews?.[action.id]?.hasBlockers,
+    ) ?? [];
+  const availableActionItems =
+    workspace?.actionItems.filter(
+      (action) => !workspace.actionDependencyPreviews?.[action.id]?.hasBlockers,
+    ) ?? [];
+
   return (
     <div className="absolute inset-0 z-40 flex items-stretch justify-center lg:items-center lg:p-3">
       <button
@@ -307,7 +319,7 @@ export function LocationSceneOverlay({
               </button>
               <div className="min-w-0">
                 <p className="truncate text-[11px] text-slate-500">
-                  {regionName} / {zoneName} · 地点工作台
+                  {regionName} / {zoneName} · 地点工作台 · 当前阶段 {workspace?.stageName || project.currentStage}
                 </p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2">
                   <h2 className="truncate text-lg font-semibold text-cyan-50">{node.name}</h2>
@@ -393,10 +405,31 @@ export function LocationSceneOverlay({
               subtitle="推荐动作优先，其余行动折叠展示"
               className="min-h-[280px] shrink-0 lg:min-w-0 lg:flex-1 lg:min-h-0 lg:shrink"
             >
+              {blockedActionItems.length > 0 ? (
+                <div className="mb-3 space-y-2">
+                  <h4 className="text-xs font-medium text-amber-300">当前阻塞事项</h4>
+                  {blockedActionItems.map((action) => (
+                    <ActionDependencyPreviewPanel
+                      key={action.id}
+                      preview={workspace?.actionDependencyPreviews?.[action.id]}
+                      actionLabel={action.label}
+                      compact
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {availableActionItems.length > 0 ? (
+                <p className="mb-2 text-xs font-medium text-emerald-300/90">
+                  可办理（{availableActionItems.length}）
+                </p>
+              ) : null}
+
               {workspace && workspace.unlocked ? (
                 <LocationActionExecutePanel
                   locationId={workspace.locationId}
                   actions={workspace.actionItems}
+                  actionDependencyPreviews={workspace.actionDependencyPreviews}
                   user={workspace.user}
                   unlocked={workspace.unlocked}
                   appearance="sandtable"
@@ -435,6 +468,7 @@ export function LocationSceneOverlay({
                     <LocationActionExecutePanel
                       locationId={workspace.locationId}
                       actions={workspace.actionItems}
+                      actionDependencyPreviews={workspace.actionDependencyPreviews}
                       user={workspace.user}
                       unlocked={workspace.unlocked}
                       appearance="sandtable"

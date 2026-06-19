@@ -10,6 +10,8 @@ import {
   markFirstActionHintSeen,
 } from "@/lib/onboardingStorage";
 import type { LocationActionDisplayItem } from "@/game/locationPresentationEngine";
+import type { ActionDependencyPreview } from "@/game/locationActionPreviewEngine";
+import { ActionDependencyPreviewPanel } from "./ActionDependencyPreview";
 import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
 
 type UserResources = {
@@ -22,6 +24,7 @@ type UserResources = {
 type LocationActionExecutePanelProps = {
   locationId: string;
   actions: LocationActionDisplayItem[];
+  actionDependencyPreviews?: Record<string, ActionDependencyPreview>;
   user: UserResources;
   unlocked: boolean;
   appearance?: "default" | "sandtable";
@@ -30,9 +33,10 @@ type LocationActionExecutePanelProps = {
 };
 
 type ExecuteFeedback = {
-  type: "success" | "skip" | "error";
+  type: "success" | "skip" | "error" | "blocked";
   message: string;
   createdTasks?: { id: string; title: string }[];
+  blockedTasks?: { slug: string; title: string; reasons: string[] }[];
 };
 
 function canExecuteAction(action: LocationActionDisplayItem, user: UserResources): string | null {
@@ -111,6 +115,7 @@ function ActionTaskLinks({ action }: { action: LocationActionDisplayItem }) {
 export function LocationActionExecutePanel({
   locationId,
   actions,
+  actionDependencyPreviews,
   user,
   unlocked,
   appearance = "default",
@@ -163,14 +168,26 @@ export function LocationActionExecutePanel({
         id: task.id,
         title: task.title,
       }));
+      const blockedTasks = (data.blockedTasks || []) as {
+        slug: string;
+        title: string;
+        reasons: string[];
+      }[];
 
       const type =
-        createdTasks.length > 0 ? "success" : data.skippedTasks?.length > 0 ? "skip" : "success";
+        createdTasks.length > 0
+          ? "success"
+          : blockedTasks.length > 0
+            ? "blocked"
+            : data.skippedTasks?.length > 0
+              ? "skip"
+              : "success";
 
       setFeedback({
         type,
         message: data.message || "行动已执行",
         createdTasks,
+        blockedTasks,
       });
       if (createdTasks.length > 0 && !isFirstActionHintSeen()) {
         setShowFirstActionHint(true);
@@ -342,6 +359,16 @@ export function LocationActionExecutePanel({
                     {blockReason && (
                       <p className={cn("mt-2 text-xs text-[#EF4444]", isHero && "text-[11px]")}>{blockReason}</p>
                     )}
+
+                    {!blockReason && actionDependencyPreviews?.[action.id] ? (
+                      <div className="mt-3">
+                        <ActionDependencyPreviewPanel
+                          preview={actionDependencyPreviews[action.id]}
+                          actionLabel={action.label}
+                          compact={isHero || isCompact}
+                        />
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className={cn("flex flex-col gap-2", !isHero && "items-stretch lg:items-end")}>
@@ -393,6 +420,8 @@ export function LocationActionExecutePanel({
               "rounded-lg border px-4 py-3 text-sm",
               feedback.type === "error" &&
                 "border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.08)] text-[#FCA5A5]",
+              feedback.type === "blocked" &&
+                "border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.08)] text-[#FCA5A5]",
               feedback.type === "skip" &&
                 "border-[rgba(250,204,21,0.35)] bg-[rgba(250,204,21,0.08)] text-[#FDE68A]",
               feedback.type === "success" &&
@@ -400,6 +429,16 @@ export function LocationActionExecutePanel({
             )}
           >
             <p>{feedback.message}</p>
+            {feedback.blockedTasks?.map((task) => (
+              <div key={task.slug} className="mt-2 text-xs">
+                <p className="font-medium">{task.title}</p>
+                <ul className="mt-1 space-y-0.5 opacity-90">
+                  {task.reasons.map((reason) => (
+                    <li key={reason}>· {reason}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
             {feedback.createdTasks && feedback.createdTasks.length > 0 && (
               <div className="mt-2">
                 <p className="text-xs font-medium">任务已生成，可在工作台继续跟进：</p>

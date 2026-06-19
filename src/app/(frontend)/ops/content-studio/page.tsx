@@ -9,8 +9,15 @@ type ContentStudioPageProps = {
   searchParams: Promise<{ location?: string; tab?: string }>;
 };
 
-function parseContentStudioTab(value?: string): "overview" | "deliverables" | "dependency" | "debug" {
-  if (value === "deliverables" || value === "dependency" || value === "debug") return value;
+function parseContentStudioTab(value?: string): "overview" | "deliverables" | "dependency" | "debug" | "mainline" {
+  if (
+    value === "deliverables" ||
+    value === "dependency" ||
+    value === "debug" ||
+    value === "mainline"
+  ) {
+    return value;
+  }
   return "overview";
 }
 

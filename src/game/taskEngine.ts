@@ -510,7 +510,14 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
   if (success && stageTemplates) {
     const advanceResult = await advanceStageIfReady(SEASON_ID);
     if (advanceResult.advanced) {
-      await spawnTasksFromTemplates(stageTemplates);
+      const { getTaskTemplates: loadTemplates } = await import("./contentLoader");
+      const templates = await loadTemplates();
+      const project = await getProjectState(SEASON_ID);
+      const nextStageTemplates = filterTemplatesForCurrentStage(
+        templates,
+        normalizeStageId(project?.currentStage),
+      );
+      await spawnTasksFromTemplates(nextStageTemplates);
     }
   }
 

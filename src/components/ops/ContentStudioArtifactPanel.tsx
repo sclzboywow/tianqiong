@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,24 @@ function formatRefs(refs?: { slug: string; title: string }[]) {
 }
 
 export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelProps) {
+  const [runtimeStatus, setRuntimeStatus] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    void fetch("/api/project/artifacts")
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) return;
+        const map: Record<string, string | null> = {};
+        for (const items of Object.values(json.byStage || {}) as { slug: string; currentStatus: string | null }[][]) {
+          for (const item of items) {
+            map[item.slug] = item.currentStatus;
+          }
+        }
+        setRuntimeStatus(map);
+      })
+      .catch(() => undefined);
+  }, []);
+
   const knownSlugs = useMemo(
     () => new Set(data.artifactDefinitions.map((item) => item.slug)),
     [data.artifactDefinitions],
@@ -54,6 +72,7 @@ export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelP
               <th className="px-3 py-2 text-left font-medium">阶段</th>
               <th className="px-3 py-2 text-left font-medium">默认状态</th>
               <th className="px-3 py-2 text-left font-medium">允许状态</th>
+              <th className="px-3 py-2 text-left font-medium">运行时状态</th>
               <th className="px-3 py-2 text-left font-medium">产出任务</th>
               <th className="px-3 py-2 text-left font-medium">依赖任务</th>
               <th className="px-3 py-2 text-left font-medium">事件影响</th>
@@ -85,6 +104,13 @@ export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelP
                   <td className="px-3 py-2">{stageLabel(artifact.stage)}</td>
                   <td className="px-3 py-2">{artifact.defaultStatus || "draft"}</td>
                   <td className="px-3 py-2 text-xs text-zinc-400">{statusFlow || "—"}</td>
+                  <td className="px-3 py-2 text-xs">
+                    {runtimeStatus[artifact.slug] ? (
+                      <span className="text-emerald-400">{runtimeStatus[artifact.slug]}</span>
+                    ) : (
+                      <span className="text-zinc-500">未产出</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-xs text-zinc-400">
                     {formatRefs(data.artifactUsage.producedByTasks[artifact.slug])}
                   </td>

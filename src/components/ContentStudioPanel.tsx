@@ -22,8 +22,9 @@ import {
 import type { LocationAction } from "@/data/locationActions";
 import { ContentStudioArtifactPanel, ContentStudioDependencyDebugPanel } from "@/components/ops/ContentStudioArtifactPanel";
 import { ContentStudioDependencyFlow } from "@/components/ops/ContentStudioDependencyFlow";
+import { ContentStudioMainlineDebugPanel } from "@/components/ops/ContentStudioMainlineDebugPanel";
 
-export type ContentStudioTab = "overview" | "deliverables" | "dependency" | "debug";
+export type ContentStudioTab = "overview" | "deliverables" | "dependency" | "debug" | "mainline";
 
 type ContentStudioPanelProps = {
   data: ContentStudioData;
@@ -300,6 +301,7 @@ export function ContentStudioPanel({
     { id: "deliverables", label: "成果物中心" },
     { id: "dependency", label: "依赖关系图" },
     { id: "debug", label: "依赖调试" },
+    { id: "mainline", label: "主线调试" },
   ];
 
   const taskSlugs = data.taskTemplates.map((template) => template.slug);
@@ -361,6 +363,12 @@ export function ContentStudioPanel({
       {activeTab === "debug" ? (
         <section>
           <ContentStudioDependencyDebugPanel taskSlugs={taskSlugs} />
+        </section>
+      ) : null}
+
+      {activeTab === "mainline" ? (
+        <section>
+          <ContentStudioMainlineDebugPanel />
         </section>
       ) : null}
 

@@ -92,7 +92,7 @@ export const CHAPTER1_TASK_TEMPLATES: TaskTemplateData[] = [
   }, {
     description:
       "甲方把组织架构草稿推到你面前，三处职责重叠还没谈拢。今天不定下来，后面的协调会排不进日程。",
-    area: "建设主体 · 项目管理部",
+    area: "项目管理部",
     outputArtifacts: [{ artifactSlug: "project_org_chart", status: "confirmed" }],
   }),
   chapter1Task("prepare_master_plan", "抢时间：总控计划定稿", "masterPlanDone", {
@@ -102,7 +102,7 @@ export const CHAPTER1_TASK_TEMPLATES: TaskTemplateData[] = [
   }, {
     description:
       "造价、设计、施工的节点互相打架。有人想跳过计划先动土，甲方却在等一版能马上用的总控计划。",
-    area: "建设主体 · 项目管理部",
+    area: "项目管理部",
     inputArtifacts: [{ artifactSlug: "project_org_chart", minStatus: "confirmed" }],
     prerequisiteTaskSlugs: ["setup_project_team"],
     outputArtifacts: [{ artifactSlug: "master_plan_doc", status: "confirmed" }],
@@ -114,7 +114,7 @@ export const CHAPTER1_TASK_TEMPLATES: TaskTemplateData[] = [
   }, {
     description:
       "消防、资料、进度几条线在同时冒头。监理要分级，总包要先清单——本周必须拿出一份能翻得动的风险台账。",
-    area: "建设主体 · 项目管理部",
+    area: "项目管理部",
     inputArtifacts: [{ artifactSlug: "master_plan_doc", minStatus: "confirmed" }],
     prerequisiteTaskSlugs: ["prepare_master_plan"],
     outputArtifacts: [{ artifactSlug: "risk_register", status: "confirmed" }],
@@ -126,7 +126,7 @@ export const CHAPTER1_TASK_TEMPLATES: TaskTemplateData[] = [
   }, {
     description:
       "各家单位的竣工资料各放各的，监理催着要统一目录。档案室位置有限，再拖就要影响报批。",
-    area: "建设主体 · 档案资料室",
+    area: "档案资料室",
     outputArtifacts: [{ artifactSlug: "document_ledger", status: "confirmed" }],
   }),
   chapter1Task("coordinate_first_meeting", "第一次协调会：别白开一场", "firstCoordinationMeetingDone", {
@@ -136,7 +136,7 @@ export const CHAPTER1_TASK_TEMPLATES: TaskTemplateData[] = [
   }, {
     description:
       "下午三点各方已落座。职责界面和变更联络还没谈拢——散会时得带走能执行的结论，不是又一堆「再研究研究」。",
-    area: "建设主体 · 项目管理部",
+    area: "项目管理部",
     inputArtifacts: [{ artifactSlug: "project_org_chart", minStatus: "confirmed" }],
     prerequisiteTaskSlugs: ["setup_project_team"],
     outputArtifacts: [{ artifactSlug: "first_meeting_minutes", status: "confirmed" }],

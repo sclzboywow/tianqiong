@@ -27,6 +27,8 @@ export const AREA_CATEGORIES: CategoryOption[] = [
 
 export const EVENT_CATEGORIES: CategoryOption[] = [
   { label: "建设主线", value: "mainline" },
+  { label: "主线补正", value: "correction" },
+  { label: "旧版内容", value: "legacy" },
   { label: "现场事件", value: "site_event" },
   { label: "消防专项", value: "fire" },
   { label: "质量资料", value: "quality" },
