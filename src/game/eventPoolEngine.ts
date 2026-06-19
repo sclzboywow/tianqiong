@@ -185,6 +185,8 @@ export async function triggerEventForLocationAction(params: {
     const skippedTasks: EventTriggerResult["skippedTasks"] = [];
     const blockedTasks: EventTriggerResult["blockedTasks"] = [];
 
+    let artifactEffectsApplied = false;
+
     try {
       if (selected.artifactEffects?.length) {
         await applyArtifactEffects(SEASON_ID, selected.artifactEffects, {
@@ -192,6 +194,7 @@ export async function triggerEventForLocationAction(params: {
           sourceId: selected.slug,
           note: `事件「${selected.title}」触发`,
         });
+        artifactEffectsApplied = true;
       }
     } catch (error) {
       const reason = error instanceof Error ? error.message : "成果物效果应用失败";
@@ -214,10 +217,11 @@ export async function triggerEventForLocationAction(params: {
       if (process.env.NODE_ENV !== "production") {
         console.warn("[eventPoolEngine] metricEffects failed:", error);
       }
+      const partialNote = artifactEffectsApplied ? "（部分成果物效果可能已应用）" : "";
       return {
         ...empty,
         error: reason,
-        message: `事件触发失败：${reason}`,
+        message: `事件触发失败：${reason}${partialNote}`,
       };
     }
 

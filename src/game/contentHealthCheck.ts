@@ -689,6 +689,25 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
     });
   }
 
+  {
+    const failures: string[] = [];
+    let keyCount = 0;
+    for (const row of data.taskTemplates) {
+      for (const key of row.requiredMilestones || []) {
+        keyCount++;
+        if (!milestoneKeys.has(key)) {
+          failures.push(`${row.slug}: requiredMilestones.${key} 不在 MILESTONE_LABELS 中`);
+        }
+      }
+    }
+    results.push({
+      name: "task-templates.requiredMilestones",
+      pass: failures.length === 0,
+      total: keyCount,
+      failures,
+    });
+  }
+
   if (!data.hasEventTemplatesTable) {
     results.push({
       name: "event-templates (表)",
@@ -879,108 +898,115 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
     }
   }
 
-  if (artifactSlugs.size > 0) {
-    {
-      const items: { label: string; value: string }[] = [];
-      for (const row of data.taskTemplates) {
-        for (const effect of row.inputArtifacts || []) {
-          items.push({ label: row.slug, value: effect.artifactSlug });
-        }
-        for (const effect of row.outputArtifacts || []) {
-          items.push({ label: row.slug, value: effect.artifactSlug });
+  {
+    const items: { label: string; value: string }[] = [];
+    for (const row of data.taskTemplates) {
+      for (const effect of row.inputArtifacts || []) {
+        if (effect.artifactSlug?.trim()) {
+          items.push({ label: row.slug, value: effect.artifactSlug.trim() });
         }
       }
-      results.push(checkMembership("task-templates.artifactReferences", items, artifactSlugs));
+      for (const effect of row.outputArtifacts || []) {
+        if (effect.artifactSlug?.trim()) {
+          items.push({ label: row.slug, value: effect.artifactSlug.trim() });
+        }
+      }
     }
+    results.push(checkMembership("task-templates.artifactReferences", items, artifactSlugs));
+  }
 
-    {
-      const items: { label: string; value: string }[] = [];
-      for (const row of data.taskTemplates) {
-        for (const slug of row.prerequisiteTaskSlugs || []) {
-          items.push({ label: row.slug, value: slug });
-        }
+  {
+    const items: { label: string; value: string }[] = [];
+    for (const row of data.taskTemplates) {
+      for (const slug of row.prerequisiteTaskSlugs || []) {
+        items.push({ label: row.slug, value: slug });
       }
-      results.push(checkMembership("task-templates.prerequisiteTaskSlugs", items, taskTemplateSlugs));
     }
+    results.push(checkMembership("task-templates.prerequisiteTaskSlugs", items, taskTemplateSlugs));
+  }
 
-    {
-      const items: { label: string; value: string }[] = [];
-      for (const row of data.eventTemplates) {
-        for (const effect of row.artifactEffects || []) {
-          items.push({ label: row.slug, value: effect.artifactSlug });
+  {
+    const items: { label: string; value: string }[] = [];
+    for (const row of data.eventTemplates) {
+      for (const effect of row.artifactEffects || []) {
+        if (effect.artifactSlug?.trim()) {
+          items.push({ label: row.slug, value: effect.artifactSlug.trim() });
         }
       }
-      results.push(checkMembership("event-templates.artifactEffects", items, artifactSlugs));
     }
+    results.push(checkMembership("event-templates.artifactEffects", items, artifactSlugs));
+  }
 
-    {
-      const failures: string[] = [];
-      let total = 0;
-      for (const row of data.taskTemplates) {
-        for (const effect of row.inputArtifacts || []) {
-          if (!effect.minStatus?.trim()) continue;
-          total++;
-          const def = artifactStatusMap.get(effect.artifactSlug);
-          if (!def) continue;
-          if (!def.allowed.has(effect.minStatus.trim())) {
-            failures.push(
-              `${row.slug}: inputArtifacts.minStatus "${effect.minStatus}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
-            );
-          }
-        }
-        for (const effect of row.outputArtifacts || []) {
-          if (!effect.status?.trim()) continue;
-          total++;
-          const def = artifactStatusMap.get(effect.artifactSlug);
-          if (!def) continue;
-          if (!def.allowed.has(effect.status.trim())) {
-            failures.push(
-              `${row.slug}: outputArtifacts.status "${effect.status}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
-            );
-          }
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      for (const effect of row.inputArtifacts || []) {
+        if (!effect.minStatus?.trim() || !effect.artifactSlug?.trim()) continue;
+        if (!artifactSlugs.has(effect.artifactSlug.trim())) continue;
+        total++;
+        const def = artifactStatusMap.get(effect.artifactSlug.trim());
+        if (!def) continue;
+        if (!def.allowed.has(effect.minStatus.trim())) {
+          failures.push(
+            `${row.slug}: inputArtifacts.minStatus "${effect.minStatus}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
+          );
         }
       }
-      for (const row of data.eventTemplates) {
-        for (const effect of row.artifactEffects || []) {
-          if (!effect.status?.trim()) continue;
-          total++;
-          const def = artifactStatusMap.get(effect.artifactSlug);
-          if (!def) continue;
-          if (!def.allowed.has(effect.status.trim())) {
-            failures.push(
-              `${row.slug}: artifactEffects.status "${effect.status}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
-            );
-          }
+      for (const effect of row.outputArtifacts || []) {
+        if (!effect.status?.trim() || !effect.artifactSlug?.trim()) continue;
+        if (!artifactSlugs.has(effect.artifactSlug.trim())) continue;
+        total++;
+        const def = artifactStatusMap.get(effect.artifactSlug.trim());
+        if (!def) continue;
+        if (!def.allowed.has(effect.status.trim())) {
+          failures.push(
+            `${row.slug}: outputArtifacts.status "${effect.status}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
+          );
         }
       }
-      results.push({
-        name: "artifact-definitions.allowedStatuses",
-        pass: failures.length === 0,
-        total,
-        failures,
-      });
     }
+    for (const row of data.eventTemplates) {
+      for (const effect of row.artifactEffects || []) {
+        if (!effect.status?.trim() || !effect.artifactSlug?.trim()) continue;
+        if (!artifactSlugs.has(effect.artifactSlug.trim())) continue;
+        total++;
+        const def = artifactStatusMap.get(effect.artifactSlug.trim());
+        if (!def) continue;
+        if (!def.allowed.has(effect.status.trim())) {
+          failures.push(
+            `${row.slug}: artifactEffects.status "${effect.status}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
+          );
+        }
+      }
+    }
+    results.push({
+      name: "artifact-definitions.allowedStatuses",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
 
-    {
-      const failures: string[] = [];
-      let total = 0;
-      for (const row of data.eventTemplates) {
-        for (const effect of row.taskEffects || []) {
-          total++;
-          if (effect.action !== "spawn") {
-            failures.push(
-              `${row.slug}: taskEffects.action "${effect.action}" 不受支持（本阶段仅支持 spawn）`,
-            );
-          }
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.eventTemplates) {
+      for (const effect of row.taskEffects || []) {
+        total++;
+        if (effect.action !== "spawn") {
+          failures.push(
+            `${row.slug}: taskEffects.action "${effect.action}" 不受支持（本阶段仅支持 spawn）`,
+          );
         }
       }
-      warnings.push({
-        name: "event-templates.taskEffects.unsupportedAction (warning)",
-        pass: failures.length === 0,
-        total,
-        failures,
-      });
     }
+    warnings.push({
+      name: "event-templates.taskEffects.unsupportedAction (warning)",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
   }
 
   if (!data.hasStoryEntriesTable) {
