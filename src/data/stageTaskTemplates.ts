@@ -1,6 +1,5 @@
 import type { TaskTemplateData } from "@/game/types";
 import type { ProjectStageId } from "@/game/projectStages";
-import { CHAPTER1_TASK_TEMPLATES } from "@/data/chapter1Content";
 
 const genericChoiceEffects = {
   immediate_fix: {},
@@ -34,8 +33,6 @@ function stageTask(
 }
 
 export const STAGE_TASK_TEMPLATES: TaskTemplateData[] = [
-  ...CHAPTER1_TASK_TEMPLATES,
-
   stageTask("confirm_approval_path", "明确报批路径", "APPROVAL", "approvalPathConfirmed", {
     successEffects: { stageProgress: 25, ownerTrust: 2, dataIntegrity: 3 },
   }),

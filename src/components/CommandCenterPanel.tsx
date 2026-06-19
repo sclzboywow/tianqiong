@@ -8,12 +8,16 @@ import { getStageConfig } from "@/game/projectStages";
 import { getStageRecommendations } from "@/game/locationEngine";
 import { getRecentMapActionLogs } from "@/game/logEngine";
 import { listTasks } from "@/game/taskEngine";
+import { getCurrentUserId } from "@/lib/session";
+import { isGameAdmin } from "@/lib/gameAdmin";
 
 type CommandCenterPanelProps = {
   project: ProjectState;
 };
 
 export async function CommandCenterPanel({ project }: CommandCenterPanelProps) {
+  const userId = await getCurrentUserId();
+  const showOpsNav = userId ? await isGameAdmin(userId) : false;
   const stageConfig = getStageConfig(project.currentStage);
   const tasks = await listTasks();
   const recommendations = await getStageRecommendations(project, tasks);
@@ -89,6 +93,12 @@ export async function CommandCenterPanel({ project }: CommandCenterPanelProps) {
               { href: "/tasks", label: "任务大厅" },
               { href: "/ops/project-overview", label: "项目总控" },
               { href: "/profile", label: "角色状态" },
+              ...(showOpsNav
+                ? [
+                    { href: "/ops/content-orchestration", label: "项目主线编排" },
+                    { href: "/ops/content-studio", label: "内容编排台" },
+                  ]
+                : []),
             ].map((link) => (
               <Link
                 key={link.href}

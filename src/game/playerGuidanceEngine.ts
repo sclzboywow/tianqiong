@@ -1,11 +1,10 @@
 import type { ProjectState } from "@prisma/client";
 import type { Task } from "@prisma/client";
+import { CONSTRUCTION_PROJECT_LOCATION_ACTIONS } from "@/data/constructionProjectLocationActions";
 import {
-  CHAPTER1_LOCATION_ACTIONS,
-  CHAPTER1_NAME,
-  CHAPTER1_TASK_SLUGS,
-  CHAPTER1_TASK_TEMPLATES,
-} from "@/data/chapter1Content";
+  CONSTRUCTION_MAINLINE_TASK_SLUGS,
+  CONSTRUCTION_PROJECT_MAINLINE_TASKS,
+} from "@/data/constructionProjectMainlineTasks";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import { MAP_LOCATIONS } from "@/data/locations";
 import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
@@ -65,9 +64,10 @@ export type PendingTaskItem = {
   urgency?: "高" | "中" | "低";
 };
 
-const MAINLINE_TEMPLATE_IDS = new Set(
-  STAGE_TASK_TEMPLATES.filter((t) => t.category === "mainline").map((t) => t.slug),
-);
+const MAINLINE_TEMPLATE_IDS = new Set([
+  ...STAGE_TASK_TEMPLATES.filter((t) => t.category === "mainline").map((t) => t.slug),
+  ...CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter((t) => t.category === "mainline").map((t) => t.slug),
+]);
 
 const INITIATION_CHAPTER_GOALS: Array<{
   key: string;
@@ -78,35 +78,40 @@ const INITIATION_CHAPTER_GOALS: Array<{
 }> = [
   {
     key: "projectOrgDone",
-    label: "项目组织架构",
+    label: "建设需求确认",
     milestone: "projectOrgDone",
-    taskSlug: "setup_project_team",
+    taskSlug: "confirm_project_need",
     locationId: "owner_project_management_dept",
   },
   {
     key: "masterPlanDone",
-    label: "总控计划",
+    label: "项目启动会",
     milestone: "masterPlanDone",
-    taskSlug: "prepare_master_plan",
-    locationId: "owner_project_management_dept",
+    taskSlug: "hold_project_kickoff_meeting",
+    locationId: "project_meeting_room",
   },
   {
     key: "riskRegisterDone",
-    label: "风险清单",
+    label: "总控计划与风险台账",
     milestone: "riskRegisterDone",
-    taskSlug: "create_risk_register",
+    taskSlug: "prepare_master_control_plan",
     locationId: "owner_project_management_dept",
   },
   {
     key: "documentLedgerDone",
     label: "资料台账",
     milestone: "documentLedgerDone",
-    taskSlug: "create_document_ledger",
+    taskSlug: "prepare_master_control_plan",
     locationId: "owner_archive_room",
   },
 ];
 
 const INITIATION_GUIDANCE = INITIATION_CHAPTER_GOALS;
+
+const INITIATION_TASK_PRIORITY = CONSTRUCTION_MAINLINE_TASK_SLUGS.filter((slug) => {
+  const task = CONSTRUCTION_PROJECT_MAINLINE_TASKS.find((t) => t.slug === slug);
+  return task?.stage === "INITIATION";
+});
 
 function getLocationName(locationId: string): string {
   return MAP_LOCATIONS.find((loc) => loc.id === locationId)?.name || "相关地点";
@@ -114,13 +119,13 @@ function getLocationName(locationId: string): string {
 
 function getTaskTitle(taskSlug: string): string {
   const template =
-    STAGE_TASK_TEMPLATES.find((t) => t.slug === taskSlug) ||
-    CHAPTER1_TASK_TEMPLATES.find((t) => t.slug === taskSlug);
+    CONSTRUCTION_PROJECT_MAINLINE_TASKS.find((t) => t.slug === taskSlug) ||
+    STAGE_TASK_TEMPLATES.find((t) => t.slug === taskSlug);
   return template?.title || taskSlug;
 }
 
 function findActionLabel(locationId: string, taskSlug: string): string | undefined {
-  const actions = [...CHAPTER1_LOCATION_ACTIONS, ...LOCATION_ACTIONS];
+  const actions = [...CONSTRUCTION_PROJECT_LOCATION_ACTIONS, ...LOCATION_ACTIONS];
   const action = actions.find(
     (item) =>
       item.locationId === locationId &&
@@ -146,17 +151,7 @@ function resolveTaskLocationContext(taskSlug: string): {
     }
   }
 
-  for (const action of CHAPTER1_LOCATION_ACTIONS) {
-    if ((action.triggerTaskSlugs || []).includes(taskSlug)) {
-      return {
-        locationId: action.locationId,
-        locationName: getLocationName(action.locationId),
-        actionLabel: action.label,
-      };
-    }
-  }
-
-  for (const action of LOCATION_ACTIONS) {
+  for (const action of [...CONSTRUCTION_PROJECT_LOCATION_ACTIONS, ...LOCATION_ACTIONS]) {
     if ((action.triggerTaskSlugs || []).includes(taskSlug)) {
       return {
         locationId: action.locationId,
@@ -177,10 +172,10 @@ function isActiveMainlineTask(task: Task): boolean {
 }
 
 function sortActiveMainlineTasks(tasks: Task[]): Task[] {
-  const priority = CHAPTER1_TASK_SLUGS as readonly string[];
+  const priority = INITIATION_TASK_PRIORITY as readonly string[];
   return [...tasks].sort((a, b) => {
-    const aOrder = priority.indexOf(a.templateId as (typeof priority)[number]);
-    const bOrder = priority.indexOf(b.templateId as (typeof priority)[number]);
+    const aOrder = priority.indexOf(a.templateId);
+    const bOrder = priority.indexOf(b.templateId);
     const aRank = aOrder === -1 ? 999 : aOrder;
     const bRank = bOrder === -1 ? 999 : bOrder;
     if (aRank !== bRank) return aRank - bRank;
@@ -247,7 +242,7 @@ export function getNextRecommendedAction(
           headline: "下一步推荐行动",
           description: `前往「${locationName}」执行「${actionLabel || taskTitle}」，生成相关任务。`,
           href: `/locations/${item.locationId}`,
-          reason: `章节目标「${MILESTONE_LABELS[item.milestone] || item.label}」尚未完成，需先在对应地点执行行动并触发任务。`,
+          reason: `阶段目标「${MILESTONE_LABELS[item.milestone] || item.label}」尚未完成，需先在对应地点执行行动并触发任务。`,
           priority: 80,
           locationId: item.locationId,
           locationName,
@@ -270,19 +265,10 @@ export function getNextRecommendedAction(
 }
 
 export function getChapterInfo(project: ProjectState): ChapterInfo {
-  const stage = normalizeStageId(project.currentStage) as ProjectStageId;
-  if (stage === "INITIATION") {
-    return {
-      chapterName: CHAPTER1_NAME,
-      chapterSubtitle: "第一章 · 总控计划与风险清单",
-      stageGoal: "建立项目组织架构、编制总控计划、建立风险登记台账与资料台账，推进至前期报批。",
-    };
-  }
-
   const stageConfig = getStageConfig(project.currentStage);
   return {
-    chapterName: stageConfig?.name || CHAPTER1_NAME,
-    chapterSubtitle: stageConfig?.name || CHAPTER1_NAME,
+    chapterName: stageConfig?.name || "建设项目",
+    chapterSubtitle: stageConfig?.name || project.currentStage,
     stageGoal: stageConfig?.description || "",
   };
 }
@@ -339,19 +325,7 @@ export function getChapterGoalItems(project: ProjectState, tasks: Task[]): Chapt
 }
 
 export function getChapterMilestoneItems(project: ProjectState): ChapterMilestoneItem[] {
-  const stageInfo = getStageDisplayInfo(project);
-  const items = [...stageInfo.milestoneItems];
-
-  if (normalizeStageId(project.currentStage) === "INITIATION") {
-    const milestones = parseMilestones(project);
-    items.push({
-      key: "firstCoordinationMeetingDone",
-      label: MILESTONE_LABELS.firstCoordinationMeetingDone || "首次项目协调会完成",
-      done: !!milestones.firstCoordinationMeetingDone,
-    });
-  }
-
-  return items;
+  return getStageDisplayInfo(project).milestoneItems;
 }
 
 export function getPendingTaskGroups(tasks: Task[]): PendingTaskGroup {

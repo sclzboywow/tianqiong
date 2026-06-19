@@ -5,7 +5,7 @@
 import { prisma } from "../src/prisma/client";
 import { sealData } from "iron-session";
 import { CONSTRUCTION_MAINLINE_TASK_SLUGS } from "../src/data/constructionProjectMainlineTasks";
-import { CHAPTER1_TASK_SLUGS } from "../src/data/chapter1Content";
+import { LEGACY_CHAPTER1_TASK_SLUGS } from "../src/data/legacyChapter1Slugs";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 const COOKIE_NAME = "tianqiong_session";
@@ -66,7 +66,7 @@ async function main() {
   {
     const { status, data } = await request("/api/tasks", { cookie });
     const tasks = (data.tasks as { templateId?: string }[]) || [];
-    const legacy = CHAPTER1_TASK_SLUGS.filter((slug) =>
+    const legacy = LEGACY_CHAPTER1_TASK_SLUGS.filter((slug) =>
       tasks.some((t) => t.templateId === slug),
     );
     const ok = status === 200 && legacy.length === 0;

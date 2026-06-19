@@ -6,7 +6,12 @@ import { createClient } from "@libsql/client";
 import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "../src/data/constructionProjectMainlineTasks";
 import { CONSTRUCTION_PROJECT_EVENTS } from "../src/data/constructionProjectEvents";
 import { CONSTRUCTION_PROJECT_LOCATION_ACTIONS } from "../src/data/constructionProjectLocationActions";
-import { CHAPTER1_EVENTS } from "../src/data/chapter1Content";
+import {
+  LEGACY_CHAPTER1_EVENT_SLUGS,
+  LEGACY_CHAPTER1_LOCATION_ACTION_SLUGS,
+  LEGACY_CHAPTER1_STORY_ENTRY_SLUGS,
+  LEGACY_CHAPTER1_TASK_SLUGS,
+} from "../src/data/legacyChapter1Slugs";
 import { ARTIFACT_DEFINITIONS } from "../src/data/artifactDefinitions";
 
 const INK_FILES = [
@@ -56,7 +61,6 @@ async function main() {
     (t) => t.category === "correction",
   ).map((t) => t.slug);
   const eventSlugs = CONSTRUCTION_PROJECT_EVENTS.map((e) => String(e.slug)).filter(Boolean);
-  const chapter1Slugs = CHAPTER1_EVENTS.map((e) => String(e.slug)).filter(Boolean);
   const actionIds = CONSTRUCTION_PROJECT_LOCATION_ACTIONS.map((a) => a.id);
 
   const artifactCount = await countTable(client, "artifact_definitions");
@@ -70,8 +74,8 @@ async function main() {
   const taskCount = taskSlugs.size;
   checks.push({
     name: "task-templates.total",
-    ok: taskCount >= 75,
-    detail: `${taskCount} (期望 ≥ 75)`,
+    ok: taskCount >= 70,
+    detail: `${taskCount} (期望 ≥ 70)`,
   });
   checks.push({
     name: "task-templates.mainline",
@@ -84,6 +88,13 @@ async function main() {
     detail: `6 补正，缺失: ${missingSlugs(correctionSlugs, taskSlugs).join(", ") || "无"}`,
   });
 
+  const legacyInTasks = LEGACY_CHAPTER1_TASK_SLUGS.filter((slug) => taskSlugs.has(slug));
+  checks.push({
+    name: "legacy-chapter1.tasks-absent",
+    ok: legacyInTasks.length === 0,
+    detail: legacyInTasks.length ? `仍含: ${legacyInTasks.join(", ")}` : "无旧任务",
+  });
+
   const eventSlugsDb = await slugsWhere(client, "event_templates");
   checks.push({
     name: "event-templates.construction",
@@ -91,20 +102,12 @@ async function main() {
     detail: `6 建设事件，缺失: ${missingSlugs(eventSlugs, eventSlugsDb).join(", ") || "无"}`,
   });
 
-  for (const slug of chapter1Slugs) {
-    const r = await client.execute({
-      sql: "SELECT enabled, category FROM event_templates WHERE slug = ?",
-      args: [slug],
-    });
-    const row = r.rows[0];
-    checks.push({
-      name: `chapter1.${slug}`,
-      ok: row != null && Number(row.enabled) === 0 && row.category === "legacy",
-      detail: row
-        ? `enabled=${row.enabled}, category=${row.category}`
-        : "未找到",
-    });
-  }
+  const legacyInEvents = LEGACY_CHAPTER1_EVENT_SLUGS.filter((slug) => eventSlugsDb.has(slug));
+  checks.push({
+    name: "legacy-chapter1.events-absent",
+    ok: legacyInEvents.length === 0,
+    detail: legacyInEvents.length ? `仍含: ${legacyInEvents.join(", ")}` : "无旧事件",
+  });
 
   for (const slug of eventSlugs) {
     const r = await client.execute({
@@ -126,6 +129,23 @@ async function main() {
     detail: `${actionIds.length} 建设行动，缺失: ${missingSlugs(actionIds, actionSlugs).join(", ") || "无"}`,
   });
 
+  const legacyInActions = LEGACY_CHAPTER1_LOCATION_ACTION_SLUGS.filter((slug) =>
+    actionSlugs.has(slug),
+  );
+  checks.push({
+    name: "legacy-chapter1.actions-absent",
+    ok: legacyInActions.length === 0,
+    detail: legacyInActions.length ? `仍含: ${legacyInActions.join(", ")}` : "无旧地点行动",
+  });
+
+  const storySlugs = await slugsWhere(client, "story_entries");
+  const legacyInStories = LEGACY_CHAPTER1_STORY_ENTRY_SLUGS.filter((slug) => storySlugs.has(slug));
+  checks.push({
+    name: "legacy-chapter1.stories-absent",
+    ok: legacyInStories.length === 0,
+    detail: legacyInStories.length ? `仍含: ${legacyInStories.join(", ")}` : "无旧 StoryEntry",
+  });
+
   const mapCount = await countTable(client, "map_locations");
   checks.push({
     name: "map-locations",
@@ -133,11 +153,10 @@ async function main() {
     detail: `${mapCount} (期望 ≥ 26)`,
   });
 
-  const inkFiles = INK_FILES;
-  const inkPlaceholders = inkFiles.map(() => "?").join(", ");
+  const inkPlaceholders = INK_FILES.map(() => "?").join(", ");
   const inkResult = await client.execute({
     sql: `SELECT COUNT(DISTINCT ink_file) as c FROM story_entries WHERE ink_file IN (${inkPlaceholders})`,
-    args: inkFiles,
+    args: INK_FILES,
   });
   const inkCount = Number(inkResult.rows[0]?.c ?? 0);
   checks.push({

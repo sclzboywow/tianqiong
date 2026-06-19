@@ -21,10 +21,10 @@ export type NpcTaskActionDefinition = {
 };
 
 export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
-  // —— 组织第一次综合协调会 ——
+  // —— 召开项目启动会 ——
   {
     id: "coord_contact_primary",
-    taskSlug: "coordinate_first_meeting",
+    taskSlug: "hold_project_kickoff_meeting",
     locationId: "project_meeting_room",
     type: "contact_npc",
     label: "联络业主项目负责人",
@@ -34,7 +34,7 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   },
   {
     id: "coord_confirm_attendees",
-    taskSlug: "coordinate_first_meeting",
+    taskSlug: "hold_project_kickoff_meeting",
     locationId: "project_meeting_room",
     type: "complete_step",
     label: "确认参会名单",
@@ -44,7 +44,7 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   },
   {
     id: "coord_send_notice",
-    taskSlug: "coordinate_first_meeting",
+    taskSlug: "hold_project_kickoff_meeting",
     locationId: "project_meeting_room",
     type: "complete_step",
     label: "发送会议通知",
@@ -54,14 +54,14 @@ export const NPC_TASK_ACTIONS: NpcTaskActionDefinition[] = [
   },
   {
     id: "coord_hold_meeting",
-    taskSlug: "coordinate_first_meeting",
+    taskSlug: "hold_project_kickoff_meeting",
     locationId: "project_meeting_room",
     type: "hold_meeting",
-    label: "召开第一次协调会",
+    label: "召开项目启动会",
     sortOrder: 4,
     dependsOnActionIds: ["coord_send_notice"],
     requiresCanProgress: true,
-    successLog: "第一次综合协调会已召开，可前往任务页继续推进。",
+    successLog: "项目启动会已召开，可前往任务页继续推进。",
   },
 
   // —— 闭合图纸会审问题 · 设计院 ——

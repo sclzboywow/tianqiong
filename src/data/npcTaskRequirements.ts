@@ -15,8 +15,8 @@ export type NpcTaskRequirement = {
 
 export const NPC_TASK_REQUIREMENTS: NpcTaskRequirement[] = [
   {
-    taskSlug: "coordinate_first_meeting",
-    taskTitle: "组织第一次综合协调会",
+    taskSlug: "hold_project_kickoff_meeting",
+    taskTitle: "召开项目启动会",
     locationId: "project_meeting_room",
     primaryNpcId: "owner_project_director",
     supportNpcIds: [

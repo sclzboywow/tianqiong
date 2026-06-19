@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppSiteHeader } from "@/components/AppSiteHeader";
 import { ContentStudioPanel } from "@/components/ContentStudioPanel";
 import { buildContentHealthCheckFromStudioData } from "@/game/contentHealthCheck";
 import { loadContentStudioData } from "@/game/contentStudioLoader";
@@ -31,7 +31,7 @@ export default async function ContentStudioPage({ searchParams }: ContentStudioP
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <SiteHeader />
+      <AppSiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-6">
         <ContentStudioPanel
           data={data}

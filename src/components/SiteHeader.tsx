@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PLAYER_NAV_ITEMS } from "@/components/player/playerNavConfig";
+import { PLAYER_NAV_ITEMS, type PlayerNavItem } from "@/components/player/playerNavConfig";
 
 const EXTRA_NAV = [{ href: "/daily-report", label: "日志" }];
 
-export function SiteHeader() {
-  const navItems = [...PLAYER_NAV_ITEMS, ...EXTRA_NAV];
+type SiteHeaderProps = {
+  extraNavItems?: PlayerNavItem[];
+};
+
+export function SiteHeader({ extraNavItems = [] }: SiteHeaderProps) {
+  const navItems = [...PLAYER_NAV_ITEMS, ...EXTRA_NAV, ...extraNavItems];
 
   return (
     <header className="sticky top-0 z-50 border-b border-[rgba(60,160,255,0.18)] bg-[#050B14]/95 backdrop-blur">

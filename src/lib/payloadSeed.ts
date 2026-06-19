@@ -8,7 +8,6 @@ import { ACHIEVEMENTS } from "@/data/achievements";
 import { MAP_LOCATIONS } from "@/data/locations";
 import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
-import { CHAPTER1_EVENTS } from "@/data/chapter1Content";
 import { CONSTRUCTION_PROJECT_EVENTS } from "@/data/constructionProjectEvents";
 import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
 import type { TaskTemplateData, EventTemplateData, ArtifactDefinitionData } from "@/game/types";
@@ -27,7 +26,7 @@ import {
   inferTaskCategory,
 } from "@/payload/contentCategories";
 
-/** chapter1 + 旧 STAGE_TASK_TEMPLATES：不自动生成可触发事件，避免空 location 约束下漏回事件池 */
+/** 旧 STAGE_TASK_TEMPLATES：不自动生成可触发事件，避免空 location 约束下漏回事件池 */
 const LEGACY_AUTO_EVENT_TASK_SLUGS = new Set(
   STAGE_TASK_TEMPLATES.map((template) => template.slug),
 );
@@ -443,23 +442,6 @@ export async function seedPayloadCollections(
       () => payload.create({ collection: "event-templates", data }),
       () => payload.update({ collection: "event-templates", id: doc.id, data }),
     );
-  }
-
-  for (const event of CHAPTER1_EVENTS) {
-    if (!event.slug) continue;
-    const data = buildManualEventPayloadData(event, { forceDisabled: true });
-    const existing = await payload.find({
-      collection: "event-templates",
-      where: { slug: { equals: event.slug } },
-    });
-    const doc = existing.docs[0];
-    if (doc) {
-      await payload.update({ collection: "event-templates", id: doc.id, data });
-      stats.eventTemplates.updated++;
-    } else {
-      await payload.create({ collection: "event-templates", data });
-      stats.eventTemplates.created++;
-    }
   }
 
   for (const event of CONSTRUCTION_PROJECT_EVENTS) {

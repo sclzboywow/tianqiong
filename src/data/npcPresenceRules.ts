@@ -44,13 +44,13 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "owner_gm_office",
         reason: "重大节点汇报",
-        taskSlugs: ["prepare_master_plan"],
+        taskSlugs: ["prepare_master_control_plan"],
         priority: 1,
       },
       {
         locationId: "project_meeting_room",
         reason: "现场协调会",
-        taskSlugs: ["coordinate_first_meeting", "organize_drawing_review"],
+        taskSlugs: ["hold_project_kickoff_meeting", "organize_drawing_review"],
         priority: 2,
       },
     ],
@@ -65,7 +65,7 @@ export const NPC_PRESENCE_RULES: NpcPresenceRule[] = [
       {
         locationId: "project_meeting_room",
         reason: "参加综合协调会",
-        taskSlugs: ["coordinate_first_meeting", "opening_joint_inspection"],
+        taskSlugs: ["hold_project_kickoff_meeting", "opening_joint_inspection"],
         priority: 1,
       },
     ],

@@ -22,3 +22,5 @@ export async function requireOpsDebugAccess() {
 
   return { userId };
 }
+
+export const requireOpsAccess = requireOpsDebugAccess;

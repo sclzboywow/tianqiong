@@ -1,0 +1,26 @@
+import { redirect } from "next/navigation";
+import { AppSiteHeader } from "@/components/AppSiteHeader";
+import { ContentOrchestrationPanel } from "@/components/ops/ContentOrchestrationPanel";
+import { buildContentHealthCheckFromStudioData } from "@/game/contentHealthCheck";
+import { loadContentOrchestrationData } from "@/game/contentOrchestrationLoader";
+import { requireOpsAccess } from "@/lib/opsDebugAccess";
+
+export default async function ContentOrchestrationPage() {
+  const access = await requireOpsAccess();
+  if (access.error) {
+    if (access.error.status === 401) redirect("/register");
+    redirect("/project");
+  }
+
+  const data = await loadContentOrchestrationData();
+  const healthReport = buildContentHealthCheckFromStudioData(data.studio);
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <AppSiteHeader />
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        <ContentOrchestrationPanel data={data} healthReport={healthReport} />
+      </main>
+    </div>
+  );
+}
