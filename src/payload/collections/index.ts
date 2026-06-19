@@ -107,6 +107,42 @@ const ACHIEVEMENT_CONDITION_OPTIONS = [
   { label: "指标阈值", value: "metric_threshold" },
 ];
 
+const ARTIFACT_TYPE_OPTIONS = [
+  { label: "文档", value: "document" },
+  { label: "交付物", value: "deliverable" },
+  { label: "许可", value: "permit" },
+  { label: "报告", value: "report" },
+  { label: "决策", value: "decision" },
+  { label: "资产", value: "asset" },
+];
+
+const TASK_BLOCK_POLICY_OPTIONS = [
+  { label: "硬阻塞（依赖不满足不可生成）", value: "hard_block" },
+  { label: "仅警告（仍允许生成）", value: "warn_only" },
+];
+
+const EVENT_TASK_EFFECT_OPTIONS = [
+  { label: "生成任务", value: "spawn" },
+  { label: "完成任务", value: "complete" },
+  { label: "任务失败", value: "fail" },
+];
+
+function artifactRequirementFields() {
+  return [
+    { name: "artifactSlug", type: "text" as const, label: "成果物 slug", required: true },
+    { name: "minStatus", type: "text" as const, label: "最低状态", admin: { description: "留空则使用成果物 defaultStatus" } },
+    { name: "quantity", type: "number" as const, label: "数量", min: 1, defaultValue: 1 },
+  ];
+}
+
+function artifactEffectFields() {
+  return [
+    { name: "artifactSlug", type: "text" as const, label: "成果物 slug", required: true },
+    { name: "status", type: "text" as const, label: "目标状态", required: true },
+    { name: "versionBump", type: "checkbox" as const, label: "版本递增", defaultValue: false },
+  ];
+}
+
 function metricEffectRowFields() {
   return [
     {
@@ -178,6 +214,94 @@ function unlockContentFields() {
     },
   ];
 }
+
+export const ArtifactDefinitions: CollectionConfig = {
+  slug: "artifact-definitions",
+  labels: { singular: "项目成果物", plural: "项目成果物" },
+  admin: {
+    useAsTitle: "name",
+    group: "玩法内容",
+    defaultColumns: ["name", "slug", "artifactType", "stage", "defaultStatus", "enabled"],
+    listSearchableFields: ["name", "slug", "artifactType", "stage", "description"],
+    description: "项目成果物定义：任务 input/output 与运行时 ProjectArtifact 状态引用此表。",
+  },
+  fields: [
+    { name: "slug", type: "text", label: "标识", required: true, unique: true },
+    { name: "name", type: "text", label: "名称", required: true },
+    {
+      name: "artifactType",
+      type: "select",
+      label: "成果物类型",
+      required: true,
+      options: ARTIFACT_TYPE_OPTIONS,
+      defaultValue: "document",
+    },
+    {
+      name: "stage",
+      type: "select",
+      label: "建设阶段",
+      options: BUILD_STAGE_OPTIONS,
+    },
+    { name: "description", type: "textarea", label: "说明" },
+    {
+      name: "reusable",
+      type: "checkbox",
+      label: "可重复使用",
+      defaultValue: false,
+      admin: { description: "同一赛季内是否允许多次产出同一成果物。" },
+    },
+    {
+      name: "versioned",
+      type: "checkbox",
+      label: "版本化",
+      defaultValue: true,
+    },
+    {
+      name: "expires",
+      type: "number",
+      label: "过期天数",
+      defaultValue: 0,
+      min: 0,
+      admin: { description: "0 表示不过期。" },
+    },
+    {
+      name: "defaultStatus",
+      type: "text",
+      label: "默认状态",
+      defaultValue: "draft",
+      required: true,
+    },
+    {
+      name: "allowedStatuses",
+      type: "array",
+      label: "允许状态",
+      admin: { description: "按顺序排列，用于比较 minStatus 等级。" },
+      fields: [
+        { name: "status", type: "text", label: "状态值", required: true },
+        { name: "label", type: "text", label: "显示名称" },
+      ],
+    },
+    {
+      name: "sourceNpcNames",
+      type: "array",
+      label: "来源 NPC",
+      fields: [{ name: "name", type: "text", label: "NPC 名称" }],
+    },
+    {
+      name: "sourceLocationSlugs",
+      type: "array",
+      label: "来源地点",
+      fields: [{ name: "slug", type: "text", label: "地点 slug" }],
+    },
+    {
+      name: "tags",
+      type: "array",
+      label: "标签",
+      fields: [{ name: "tag", type: "text", label: "标签" }],
+    },
+    { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
+  ],
+};
 
 export const Npcs: CollectionConfig = {
   slug: "npcs",
@@ -683,6 +807,33 @@ export const EventTemplates: CollectionConfig = {
     },
     { name: "resultText", type: "textarea", label: "成功触发文案" },
     { name: "noTaskText", type: "textarea", label: "无新任务文案" },
+    {
+      name: "artifactEffects",
+      type: "array",
+      label: "成果物效果",
+      fields: artifactEffectFields(),
+    },
+    {
+      name: "taskEffects",
+      type: "array",
+      label: "任务效果",
+      fields: [
+        {
+          name: "action",
+          type: "select",
+          label: "动作",
+          options: EVENT_TASK_EFFECT_OPTIONS,
+          required: true,
+        },
+        { name: "taskSlug", type: "text", label: "任务 slug", required: true },
+      ],
+    },
+    {
+      name: "metricEffectsList",
+      type: "array",
+      label: "指标效果",
+      fields: metricEffectRowFields(),
+    },
     { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
   ],
 };
@@ -835,6 +986,46 @@ export const TaskTemplates: CollectionConfig = {
     { name: "inkFile", type: "text", label: "Ink 文件", required: true },
     { name: "baseSuccessRate", type: "number", label: "基础成功率", defaultValue: 60 },
     { name: "triggerBroadcast", type: "checkbox", label: "触发广播", defaultValue: false },
+    {
+      name: "inputArtifacts",
+      type: "array",
+      label: "输入成果物",
+      admin: { description: "生成任务前需满足的成果物条件。" },
+      fields: artifactRequirementFields(),
+    },
+    {
+      name: "outputArtifacts",
+      type: "array",
+      label: "产出成果物",
+      admin: { description: "任务成功后写入 ProjectArtifact。" },
+      fields: artifactEffectFields(),
+    },
+    {
+      name: "prerequisiteTaskSlugs",
+      type: "array",
+      label: "前置任务",
+      fields: [{ name: "slug", type: "text", label: "任务 slug" }],
+    },
+    {
+      name: "requiredMilestones",
+      type: "array",
+      label: "前置关键节点",
+      fields: [
+        {
+          name: "milestone",
+          type: "select",
+          label: "关键节点",
+          options: MILESTONE_OPTIONS,
+        },
+      ],
+    },
+    {
+      name: "blockPolicy",
+      type: "select",
+      label: "阻塞策略",
+      options: TASK_BLOCK_POLICY_OPTIONS,
+      defaultValue: "hard_block",
+    },
     { name: "enabled", type: "checkbox", label: "启用", defaultValue: true },
   ],
 };

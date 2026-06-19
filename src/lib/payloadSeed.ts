@@ -1,5 +1,6 @@
 import type { Payload } from "payload";
 import { TASK_TEMPLATES } from "@/data/taskTemplates";
+import { ARTIFACT_DEFINITIONS } from "@/data/artifactDefinitions";
 import { AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
 import { NPC_PROFILES } from "@/data/npcProfiles";
 import { buildNpcProfilePayloadData } from "@/lib/npcProfilePayload";
@@ -8,7 +9,7 @@ import { MAP_LOCATIONS } from "@/data/locations";
 import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import { CHAPTER1_EVENTS } from "@/data/chapter1Content";
-import type { TaskTemplateData, EventTemplateData } from "@/game/types";
+import type { TaskTemplateData, EventTemplateData, ArtifactDefinitionData } from "@/game/types";
 import {
   choiceEffectsToRows,
   metricEffectsToRows,
@@ -34,6 +35,7 @@ export type PayloadSeedStats = {
   npcs: CollectionSeedStats;
   areas: CollectionSeedStats;
   storyEntries: CollectionSeedStats;
+  artifactDefinitions: CollectionSeedStats;
   taskTemplates: CollectionSeedStats;
   eventTemplates: CollectionSeedStats;
   items: CollectionSeedStats;
@@ -56,6 +58,7 @@ function emptySeedStats(): PayloadSeedStats {
     npcs: emptyCollectionStats(),
     areas: emptyCollectionStats(),
     storyEntries: emptyCollectionStats(),
+    artifactDefinitions: emptyCollectionStats(),
     taskTemplates: emptyCollectionStats(),
     eventTemplates: emptyCollectionStats(),
     items: emptyCollectionStats(),
@@ -84,6 +87,28 @@ async function applySeedRecord(
     return;
   }
   stats.skipped++;
+}
+
+function buildArtifactDefinitionPayloadData(definition: ArtifactDefinitionData) {
+  return {
+    slug: definition.slug,
+    name: definition.name,
+    artifactType: definition.artifactType,
+    stage: definition.stage,
+    description: definition.description,
+    reusable: definition.reusable ?? false,
+    versioned: definition.versioned ?? true,
+    expires: definition.expires ?? 0,
+    defaultStatus: definition.defaultStatus || "draft",
+    allowedStatuses: (definition.allowedStatuses || []).map((item) => ({
+      status: item.status,
+      label: item.label,
+    })),
+    sourceNpcNames: (definition.sourceNpcNames || []).map((name) => ({ name })),
+    sourceLocationSlugs: (definition.sourceLocationSlugs || []).map((slug) => ({ slug })),
+    tags: (definition.tags || []).map((tag) => ({ tag })),
+    enabled: definition.enabled ?? true,
+  };
 }
 
 function buildTaskTemplatePayloadData(template: TaskTemplateData) {
@@ -119,6 +144,19 @@ function buildTaskTemplatePayloadData(template: TaskTemplateData) {
     inkFile: template.inkFile,
     baseSuccessRate: template.baseSuccessRate || 60,
     triggerBroadcast: template.triggerBroadcast || false,
+    inputArtifacts: (template.inputArtifacts || []).map((item) => ({
+      artifactSlug: item.artifactSlug,
+      minStatus: item.minStatus,
+      quantity: item.quantity ?? 1,
+    })),
+    outputArtifacts: (template.outputArtifacts || []).map((item) => ({
+      artifactSlug: item.artifactSlug,
+      status: item.status,
+      versionBump: item.versionBump ?? false,
+    })),
+    prerequisiteTaskSlugs: (template.prerequisiteTaskSlugs || []).map((slug) => ({ slug })),
+    requiredMilestones: (template.requiredMilestones || []).map((milestone) => ({ milestone })),
+    blockPolicy: template.blockPolicy || "hard_block",
     enabled: true,
   };
 }
@@ -220,6 +258,18 @@ function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
     onceOnly: event.onceOnly ?? false,
     cooldownDays: event.cooldownDays ?? 0,
     enabled: event.enabled ?? true,
+    artifactEffects: (event.artifactEffects || []).map((item) => ({
+      artifactSlug: item.artifactSlug,
+      status: item.status,
+      versionBump: item.versionBump ?? false,
+    })),
+    taskEffects: (event.taskEffects || []).map((item) => ({
+      action: item.action,
+      taskSlug: item.taskSlug,
+    })),
+    metricEffectsList: event.metricEffects
+      ? metricEffectsToRows(event.metricEffects)
+      : [],
   };
 }
 
@@ -291,6 +341,22 @@ export async function seedPayloadCollections(
       Boolean(doc),
       () => payload.create({ collection: "areas", data }),
       () => payload.update({ collection: "areas", id: doc.id, data }),
+    );
+  }
+
+  for (const definition of ARTIFACT_DEFINITIONS) {
+    const data = buildArtifactDefinitionPayloadData(definition);
+    const existing = await payload.find({
+      collection: "artifact-definitions",
+      where: { slug: { equals: definition.slug } },
+    });
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.artifactDefinitions,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "artifact-definitions", data }),
+      () => payload.update({ collection: "artifact-definitions", id: doc.id, data }),
     );
   }
 

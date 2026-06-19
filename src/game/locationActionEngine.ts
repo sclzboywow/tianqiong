@@ -11,6 +11,7 @@ import { triggerEventForLocationAction, type EventTriggerResult } from "./eventP
 export type LocationActionExecuteResult = {
   createdTasks: Task[];
   skippedTasks: { slug: string; title: string; reason: string }[];
+  blockedTasks: { slug: string; title: string; reasons: string[] }[];
   message: string;
   eventResult?: EventTriggerResult;
 };
@@ -117,6 +118,7 @@ export async function executeLocationAction(
 
   const createdTasks: Task[] = [];
   const skippedTasks: LocationActionExecuteResult["skippedTasks"] = [];
+  const blockedTasks: LocationActionExecuteResult["blockedTasks"] = [];
 
   for (const slug of action.triggerTaskSlugs || []) {
     const result = await createTaskFromTemplateSlug(slug);
@@ -124,9 +126,15 @@ export async function executeLocationAction(
       skippedTasks.push({ slug, title: slug, reason: "任务模板不存在" });
       continue;
     }
-    if (result.created) {
+    if (result.created && result.task) {
       createdTasks.push(result.task);
-    } else {
+    } else if (result.skipReason === "dependency_blocked") {
+      blockedTasks.push({
+        slug,
+        title: result.templateTitle || result.task?.title || slug,
+        reasons: result.dependencyReasons || ["依赖条件未满足"],
+      });
+    } else if (result.task) {
       skippedTasks.push({
         slug,
         title: result.task.title,
@@ -159,6 +167,11 @@ export async function executeLocationAction(
       staminaCost,
       spiritCost,
     );
+  } else if (blockedTasks.length > 0) {
+    const reasonText = blockedTasks
+      .map((item) => `「${item.title}」：${item.reasons.join("；")}`)
+      .join("；");
+    message = `以下任务因依赖未满足未能生成：${reasonText}`;
   } else if (skippedTasks.length > 0) {
     message =
       action.noTaskText?.trim() || "相关任务已存在，未重复生成，也未消耗体力/精神";
@@ -184,6 +197,7 @@ export async function executeLocationAction(
       actionId: action.id,
       createdCount: createdTasks.length,
       skippedCount: skippedTasks.length,
+      blockedCount: blockedTasks.length,
       staminaDeducted,
       spiritDeducted,
       message,
@@ -214,5 +228,5 @@ export async function executeLocationAction(
     }
   }
 
-  return { createdTasks, skippedTasks, message, eventResult };
+  return { createdTasks, skippedTasks, blockedTasks, message, eventResult };
 }

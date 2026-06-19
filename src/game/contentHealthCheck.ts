@@ -114,6 +114,9 @@ export type ContentHealthCheckData = {
     failMetricEffects: MetricEffectRow[];
     milestoneEffectList: MilestoneEffectRow[];
     choiceEffectList: ChoiceEffectRow[];
+    inputArtifacts?: { artifactSlug: string }[];
+    outputArtifacts?: { artifactSlug: string }[];
+    prerequisiteTaskSlugs?: string[];
   }[];
   eventTemplates: {
     slug: string;
@@ -124,6 +127,7 @@ export type ContentHealthCheckData = {
     triggerNpcNames: string[];
     triggerAreaNames: string[];
     unlockMilestones: string[];
+    artifactEffects?: { artifactSlug: string }[];
   }[];
   storyEntries: {
     slug: string;
@@ -135,6 +139,13 @@ export type ContentHealthCheckData = {
   }[];
   npcNames: string[];
   areaNames: string[];
+  artifactDefinitions?: {
+    slug: string;
+    defaultStatus: string;
+    allowedStatuses: string[];
+    sourceLocationSlugs: string[];
+    sourceNpcNames: string[];
+  }[];
 };
 
 function checkMembership(
@@ -423,6 +434,9 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
   }
   const areaNames = new Set(data.areaNames.filter(Boolean));
   const milestoneKeys = new Set(Object.keys(MILESTONE_LABELS));
+  const artifactSlugs = new Set(
+    (data.artifactDefinitions || []).map((row) => row.slug).filter(Boolean),
+  );
 
   const results: ContentHealthCheckItem[] = [];
   const warnings: ContentHealthCheckItem[] = [];
@@ -645,6 +659,102 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
         total: keyCount,
         failures,
       });
+    }
+  }
+
+  if (data.artifactDefinitions && data.artifactDefinitions.length > 0) {
+    {
+      const failures: string[] = [];
+      const slugCounts = new Map<string, number>();
+      for (const row of data.artifactDefinitions) {
+        if (!row.slug.trim()) {
+          failures.push("(unknown): slug 为空");
+          continue;
+        }
+        slugCounts.set(row.slug, (slugCounts.get(row.slug) || 0) + 1);
+      }
+      for (const [slug, count] of slugCounts) {
+        if (count > 1) failures.push(`${slug}: slug 重复 (${count} 次)`);
+      }
+      results.push({
+        name: "artifact-definitions.slug",
+        pass: failures.length === 0,
+        total: data.artifactDefinitions.length,
+        failures,
+      });
+    }
+
+    {
+      const failures: string[] = [];
+      let total = 0;
+      for (const row of data.artifactDefinitions) {
+        total++;
+        const allowed = row.allowedStatuses.length > 0 ? row.allowedStatuses : [row.defaultStatus];
+        if (!allowed.includes(row.defaultStatus)) {
+          failures.push(`${row.slug}: defaultStatus "${row.defaultStatus}" 不在 allowedStatuses 中`);
+        }
+      }
+      results.push({
+        name: "artifact-definitions.defaultStatus",
+        pass: failures.length === 0,
+        total,
+        failures,
+      });
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.artifactDefinitions) {
+        for (const slug of row.sourceLocationSlugs) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(checkMembership("artifact-definitions.sourceLocationSlugs", items, mapLocationSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.artifactDefinitions) {
+        for (const name of row.sourceNpcNames) {
+          items.push({ label: row.slug, value: name });
+        }
+      }
+      results.push(checkMembership("artifact-definitions.sourceNpcNames", items, npcNames));
+    }
+  }
+
+  if (artifactSlugs.size > 0) {
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.taskTemplates) {
+        for (const effect of row.inputArtifacts || []) {
+          items.push({ label: row.slug, value: effect.artifactSlug });
+        }
+        for (const effect of row.outputArtifacts || []) {
+          items.push({ label: row.slug, value: effect.artifactSlug });
+        }
+      }
+      results.push(checkMembership("task-templates.artifactReferences", items, artifactSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.taskTemplates) {
+        for (const slug of row.prerequisiteTaskSlugs || []) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(checkMembership("task-templates.prerequisiteTaskSlugs", items, taskTemplateSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.eventTemplates) {
+        for (const effect of row.artifactEffects || []) {
+          items.push({ label: row.slug, value: effect.artifactSlug });
+        }
+      }
+      results.push(checkMembership("event-templates.artifactEffects", items, artifactSlugs));
     }
   }
 
@@ -1265,6 +1375,9 @@ export function buildContentHealthCheckFromStudioData(
       failMetricEffects: [],
       milestoneEffectList: [],
       choiceEffectList: [],
+      inputArtifacts: template.inputArtifacts,
+      outputArtifacts: template.outputArtifacts,
+      prerequisiteTaskSlugs: template.prerequisiteTaskSlugs,
     })),
     eventTemplates: studio.eventTemplates.map((event) => ({
       slug: event.slug,
@@ -1275,6 +1388,7 @@ export function buildContentHealthCheckFromStudioData(
       triggerNpcNames: event.triggerNpcNames || [],
       triggerAreaNames: event.triggerAreaNames || [],
       unlockMilestones: event.unlockMilestones || [],
+      artifactEffects: event.artifactEffects,
     })),
     storyEntries: studio.storyEntries.map((entry) => ({
       slug: entry.slug,
@@ -1286,5 +1400,12 @@ export function buildContentHealthCheckFromStudioData(
     })),
     npcNames: studio.npcs.map((npc) => npc.name),
     areaNames: studio.areas.map((area) => area.name),
+    artifactDefinitions: studio.artifactDefinitions.map((artifact) => ({
+      slug: artifact.slug,
+      defaultStatus: artifact.defaultStatus || "draft",
+      allowedStatuses: (artifact.allowedStatuses || []).map((item) => item.status),
+      sourceLocationSlugs: artifact.sourceLocationSlugs || [],
+      sourceNpcNames: artifact.sourceNpcNames || [],
+    })),
   });
 }

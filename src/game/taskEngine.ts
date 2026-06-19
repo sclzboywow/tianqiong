@@ -16,6 +16,8 @@ import { broadcastMajorEvent } from "./broadcastEngine";
 import { checkAchievements } from "./achievementEngine";
 import { rollSuccess } from "@/utils/random";
 import type { ChoiceEffectsMap, MetricEffects, ResolutionMode, TaskTemplateData } from "./types";
+import { buildDependencyContext, evaluateTaskTemplateDependencies } from "./dependencyEngine";
+import { applyArtifactEffects } from "./artifactEngine";
 
 const SEASON_ID = process.env.SEASON_ID || "season-1";
 
@@ -467,10 +469,20 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
     if (Object.keys(milestoneEffects).length > 0) {
       await applyMilestoneEffects(milestoneEffects, SEASON_ID);
     }
+
+    const { getTaskTemplates } = await import("./contentLoader");
+    const templates = await getTaskTemplates();
+    const template = templates.find((item) => item.slug === task.templateId);
+    if (template?.outputArtifacts?.length) {
+      await applyArtifactEffects(SEASON_ID, template.outputArtifacts, {
+        sourceType: "task",
+        sourceId: task.id,
+        note: `任务「${task.title}」完成产出`,
+      });
+    }
+
     const advanceResult = await advanceStageIfReady(SEASON_ID);
     if (advanceResult.advanced) {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const templates = await getTaskTemplates();
       await spawnTasksFromTemplates(templates);
     }
   }
@@ -580,6 +592,10 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
   });
   if (existing) return existing;
 
+  const dependencyContext = await buildDependencyContext(SEASON_ID);
+  const dependency = await evaluateTaskTemplateDependencies(template, dependencyContext);
+  if (!dependency.available) return null;
+
   const project = await getProjectState();
   const resolutionMode = template.resolutionMode ?? inferResolutionMode(template.rarity);
   const minResolveCount = inferMinResolveCount(
@@ -627,7 +643,13 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
 export async function createTaskFromTemplateSlug(
   templateSlug: string,
   options?: { allowCompletedRepeat?: boolean },
-): Promise<{ task: Task; created: boolean; skipReason?: "active" | "completed" } | null> {
+): Promise<{
+  task?: Task;
+  created: boolean;
+  skipReason?: "active" | "completed" | "dependency_blocked";
+  dependencyReasons?: string[];
+  templateTitle?: string;
+} | null> {
   const { getTaskTemplates } = await import("./contentLoader");
   const templates = await getTaskTemplates();
   const template = templates.find((item) => item.slug === templateSlug);
@@ -653,7 +675,26 @@ export async function createTaskFromTemplateSlug(
     };
   }
 
+  const dependencyContext = await buildDependencyContext(SEASON_ID);
+  const dependency = await evaluateTaskTemplateDependencies(template, dependencyContext);
+  if (!dependency.available) {
+    return {
+      created: false,
+      skipReason: "dependency_blocked",
+      dependencyReasons: dependency.blockingReasons,
+      templateTitle: template.title,
+    };
+  }
+
   const task = await createTaskFromTemplate(template);
+  if (!task) {
+    return {
+      created: false,
+      skipReason: "dependency_blocked",
+      dependencyReasons: dependency.blockingReasons,
+      templateTitle: template.title,
+    };
+  }
   return { task, created: true };
 }
 
@@ -664,7 +705,8 @@ export async function spawnTasksFromTemplates(templates: TaskTemplateData[]) {
   const created = [];
   for (const template of pool) {
     if (template) {
-      created.push(await createTaskFromTemplate(template));
+      const task = await createTaskFromTemplate(template);
+      if (task) created.push(task);
     }
   }
   return created;

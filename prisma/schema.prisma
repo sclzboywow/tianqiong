@@ -184,3 +184,32 @@ model BroadcastLog {
   status        String   @default("PENDING")
   createdAt     DateTime @default(now())
 }
+
+model ProjectArtifact {
+  id           String    @id @default(cuid())
+  seasonId     String
+  artifactSlug String
+  status       String
+  version      Int       @default(1)
+  metadata     String?
+  producedAt   DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  expiresAt    DateTime?
+
+  @@unique([seasonId, artifactSlug])
+  @@index([seasonId])
+}
+
+model ProjectArtifactLog {
+  id           String   @id @default(cuid())
+  seasonId     String
+  artifactSlug String
+  fromStatus   String?
+  toStatus     String
+  sourceType   String
+  sourceId     String?
+  note         String?
+  createdAt    DateTime @default(now())
+
+  @@index([seasonId, artifactSlug])
+}

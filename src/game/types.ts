@@ -10,6 +10,91 @@ export type MetricEffects = Partial<Record<MetricKey, number>>;
 
 export type ChoiceEffectsMap = Record<string, MetricEffects>;
 
+export type ArtifactType =
+  | "document"
+  | "deliverable"
+  | "permit"
+  | "report"
+  | "decision"
+  | "asset";
+
+export type ArtifactStatusEntry = {
+  status: string;
+  label?: string;
+};
+
+export interface ArtifactDefinitionData {
+  slug: string;
+  name: string;
+  artifactType: ArtifactType;
+  stage?: ProjectStageId;
+  description?: string;
+  reusable?: boolean;
+  versioned?: boolean;
+  expires?: number;
+  defaultStatus?: string;
+  allowedStatuses?: ArtifactStatusEntry[];
+  sourceNpcNames?: string[];
+  sourceLocationSlugs?: string[];
+  tags?: string[];
+  enabled?: boolean;
+  payloadDocId?: string | number;
+}
+
+export interface ArtifactRequirement {
+  artifactSlug: string;
+  minStatus?: string;
+  quantity?: number;
+}
+
+export interface ArtifactEffect {
+  artifactSlug: string;
+  status: string;
+  versionBump?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+export type TaskBlockPolicy = "hard_block" | "warn_only";
+
+export interface ProjectArtifactRecord {
+  id: string;
+  seasonId: string;
+  artifactSlug: string;
+  status: string;
+  version: number;
+  metadata?: Record<string, unknown>;
+  producedAt: Date;
+  updatedAt: Date;
+  expiresAt?: Date | null;
+}
+
+export type MissingArtifactInfo = {
+  slug: string;
+  name: string;
+  required: string;
+  actual: string | null;
+};
+
+export interface DependencyEvaluationResult {
+  available: boolean;
+  missingArtifacts: MissingArtifactInfo[];
+  missingTasks: string[];
+  missingMilestones: string[];
+  blockingReasons: string[];
+}
+
+export interface DependencyContext {
+  seasonId: string;
+  completedTaskSlugs: string[];
+  milestones: Record<string, boolean>;
+  artifactStatuses: Record<string, string | null>;
+}
+
+export type EventTaskEffect = {
+  action: "spawn" | "complete" | "fail";
+  taskSlug: string;
+};
+
 export interface TaskTemplateData {
   slug: string;
   title: string;
@@ -33,6 +118,11 @@ export interface TaskTemplateData {
   minResolveCount?: number;
   stage?: ProjectStageId;
   milestoneEffects?: Record<string, boolean>;
+  inputArtifacts?: ArtifactRequirement[];
+  outputArtifacts?: ArtifactEffect[];
+  prerequisiteTaskSlugs?: string[];
+  requiredMilestones?: string[];
+  blockPolicy?: TaskBlockPolicy;
   category?: string;
 }
 
@@ -63,6 +153,9 @@ export interface EventTemplateData {
   triggerTaskSlugs?: string[];
   resultText?: string;
   noTaskText?: string;
+  artifactEffects?: ArtifactEffect[];
+  taskEffects?: EventTaskEffect[];
+  metricEffects?: MetricEffects;
   enabled?: boolean;
   payloadDocId?: string | number;
 }

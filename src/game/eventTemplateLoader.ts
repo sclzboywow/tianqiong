@@ -1,5 +1,46 @@
-import type { EventTemplateData } from "./types";
+import type { EventTemplateData, EventTaskEffect } from "./types";
 import type { ProjectStageId } from "./projectStages";
+import { metricEffectsToRows, type MetricEffectRow } from "./taskTemplateEffectMapper";
+import type { MetricEffects } from "./types";
+
+function metricEffectsFromRows(rows: MetricEffectRow[]): MetricEffects {
+  const effects: MetricEffects = {};
+  for (const row of rows) {
+    if (row.metric?.trim() && row.value !== undefined && row.value !== null) {
+      effects[row.metric as keyof MetricEffects] = row.value;
+    }
+  }
+  return effects;
+}
+
+function mapArtifactEffects(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as { artifactSlug?: string; status?: string; versionBump?: boolean };
+      if (!row.artifactSlug?.trim() || !row.status?.trim()) return null;
+      return {
+        artifactSlug: row.artifactSlug.trim(),
+        status: row.status.trim(),
+        versionBump: row.versionBump ?? undefined,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => !!item);
+}
+
+function mapTaskEffects(raw: unknown): EventTaskEffect[] {
+  if (!Array.isArray(raw)) return [];
+  const results: EventTaskEffect[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { action?: string; taskSlug?: string };
+    if (!row.action || !row.taskSlug?.trim()) continue;
+    if (row.action !== "spawn" && row.action !== "complete" && row.action !== "fail") continue;
+    results.push({ action: row.action, taskSlug: row.taskSlug.trim() });
+  }
+  return results;
+}
 
 function mapPayloadDoc(doc: Record<string, unknown>): EventTemplateData {
   return {
@@ -48,6 +89,9 @@ function mapPayloadDoc(doc: Record<string, unknown>): EventTemplateData {
         .filter(Boolean) || [],
     resultText: doc.resultText ? String(doc.resultText) : undefined,
     noTaskText: doc.noTaskText ? String(doc.noTaskText) : undefined,
+    artifactEffects: mapArtifactEffects(doc.artifactEffects),
+    taskEffects: mapTaskEffects(doc.taskEffects),
+    metricEffects: metricEffectsFromRows((doc.metricEffectsList as MetricEffectRow[] | null) || []),
     enabled: doc.enabled !== false,
     payloadDocId: doc.id as string | number,
   };

@@ -2,13 +2,19 @@ import type { MapLocation } from "@/data/locations";
 import { LOCATION_GROUP_ORDER } from "@/data/locations";
 import type { LocationAction } from "@/data/locationActions";
 import type { AreaData, NpcData } from "@/data/content";
-import type { TaskTemplateData, EventTemplateData, StoryEntryData } from "./types";
+import type {
+  TaskTemplateData,
+  EventTemplateData,
+  StoryEntryData,
+  ArtifactDefinitionData,
+} from "./types";
 import { getMapLocations } from "./locationLoader";
 import { getLocationActions } from "./locationActionLoader";
 import { getTaskTemplates } from "./contentLoader";
 import { getEventTemplates } from "./eventTemplateLoader";
 import { getStoryEntries } from "./storyEntryLoader";
 import { getNpcs, getAreas } from "./worldContentLoader";
+import { loadArtifactDefinitions } from "./artifactLoader";
 
 export type { EventTemplateData };
 
@@ -29,6 +35,26 @@ export type ContentStudioOverview = {
   storyEntries: number;
   npcs: number;
   areas: number;
+  artifactDefinitions: number;
+};
+
+export type DependencyGraphNode = {
+  id: string;
+  type: "task" | "artifact";
+  label: string;
+  stage?: string;
+};
+
+export type DependencyGraphEdge = {
+  id: string;
+  source: string;
+  target: string;
+  kind: "input" | "output" | "prerequisite";
+};
+
+export type DependencyGraphData = {
+  nodes: DependencyGraphNode[];
+  edges: DependencyGraphEdge[];
 };
 
 export type ContentStudioData = {
@@ -44,6 +70,9 @@ export type ContentStudioData = {
   eventTemplates: EventTemplateData[];
   storyEntries: StoryEntryData[];
   storyEntryDocIds: Record<string, string | number>;
+  artifactDefinitions: ArtifactDefinitionData[];
+  artifactDefinitionDocIds: Record<string, string | number>;
+  dependencyGraph: DependencyGraphData;
   npcs: NpcData[];
   areas: AreaData[];
 };
@@ -54,19 +83,21 @@ async function loadPayloadDocIdMaps() {
   const taskTemplateDocIds: Record<string, string | number> = {};
   const eventTemplateDocIds: Record<string, string | number> = {};
   const storyEntryDocIds: Record<string, string | number> = {};
+  const artifactDefinitionDocIds: Record<string, string | number> = {};
 
   try {
     const { getPayload } = await import("payload");
     const config = (await import("@payload-config")).default;
     const payload = await getPayload({ config });
 
-    const [mapLocations, locationActions, taskTemplates, eventTemplates, storyEntries] =
+    const [mapLocations, locationActions, taskTemplates, eventTemplates, storyEntries, artifactDefinitions] =
       await Promise.all([
         payload.find({ collection: "map-locations", limit: 500 }),
         payload.find({ collection: "location-actions", limit: 500 }),
         payload.find({ collection: "task-templates", limit: 500 }),
         payload.find({ collection: "event-templates", limit: 500 }),
         payload.find({ collection: "story-entries", limit: 500 }),
+        payload.find({ collection: "artifact-definitions", limit: 500 }),
       ]);
 
     for (const doc of mapLocations.docs) {
@@ -84,6 +115,9 @@ async function loadPayloadDocIdMaps() {
     for (const doc of storyEntries.docs) {
       if (doc.slug) storyEntryDocIds[String(doc.slug)] = doc.id;
     }
+    for (const doc of artifactDefinitions.docs) {
+      if (doc.slug) artifactDefinitionDocIds[String(doc.slug)] = doc.id;
+    }
   } catch {
     // 静态回退时无 Payload 文档 ID
   }
@@ -94,7 +128,105 @@ async function loadPayloadDocIdMaps() {
     taskTemplateDocIds,
     eventTemplateDocIds,
     storyEntryDocIds,
+    artifactDefinitionDocIds,
   };
+}
+
+export function buildDependencyGraph(
+  taskTemplates: TaskTemplateData[],
+  artifactDefinitions: ArtifactDefinitionData[],
+): DependencyGraphData {
+  const nodes: DependencyGraphNode[] = [];
+  const edges: DependencyGraphEdge[] = [];
+  const nodeIds = new Set<string>();
+
+  for (const artifact of artifactDefinitions) {
+    const id = `artifact:${artifact.slug}`;
+    if (!nodeIds.has(id)) {
+      nodes.push({
+        id,
+        type: "artifact",
+        label: artifact.name,
+        stage: artifact.stage,
+      });
+      nodeIds.add(id);
+    }
+  }
+
+  for (const template of taskTemplates) {
+    const taskId = `task:${template.slug}`;
+    if (!nodeIds.has(taskId)) {
+      nodes.push({
+        id: taskId,
+        type: "task",
+        label: template.title,
+        stage: template.stage,
+      });
+      nodeIds.add(taskId);
+    }
+
+    for (const input of template.inputArtifacts || []) {
+      const artifactId = `artifact:${input.artifactSlug}`;
+      if (!nodeIds.has(artifactId)) {
+        const def = artifactDefinitions.find((item) => item.slug === input.artifactSlug);
+        nodes.push({
+          id: artifactId,
+          type: "artifact",
+          label: def?.name || input.artifactSlug,
+          stage: def?.stage,
+        });
+        nodeIds.add(artifactId);
+      }
+      edges.push({
+        id: `input:${template.slug}:${input.artifactSlug}`,
+        source: artifactId,
+        target: taskId,
+        kind: "input",
+      });
+    }
+
+    for (const output of template.outputArtifacts || []) {
+      const artifactId = `artifact:${output.artifactSlug}`;
+      if (!nodeIds.has(artifactId)) {
+        const def = artifactDefinitions.find((item) => item.slug === output.artifactSlug);
+        nodes.push({
+          id: artifactId,
+          type: "artifact",
+          label: def?.name || output.artifactSlug,
+          stage: def?.stage,
+        });
+        nodeIds.add(artifactId);
+      }
+      edges.push({
+        id: `output:${template.slug}:${output.artifactSlug}`,
+        source: taskId,
+        target: artifactId,
+        kind: "output",
+      });
+    }
+
+    for (const prereq of template.prerequisiteTaskSlugs || []) {
+      const prereqId = `task:${prereq}`;
+      if (!nodeIds.has(prereqId)) {
+        const def = taskTemplates.find((item) => item.slug === prereq);
+        nodes.push({
+          id: prereqId,
+          type: "task",
+          label: def?.title || prereq,
+          stage: def?.stage,
+        });
+        nodeIds.add(prereqId);
+      }
+      edges.push({
+        id: `prereq:${template.slug}:${prereq}`,
+        source: prereqId,
+        target: taskId,
+        kind: "prerequisite",
+      });
+    }
+  }
+
+  return { nodes, edges };
 }
 
 export async function loadContentStudioData(): Promise<ContentStudioData> {
@@ -107,6 +239,7 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     npcs,
     areas,
     docIds,
+    artifactDefinitions,
   ] = await Promise.all([
     getMapLocations(),
     getLocationActions(),
@@ -116,7 +249,10 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     getNpcs(),
     getAreas(),
     loadPayloadDocIdMaps(),
+    loadArtifactDefinitions(),
   ]);
+
+  const dependencyGraph = buildDependencyGraph(taskTemplates, artifactDefinitions);
 
   const actionsByLocation = new Map<string, LocationAction[]>();
   for (const action of locationActions) {
@@ -163,6 +299,7 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
       storyEntries: storyEntries.length,
       npcs: npcs.length,
       areas: areas.length,
+      artifactDefinitions: artifactDefinitions.length,
     },
     locationsByGroup,
     mapLocations,
@@ -175,6 +312,9 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     eventTemplates,
     storyEntries,
     storyEntryDocIds: docIds.storyEntryDocIds,
+    artifactDefinitions,
+    artifactDefinitionDocIds: docIds.artifactDefinitionDocIds,
+    dependencyGraph,
     npcs,
     areas,
   };

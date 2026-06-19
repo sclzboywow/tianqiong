@@ -5,6 +5,8 @@ import { getEventTemplates } from "./eventTemplateLoader";
 import { parseMilestones } from "./projectEngine";
 import { createTaskFromTemplateSlug } from "./taskEngine";
 import { buildEventPoolLogContent, writeGameLog } from "./logEngine";
+import { applyArtifactEffects } from "./artifactEngine";
+import { applyTaskOutcomeEffects } from "./projectEngine";
 
 const SEASON_ID = process.env.SEASON_ID || "season-1";
 
@@ -12,6 +14,7 @@ export type EventTriggerResult = {
   triggeredEvent: EventTemplateData | null;
   createdTasks: Task[];
   skippedTasks: { slug: string; title: string; reason: string }[];
+  blockedTasks: { slug: string; title: string; reasons: string[] }[];
   message: string;
 };
 
@@ -160,6 +163,7 @@ export async function triggerEventForLocationAction(params: {
     triggeredEvent: null,
     createdTasks: [],
     skippedTasks: [],
+    blockedTasks: [],
     message: "",
   };
 
@@ -178,6 +182,19 @@ export async function triggerEventForLocationAction(params: {
 
     const createdTasks: Task[] = [];
     const skippedTasks: EventTriggerResult["skippedTasks"] = [];
+    const blockedTasks: EventTriggerResult["blockedTasks"] = [];
+
+    if (selected.artifactEffects?.length) {
+      await applyArtifactEffects(SEASON_ID, selected.artifactEffects, {
+        sourceType: "event",
+        sourceId: selected.slug,
+        note: `事件「${selected.title}」触发`,
+      });
+    }
+
+    if (selected.metricEffects && Object.keys(selected.metricEffects).length > 0) {
+      await applyTaskOutcomeEffects(selected.metricEffects, true, SEASON_ID);
+    }
 
     for (const slug of selected.triggerTaskSlugs || []) {
       const result = await createTaskFromTemplateSlug(slug);
@@ -185,9 +202,15 @@ export async function triggerEventForLocationAction(params: {
         skippedTasks.push({ slug, title: slug, reason: "任务模板不存在" });
         continue;
       }
-      if (result.created) {
+      if (result.created && result.task) {
         createdTasks.push(result.task);
-      } else {
+      } else if (result.skipReason === "dependency_blocked") {
+        blockedTasks.push({
+          slug,
+          title: result.templateTitle || result.task?.title || slug,
+          reasons: result.dependencyReasons || ["依赖条件未满足"],
+        });
+      } else if (result.task) {
         skippedTasks.push({
           slug,
           title: result.task.title,
@@ -195,6 +218,24 @@ export async function triggerEventForLocationAction(params: {
             result.skipReason === "completed"
               ? "该任务已完成，未重复生成"
               : "已有进行中的同类任务",
+        });
+      }
+    }
+
+    for (const effect of selected.taskEffects || []) {
+      if (effect.action !== "spawn") continue;
+      const result = await createTaskFromTemplateSlug(effect.taskSlug);
+      if (!result) {
+        skippedTasks.push({ slug: effect.taskSlug, title: effect.taskSlug, reason: "任务模板不存在" });
+        continue;
+      }
+      if (result.created && result.task) {
+        createdTasks.push(result.task);
+      } else if (result.skipReason === "dependency_blocked") {
+        blockedTasks.push({
+          slug: effect.taskSlug,
+          title: result.templateTitle || effect.taskSlug,
+          reasons: result.dependencyReasons || ["依赖条件未满足"],
         });
       }
     }
@@ -214,6 +255,11 @@ export async function triggerEventForLocationAction(params: {
       message =
         selected.resultText?.trim() ||
         `事件「${selected.title}」已触发，生成 ${createdTasks.length} 项任务`;
+    } else if (blockedTasks.length > 0) {
+      const reasonText = blockedTasks
+        .map((item) => `「${item.title}」：${item.reasons.join("；")}`)
+        .join("；");
+      message = `事件「${selected.title}」已触发，但部分任务因依赖未满足未能生成：${reasonText}`;
     } else if (skippedTasks.length > 0) {
       message =
         selected.noTaskText?.trim() ||
@@ -252,6 +298,7 @@ export async function triggerEventForLocationAction(params: {
       triggeredEvent: selected,
       createdTasks,
       skippedTasks,
+      blockedTasks,
       message,
     };
   } catch {
