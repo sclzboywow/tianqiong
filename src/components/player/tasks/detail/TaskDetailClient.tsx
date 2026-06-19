@@ -7,10 +7,10 @@ import type { Job } from "@/game/prisma-types";
 import { JOB_LABELS } from "@/utils/formatter";
 import { TaskDetailLayout } from "./TaskDetailLayout";
 import { TaskDetailHeader } from "./TaskDetailHeader";
-import { TaskIntelPanel } from "./TaskIntelPanel";
-import { TaskImpactPanel } from "./TaskImpactPanel";
+import { TaskIntelImpactPanel } from "./TaskIntelImpactPanel";
 import { TaskStoryPanel } from "./TaskStoryPanel";
-import { TaskResultPanel, type TaskResolveResult } from "./TaskResultPanel";
+import { TaskDecisionPanel, type TaskResolveResult } from "./TaskDecisionPanel";
+import { TaskRecentLogsPanel } from "./TaskRecentLogsPanel";
 
 type TaskDetailClientProps = {
   initialData: TaskDetailViewData;
@@ -185,37 +185,28 @@ export function TaskDetailClient({ initialData }: TaskDetailClientProps) {
 
   const showChoices =
     data.isJoined && data.isActive && !data.hasSubmitted && !pending && !result?.finalized;
+  const choices = story?.choices || [];
 
   return (
     <TaskDetailLayout
       header={<TaskDetailHeader data={data} />}
-      intel={<TaskIntelPanel data={data} />}
-      impact={<TaskImpactPanel data={data} />}
-      story={
-        <TaskStoryPanel
-          story={story}
-          inkAvailable={data.inkAvailable}
-          isActive={data.isActive}
-          isJoined={data.isJoined}
-          hasSubmitted={data.hasSubmitted}
+      decision={
+        <TaskDecisionPanel
+          data={data}
+          choices={choices}
           loading={loading}
           error={error}
           onJoin={handleJoin}
           onChoose={handleChoose}
           pending={pending}
           showChoices={showChoices}
-        />
-      }
-      result={
-        <TaskResultPanel
-          isCompleted={data.isCompleted}
-          resolvedSuccess={data.resolvedSuccess}
           selectedChoiceText={selectedChoiceText}
           result={result}
-          milestoneLabels={data.milestoneLabels}
-          recentLogs={data.recentLogs}
         />
       }
+      story={<TaskStoryPanel story={story} inkAvailable={data.inkAvailable} />}
+      intel={<TaskIntelImpactPanel data={data} />}
+      logs={<TaskRecentLogsPanel logs={data.recentLogs} />}
     />
   );
 }

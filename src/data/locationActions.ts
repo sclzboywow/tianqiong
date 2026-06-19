@@ -1,5 +1,5 @@
 import type { ProjectStageId } from "@/game/projectStages";
-import { CHAPTER1_LOCATION_ACTIONS } from "@/data/chapter1Content";
+import { CONSTRUCTION_PROJECT_LOCATION_ACTIONS } from "@/data/constructionProjectLocationActions";
 
 export type LocationAction = {
   id: string;
@@ -21,8 +21,8 @@ export type LocationAction = {
   sortOrder?: number;
 };
 
-export const LOCATION_ACTIONS: LocationAction[] = [
-  ...CHAPTER1_LOCATION_ACTIONS,
+/** 旧阶段/chapter1 入口，默认不暴露给玩家 */
+export const LEGACY_LOCATION_ACTIONS: LocationAction[] = [
   {
     id: "action_pre_approval_push",
     locationId: "owner_pre_approval_office",
@@ -76,6 +76,10 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     minLevel: 3,
     minReputation: 30,
   },
+];
+
+export const LOCATION_ACTIONS: LocationAction[] = [
+  ...CONSTRUCTION_PROJECT_LOCATION_ACTIONS,
   {
     id: "action_fire_pump_check",
     locationId: "site_fire_pump_room",
@@ -130,4 +134,3 @@ export const LOCATION_ACTIONS: LocationAction[] = [
     minReputation: 35,
   },
 ];
-

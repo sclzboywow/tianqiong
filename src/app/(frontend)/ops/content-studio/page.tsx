@@ -6,8 +6,20 @@ import { loadContentStudioData } from "@/game/contentStudioLoader";
 import { getCurrentUserId } from "@/lib/session";
 
 type ContentStudioPageProps = {
-  searchParams: Promise<{ location?: string }>;
+  searchParams: Promise<{ location?: string; tab?: string }>;
 };
+
+function parseContentStudioTab(value?: string): "overview" | "deliverables" | "dependency" | "debug" | "mainline" {
+  if (
+    value === "deliverables" ||
+    value === "dependency" ||
+    value === "debug" ||
+    value === "mainline"
+  ) {
+    return value;
+  }
+  return "overview";
+}
 
 export default async function ContentStudioPage({ searchParams }: ContentStudioPageProps) {
   const userId = await getCurrentUserId();
@@ -25,6 +37,7 @@ export default async function ContentStudioPage({ searchParams }: ContentStudioP
           data={data}
           healthReport={healthReport}
           selectedLocationId={params.location}
+          activeTab={parseContentStudioTab(params.tab)}
         />
       </main>
     </div>

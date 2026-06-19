@@ -1,6 +1,10 @@
 import { TrendingUp } from "lucide-react";
 import type { ProfileViewData } from "@/game/profilePresentationEngine";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
+import {
+  taskDetailMetricAccent,
+  taskDetailPanel,
+  taskDetailPanelHeader,
+} from "../tasks/taskBoardUi";
 
 type PlayerGrowthCardProps = {
   profile: Pick<
@@ -13,47 +17,45 @@ export function PlayerGrowthCard({ profile }: PlayerGrowthCardProps) {
   const needExp = Math.max(0, profile.nextLevelExp - profile.exp);
 
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <div className="flex items-center gap-2">
-          <TrendingUp className="size-4 text-[#FACC15]" />
-          <h3 className="text-base font-semibold text-[#EAF3FF]">成长进度</h3>
-        </div>
-        <p className="mt-1 text-xs text-[#8EA3B8]">通过任务结算获得经验并提升等级</p>
+    <section className={taskDetailPanel}>
+      <div className={taskDetailPanelHeader}>
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
+          <TrendingUp className="size-3.5 text-amber-400/80" />
+          成长进度
+        </h3>
       </div>
 
-      <div className={playerCardBodyClass}>
-        <div className="rounded-2xl border border-[rgba(250,204,21,0.22)] bg-[rgba(250,204,21,0.08)] px-4 py-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="text-xs text-[#FACC15]/80">当前等级</p>
-              <p className="mt-1 text-4xl font-bold tabular-nums text-[#FACC15]">Lv.{profile.level}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-[#8EA3B8]">经验值</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums text-[#EAF3FF]">
-                {profile.exp}
-                <span className="text-[#8EA3B8]"> / {profile.nextLevelExp}</span>
-              </p>
-            </div>
+      <div className="space-y-2 p-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] text-slate-500">当前等级</p>
+            <p className="text-xl font-semibold tabular-nums text-amber-200/90">Lv.{profile.level}</p>
           </div>
-
-          <div className="mt-4">
-            <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span className="text-[#8EA3B8]">升级进度</span>
-              <span className="tabular-nums text-[#EAF3FF]">{profile.expProgressPercent}%</span>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#FACC15] to-[#FDE047] shadow-[0_0_12px_rgba(250,204,21,0.35)]"
-                style={{ width: `${profile.expProgressPercent}%` }}
-              />
-            </div>
+          <div className="text-right">
+            <p className="text-[11px] text-slate-500">经验值</p>
+            <p className="text-[13px] font-semibold tabular-nums text-slate-300">
+              {profile.exp}
+              <span className="text-slate-600"> / {profile.nextLevelExp}</span>
+            </p>
           </div>
+        </div>
 
-          <p className="mt-3 text-xs text-[#8EA3B8]">
-            距离 Lv.{profile.level + 1} 还需 {needExp} 经验
-          </p>
+        <div>
+          <div className="mb-1 flex items-center justify-between text-xs">
+            <span className="text-slate-600">升级进度</span>
+            <span className="tabular-nums text-cyan-200/90">{profile.expProgressPercent}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden bg-slate-950/40">
+            <div
+              className="h-full bg-amber-400/45"
+              style={{ width: `${profile.expProgressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className={taskDetailMetricAccent}>
+          <p className="text-xs text-cyan-400/55">距离下一级</p>
+          <p className="mt-0.5 text-[13px] text-cyan-100">还需 {needExp} 经验 · Lv.{profile.level + 1}</p>
         </div>
       </div>
     </section>

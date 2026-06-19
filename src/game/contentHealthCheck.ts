@@ -12,6 +12,11 @@ import {
   type TaskTemplateEffectDoc,
 } from "./taskTemplateEffectMapper";
 import { inkSourceUsesLegacyDialogueWithoutSpeakerTags } from "./storySegmentParser";
+import { LEGACY_NPC_NAME_ALIASES } from "@/data/npcProfiles";
+import {
+  resolveAllowedStatuses,
+  STANDARD_ARTIFACT_STATUSES,
+} from "@/data/artifactDefinitions";
 
 const STORIES_DIR = path.join(process.cwd(), "src/ink/stories");
 
@@ -113,6 +118,10 @@ export type ContentHealthCheckData = {
     failMetricEffects: MetricEffectRow[];
     milestoneEffectList: MilestoneEffectRow[];
     choiceEffectList: ChoiceEffectRow[];
+    inputArtifacts?: { artifactSlug: string; minStatus?: string }[];
+    outputArtifacts?: { artifactSlug: string; status?: string }[];
+    prerequisiteTaskSlugs?: string[];
+    requiredMilestones?: string[];
   }[];
   eventTemplates: {
     slug: string;
@@ -123,6 +132,8 @@ export type ContentHealthCheckData = {
     triggerNpcNames: string[];
     triggerAreaNames: string[];
     unlockMilestones: string[];
+    artifactEffects?: { artifactSlug: string; status?: string }[];
+    taskEffects?: { action: string; taskSlug: string }[];
   }[];
   storyEntries: {
     slug: string;
@@ -134,6 +145,13 @@ export type ContentHealthCheckData = {
   }[];
   npcNames: string[];
   areaNames: string[];
+  artifactDefinitions?: {
+    slug: string;
+    defaultStatus: string;
+    allowedStatuses: string[];
+    sourceLocationSlugs: string[];
+    sourceNpcNames: string[];
+  }[];
 };
 
 function checkMembership(
@@ -190,6 +208,134 @@ function parseJsonRecord(raw: unknown): Record<string, unknown> {
     return raw as Record<string, unknown>;
   }
   return {};
+}
+
+function mapInputArtifactsFromDoc(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  const results: { artifactSlug: string; minStatus?: string }[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { artifactSlug?: string; minStatus?: string };
+    if (!row.artifactSlug?.trim()) continue;
+    results.push({
+      artifactSlug: row.artifactSlug.trim(),
+      minStatus: row.minStatus?.trim() || undefined,
+    });
+  }
+  return results;
+}
+
+function mapOutputArtifactsFromDoc(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  const results: { artifactSlug: string; status?: string }[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { artifactSlug?: string; status?: string };
+    if (!row.artifactSlug?.trim()) continue;
+    results.push({
+      artifactSlug: row.artifactSlug.trim(),
+      status: row.status?.trim() || undefined,
+    });
+  }
+  return results;
+}
+
+function mapArtifactEffectsFromDoc(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  const results: { artifactSlug: string; status?: string }[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { artifactSlug?: string; status?: string };
+    if (!row.artifactSlug?.trim()) continue;
+    results.push({
+      artifactSlug: row.artifactSlug.trim(),
+      status: row.status?.trim() || undefined,
+    });
+  }
+  return results;
+}
+
+function mapInputArtifactsFromGrouped(rows: Record<string, unknown>[] | undefined) {
+  if (!rows?.length) return [];
+  return rows
+    .map((row) => ({
+      artifactSlug: String(row.artifact_slug || row.artifactSlug || "").trim(),
+      minStatus: String(row.min_status || row.minStatus || "").trim() || undefined,
+    }))
+    .filter((item) => item.artifactSlug);
+}
+
+function mapOutputArtifactsFromGrouped(rows: Record<string, unknown>[] | undefined) {
+  if (!rows?.length) return [];
+  return rows
+    .map((row) => ({
+      artifactSlug: String(row.artifact_slug || row.artifactSlug || "").trim(),
+      status: String(row.status || "").trim() || undefined,
+    }))
+    .filter((item) => item.artifactSlug);
+}
+
+function mapArtifactEffectsFromGrouped(rows: Record<string, unknown>[] | undefined) {
+  return mapOutputArtifactsFromGrouped(rows);
+}
+
+function mapPrerequisiteTaskSlugsFromDoc(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") {
+        return String((item as { slug?: string }).slug || "").trim();
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
+function buildArtifactAllowedStatusMap(
+  definitions: NonNullable<ContentHealthCheckData["artifactDefinitions"]>,
+): Map<string, { defaultStatus: string; allowed: Set<string>; usesFallback: boolean }> {
+  const map = new Map<string, { defaultStatus: string; allowed: Set<string>; usesFallback: boolean }>();
+  for (const def of definitions) {
+    const usesFallback = def.allowedStatuses.length === 0;
+    const effective = resolveAllowedStatuses({
+      allowedStatuses: def.allowedStatuses.map((status) => ({ status })),
+      defaultStatus: def.defaultStatus,
+    });
+    map.set(def.slug, {
+      defaultStatus: def.defaultStatus || "draft",
+      allowed: new Set(effective.map((item) => item.status)),
+      usesFallback,
+    });
+  }
+  return map;
+}
+
+function mapRequiredMilestonesFromDoc(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") {
+        return String((item as { milestone?: string }).milestone || "").trim();
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
+function mapTaskEffectsFromDoc(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  const results: { action: string; taskSlug: string }[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { action?: string; taskSlug?: string; task_slug?: string };
+    const action = row.action?.trim();
+    const taskSlug = (row.taskSlug || row.task_slug)?.trim();
+    if (!action || !taskSlug) continue;
+    results.push({ action, taskSlug });
+  }
+  return results;
 }
 
 function hasMetricEffectContent(rows: MetricEffectRow[]): boolean {
@@ -417,8 +563,15 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
   const eventTemplateSlugs = new Set(data.eventTemplates.map((row) => row.slug).filter(Boolean));
   const storyEntrySlugs = new Set(data.storyEntries.map((row) => row.slug).filter(Boolean));
   const npcNames = new Set(data.npcNames.filter(Boolean));
+  for (const legacyName of Object.keys(LEGACY_NPC_NAME_ALIASES)) {
+    npcNames.add(legacyName);
+  }
   const areaNames = new Set(data.areaNames.filter(Boolean));
   const milestoneKeys = new Set(Object.keys(MILESTONE_LABELS));
+  const artifactSlugs = new Set(
+    (data.artifactDefinitions || []).map((row) => row.slug).filter(Boolean),
+  );
+  const artifactStatusMap = buildArtifactAllowedStatusMap(data.artifactDefinitions || []);
 
   const results: ContentHealthCheckItem[] = [];
   const warnings: ContentHealthCheckItem[] = [];
@@ -536,6 +689,25 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
     });
   }
 
+  {
+    const failures: string[] = [];
+    let keyCount = 0;
+    for (const row of data.taskTemplates) {
+      for (const key of row.requiredMilestones || []) {
+        keyCount++;
+        if (!milestoneKeys.has(key)) {
+          failures.push(`${row.slug}: requiredMilestones.${key} 不在 MILESTONE_LABELS 中`);
+        }
+      }
+    }
+    results.push({
+      name: "task-templates.requiredMilestones",
+      pass: failures.length === 0,
+      total: keyCount,
+      failures,
+    });
+  }
+
   if (!data.hasEventTemplatesTable) {
     results.push({
       name: "event-templates (表)",
@@ -642,6 +814,199 @@ export function buildContentHealthCheckReport(data: ContentHealthCheckData): Con
         failures,
       });
     }
+  }
+
+  if (data.artifactDefinitions && data.artifactDefinitions.length > 0) {
+    {
+      const failures: string[] = [];
+      const slugCounts = new Map<string, number>();
+      for (const row of data.artifactDefinitions) {
+        if (!row.slug.trim()) {
+          failures.push("(unknown): slug 为空");
+          continue;
+        }
+        slugCounts.set(row.slug, (slugCounts.get(row.slug) || 0) + 1);
+      }
+      for (const [slug, count] of slugCounts) {
+        if (count > 1) failures.push(`${slug}: slug 重复 (${count} 次)`);
+      }
+      results.push({
+        name: "artifact-definitions.slug",
+        pass: failures.length === 0,
+        total: data.artifactDefinitions.length,
+        failures,
+      });
+    }
+
+    {
+      const failures: string[] = [];
+      let total = 0;
+      for (const row of data.artifactDefinitions) {
+        total++;
+        const allowed = resolveAllowedStatuses({
+          allowedStatuses: row.allowedStatuses.map((status) => ({ status })),
+          defaultStatus: row.defaultStatus,
+        }).map((item) => item.status);
+        const defaultStatus = row.defaultStatus || "draft";
+        if (!allowed.includes(defaultStatus)) {
+          failures.push(`${row.slug}: defaultStatus "${defaultStatus}" 不在 allowedStatuses 中`);
+        }
+      }
+      results.push({
+        name: "artifact-definitions.defaultStatus",
+        pass: failures.length === 0,
+        total,
+        failures,
+      });
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.artifactDefinitions) {
+        for (const slug of row.sourceLocationSlugs) {
+          items.push({ label: row.slug, value: slug });
+        }
+      }
+      results.push(checkMembership("artifact-definitions.sourceLocationSlugs", items, mapLocationSlugs));
+    }
+
+    {
+      const items: { label: string; value: string }[] = [];
+      for (const row of data.artifactDefinitions) {
+        for (const name of row.sourceNpcNames) {
+          items.push({ label: row.slug, value: name });
+        }
+      }
+      results.push(checkMembership("artifact-definitions.sourceNpcNames", items, npcNames));
+    }
+
+    {
+      const failures: string[] = [];
+      for (const row of data.artifactDefinitions) {
+        if (row.allowedStatuses.length === 0) {
+          failures.push(
+            `${row.slug}: allowedStatuses 为空，运行时使用标准状态集（${STANDARD_ARTIFACT_STATUSES.map((item) => item.status).join(" → ")}）`,
+          );
+        }
+      }
+      warnings.push({
+        name: "artifact-definitions.standardStatusFallback (warning)",
+        pass: failures.length === 0,
+        total: data.artifactDefinitions.length,
+        failures,
+      });
+    }
+  }
+
+  {
+    const items: { label: string; value: string }[] = [];
+    for (const row of data.taskTemplates) {
+      for (const effect of row.inputArtifacts || []) {
+        if (effect.artifactSlug?.trim()) {
+          items.push({ label: row.slug, value: effect.artifactSlug.trim() });
+        }
+      }
+      for (const effect of row.outputArtifacts || []) {
+        if (effect.artifactSlug?.trim()) {
+          items.push({ label: row.slug, value: effect.artifactSlug.trim() });
+        }
+      }
+    }
+    results.push(checkMembership("task-templates.artifactReferences", items, artifactSlugs));
+  }
+
+  {
+    const items: { label: string; value: string }[] = [];
+    for (const row of data.taskTemplates) {
+      for (const slug of row.prerequisiteTaskSlugs || []) {
+        items.push({ label: row.slug, value: slug });
+      }
+    }
+    results.push(checkMembership("task-templates.prerequisiteTaskSlugs", items, taskTemplateSlugs));
+  }
+
+  {
+    const items: { label: string; value: string }[] = [];
+    for (const row of data.eventTemplates) {
+      for (const effect of row.artifactEffects || []) {
+        if (effect.artifactSlug?.trim()) {
+          items.push({ label: row.slug, value: effect.artifactSlug.trim() });
+        }
+      }
+    }
+    results.push(checkMembership("event-templates.artifactEffects", items, artifactSlugs));
+  }
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.taskTemplates) {
+      for (const effect of row.inputArtifacts || []) {
+        if (!effect.minStatus?.trim() || !effect.artifactSlug?.trim()) continue;
+        if (!artifactSlugs.has(effect.artifactSlug.trim())) continue;
+        total++;
+        const def = artifactStatusMap.get(effect.artifactSlug.trim());
+        if (!def) continue;
+        if (!def.allowed.has(effect.minStatus.trim())) {
+          failures.push(
+            `${row.slug}: inputArtifacts.minStatus "${effect.minStatus}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
+          );
+        }
+      }
+      for (const effect of row.outputArtifacts || []) {
+        if (!effect.status?.trim() || !effect.artifactSlug?.trim()) continue;
+        if (!artifactSlugs.has(effect.artifactSlug.trim())) continue;
+        total++;
+        const def = artifactStatusMap.get(effect.artifactSlug.trim());
+        if (!def) continue;
+        if (!def.allowed.has(effect.status.trim())) {
+          failures.push(
+            `${row.slug}: outputArtifacts.status "${effect.status}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
+          );
+        }
+      }
+    }
+    for (const row of data.eventTemplates) {
+      for (const effect of row.artifactEffects || []) {
+        if (!effect.status?.trim() || !effect.artifactSlug?.trim()) continue;
+        if (!artifactSlugs.has(effect.artifactSlug.trim())) continue;
+        total++;
+        const def = artifactStatusMap.get(effect.artifactSlug.trim());
+        if (!def) continue;
+        if (!def.allowed.has(effect.status.trim())) {
+          failures.push(
+            `${row.slug}: artifactEffects.status "${effect.status}" 不在成果物 ${effect.artifactSlug} 的 allowedStatuses 中`,
+          );
+        }
+      }
+    }
+    results.push({
+      name: "artifact-definitions.allowedStatuses",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
+  }
+
+  {
+    const failures: string[] = [];
+    let total = 0;
+    for (const row of data.eventTemplates) {
+      for (const effect of row.taskEffects || []) {
+        total++;
+        if (effect.action !== "spawn") {
+          failures.push(
+            `${row.slug}: taskEffects.action "${effect.action}" 不受支持（本阶段仅支持 spawn）`,
+          );
+        }
+      }
+    }
+    warnings.push({
+      name: "event-templates.taskEffects.unsupportedAction (warning)",
+      pass: failures.length === 0,
+      total,
+      failures,
+    });
   }
 
   if (!data.hasStoryEntriesTable) {
@@ -977,6 +1342,14 @@ function mapPayloadTaskTemplateRow(
     failMetricEffects: visual?.failMetricEffects || [],
     milestoneEffectList: visual?.milestoneEffectList || [],
     choiceEffectList: visual?.choiceEffectList || [],
+    inputArtifacts: mapInputArtifactsFromDoc(row.input_artifacts ?? row.inputArtifacts),
+    outputArtifacts: mapOutputArtifactsFromDoc(row.output_artifacts ?? row.outputArtifacts),
+    prerequisiteTaskSlugs: mapPrerequisiteTaskSlugsFromDoc(
+      row.prerequisite_task_slugs ?? row.prerequisiteTaskSlugs,
+    ),
+    requiredMilestones: mapRequiredMilestonesFromDoc(
+      row.required_milestones ?? row.requiredMilestones,
+    ),
   };
 }
 
@@ -1020,6 +1393,16 @@ export async function loadContentHealthCheckDataFromSqlite(
     storyRelatedEventSlugs,
     storyRelatedLocationSlugs,
     storyRelatedNpcNames,
+    taskInputArtifacts,
+    taskOutputArtifacts,
+    taskPrerequisiteSlugs,
+    taskRequiredMilestones,
+    eventArtifactEffects,
+    eventTaskEffects,
+    artifactDefinitionRows,
+    artifactAllowedStatuses,
+    artifactSourceLocationSlugs,
+    artifactSourceNpcNames,
   ] = await Promise.all([
     hasLocationActionsTable ? queryRows(client, "location_actions") : Promise.resolve([]),
     queryRows(client, "map_locations"),
@@ -1041,6 +1424,16 @@ export async function loadContentHealthCheckDataFromSqlite(
     queryArrayByParent(client, "story_entries_related_event_slugs", "slug"),
     queryArrayByParent(client, "story_entries_related_location_slugs", "slug"),
     queryArrayByParent(client, "story_entries_related_npc_names", "name"),
+    queryGroupedChildRows(client, "task_templates_input_artifacts"),
+    queryGroupedChildRows(client, "task_templates_output_artifacts"),
+    queryArrayByParent(client, "task_templates_prerequisite_task_slugs", "slug"),
+    queryArrayByParent(client, "task_templates_required_milestones", "milestone"),
+    queryGroupedChildRows(client, "event_templates_artifact_effects"),
+    queryGroupedChildRows(client, "event_templates_task_effects"),
+    queryRows(client, "artifact_definitions"),
+    queryGroupedChildRows(client, "artifact_definitions_allowed_statuses"),
+    queryGroupedChildRows(client, "artifact_definitions_source_location_slugs"),
+    queryGroupedChildRows(client, "artifact_definitions_source_npc_names"),
   ]);
 
   const taskTemplateIds = taskTemplateRows.map((row) => row.id as number);
@@ -1062,19 +1455,31 @@ export async function loadContentHealthCheckDataFromSqlite(
       relatedNpcNames: mapLocationNpcNames.get(row.id as number) || [],
       relatedAreaNames: mapLocationAreaNames.get(row.id as number) || [],
     })),
-    taskTemplates: taskTemplateRows.map((row) =>
-      mapPayloadTaskTemplateRow(row, visualEffects[row.id as number]),
-    ),
-    eventTemplates: eventTemplateRows.map((row) => ({
-      slug: String(row.slug || "(unknown)"),
-      inkFile: String(row.ink_file || row.inkFile || ""),
-      storySlug: String(row.story_slug || row.storySlug || "") || undefined,
-      triggerLocationSlugs: eventTriggerLocationSlugs.get(row.id as number) || [],
-      triggerTaskSlugs: eventTriggerTaskSlugs.get(row.id as number) || [],
-      triggerNpcNames: eventTriggerNpcNames.get(row.id as number) || [],
-      triggerAreaNames: eventTriggerAreaNames.get(row.id as number) || [],
-      unlockMilestones: eventUnlockMilestones.get(row.id as number) || [],
-    })),
+    taskTemplates: taskTemplateRows.map((row) => {
+      const id = row.id as number;
+      return {
+        ...mapPayloadTaskTemplateRow(row, visualEffects[id]),
+        inputArtifacts: mapInputArtifactsFromGrouped(taskInputArtifacts.get(id)),
+        outputArtifacts: mapOutputArtifactsFromGrouped(taskOutputArtifacts.get(id)),
+        prerequisiteTaskSlugs: taskPrerequisiteSlugs.get(id) || [],
+        requiredMilestones: taskRequiredMilestones.get(id) || [],
+      };
+    }),
+    eventTemplates: eventTemplateRows.map((row) => {
+      const id = row.id as number;
+      return {
+        slug: String(row.slug || "(unknown)"),
+        inkFile: String(row.ink_file || row.inkFile || ""),
+        storySlug: String(row.story_slug || row.storySlug || "") || undefined,
+        triggerLocationSlugs: eventTriggerLocationSlugs.get(id) || [],
+        triggerTaskSlugs: eventTriggerTaskSlugs.get(id) || [],
+        triggerNpcNames: eventTriggerNpcNames.get(id) || [],
+        triggerAreaNames: eventTriggerAreaNames.get(id) || [],
+        unlockMilestones: eventUnlockMilestones.get(id) || [],
+        artifactEffects: mapArtifactEffectsFromGrouped(eventArtifactEffects.get(id)),
+        taskEffects: mapTaskEffectsFromDoc(eventTaskEffects.get(id)),
+      };
+    }),
     storyEntries: storyEntryRows.map((row) => ({
       slug: String(row.slug || "(unknown)"),
       inkFile: String(row.ink_file || row.inkFile || ""),
@@ -1085,6 +1490,22 @@ export async function loadContentHealthCheckDataFromSqlite(
     })),
     npcNames: npcRows.map((row) => String(row.name || "")).filter(Boolean),
     areaNames: areaRows.map((row) => String(row.name || "")).filter(Boolean),
+    artifactDefinitions: artifactDefinitionRows.map((row) => {
+      const id = row.id as number;
+      return {
+        slug: String(row.slug || ""),
+        defaultStatus: String(row.default_status || row.defaultStatus || "draft"),
+        allowedStatuses: (artifactAllowedStatuses.get(id) || [])
+          .map((child) => String(child.status || "").trim())
+          .filter(Boolean),
+        sourceLocationSlugs: (artifactSourceLocationSlugs.get(id) || [])
+          .map((child) => String(child.slug || "").trim())
+          .filter(Boolean),
+        sourceNpcNames: (artifactSourceNpcNames.get(id) || [])
+          .map((child) => String(child.name || "").trim())
+          .filter(Boolean),
+      };
+    }),
   };
 
   return { data, missingCoreTables, databaseUrl };
@@ -1120,6 +1541,7 @@ export async function runContentHealthCheckFromPayload(): Promise<ContentHealthC
       storyEntriesResult,
       npcsResult,
       areasResult,
+      artifactDefinitionsResult,
     ] = await Promise.all([
       payload.find({ collection: "location-actions", limit: 500 }),
       payload.find({ collection: "map-locations", limit: 500 }),
@@ -1128,6 +1550,7 @@ export async function runContentHealthCheckFromPayload(): Promise<ContentHealthC
       payload.find({ collection: "story-entries", limit: 500 }),
       payload.find({ collection: "npcs", limit: 500 }),
       payload.find({ collection: "areas", limit: 500 }),
+      payload.find({ collection: "artifact-definitions", limit: 500 }),
     ]);
 
     const data: ContentHealthCheckData = {
@@ -1186,6 +1609,8 @@ export async function runContentHealthCheckFromPayload(): Promise<ContentHealthC
           (doc.unlockMilestones as { milestone: string }[] | null)
             ?.map((item) => item.milestone)
             .filter(Boolean) || [],
+        artifactEffects: mapArtifactEffectsFromDoc(doc.artifactEffects),
+        taskEffects: mapTaskEffectsFromDoc(doc.taskEffects),
       })),
       storyEntries: storyEntriesResult.docs.map((doc) => ({
         slug: String(doc.slug || "(unknown)"),
@@ -1209,6 +1634,22 @@ export async function runContentHealthCheckFromPayload(): Promise<ContentHealthC
       })),
       npcNames: npcsResult.docs.map((doc) => String(doc.name || "")).filter(Boolean),
       areaNames: areasResult.docs.map((doc) => String(doc.name || "")).filter(Boolean),
+      artifactDefinitions: artifactDefinitionsResult.docs.map((doc) => ({
+        slug: String(doc.slug || ""),
+        defaultStatus: String(doc.defaultStatus || "draft"),
+        allowedStatuses:
+          (doc.allowedStatuses as { status: string }[] | null)
+            ?.map((item) => item.status)
+            .filter(Boolean) || [],
+        sourceLocationSlugs:
+          (doc.sourceLocationSlugs as { slug: string }[] | null)
+            ?.map((item) => item.slug)
+            .filter(Boolean) || [],
+        sourceNpcNames:
+          (doc.sourceNpcNames as { name: string }[] | null)
+            ?.map((item) => item.name)
+            .filter(Boolean) || [],
+      })),
     };
 
     return buildContentHealthCheckReport(data);
@@ -1261,6 +1702,16 @@ export function buildContentHealthCheckFromStudioData(
       failMetricEffects: [],
       milestoneEffectList: [],
       choiceEffectList: [],
+      inputArtifacts: template.inputArtifacts?.map((item) => ({
+        artifactSlug: item.artifactSlug,
+        minStatus: item.minStatus,
+      })),
+      outputArtifacts: template.outputArtifacts?.map((item) => ({
+        artifactSlug: item.artifactSlug,
+        status: item.status,
+      })),
+      prerequisiteTaskSlugs: template.prerequisiteTaskSlugs,
+      requiredMilestones: template.requiredMilestones,
     })),
     eventTemplates: studio.eventTemplates.map((event) => ({
       slug: event.slug,
@@ -1271,6 +1722,14 @@ export function buildContentHealthCheckFromStudioData(
       triggerNpcNames: event.triggerNpcNames || [],
       triggerAreaNames: event.triggerAreaNames || [],
       unlockMilestones: event.unlockMilestones || [],
+      artifactEffects: event.artifactEffects?.map((item) => ({
+        artifactSlug: item.artifactSlug,
+        status: item.status,
+      })),
+      taskEffects: event.taskEffects?.map((item) => ({
+        action: item.action,
+        taskSlug: item.taskSlug,
+      })),
     })),
     storyEntries: studio.storyEntries.map((entry) => ({
       slug: entry.slug,
@@ -1282,5 +1741,12 @@ export function buildContentHealthCheckFromStudioData(
     })),
     npcNames: studio.npcs.map((npc) => npc.name),
     areaNames: studio.areas.map((area) => area.name),
+    artifactDefinitions: studio.artifactDefinitions.map((artifact) => ({
+      slug: artifact.slug,
+      defaultStatus: artifact.defaultStatus || "draft",
+      allowedStatuses: (artifact.allowedStatuses || []).map((item) => item.status),
+      sourceLocationSlugs: artifact.sourceLocationSlugs || [],
+      sourceNpcNames: artifact.sourceNpcNames || [],
+    })),
   });
 }

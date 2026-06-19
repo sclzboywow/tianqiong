@@ -20,11 +20,17 @@ import {
   formatResolutionMode,
 } from "@/game/taskEffectDisplay";
 import type { LocationAction } from "@/data/locationActions";
+import { ContentStudioArtifactPanel, ContentStudioDependencyDebugPanel } from "@/components/ops/ContentStudioArtifactPanel";
+import { ContentStudioDependencyFlow } from "@/components/ops/ContentStudioDependencyFlow";
+import { ContentStudioMainlineDebugPanel } from "@/components/ops/ContentStudioMainlineDebugPanel";
+
+export type ContentStudioTab = "overview" | "deliverables" | "dependency" | "debug" | "mainline";
 
 type ContentStudioPanelProps = {
   data: ContentStudioData;
   healthReport: ContentHealthCheckReport;
   selectedLocationId?: string;
+  activeTab?: ContentStudioTab;
 };
 
 function stageLabel(stageId?: string) {
@@ -269,6 +275,7 @@ export function ContentStudioPanel({
   data,
   healthReport,
   selectedLocationId,
+  activeTab = "overview",
 }: ContentStudioPanelProps) {
   const selectedRow = getLocationStudioRow(data, selectedLocationId);
   const selectedActions = selectedLocationId
@@ -286,7 +293,18 @@ export function ContentStudioPanel({
     { label: "剧情入口", value: data.overview.storyEntries },
     { label: "NPC", value: data.overview.npcs },
     { label: "区域", value: data.overview.areas },
+    { label: "成果物", value: data.overview.artifactDefinitions },
   ];
+
+  const tabLinks: { id: ContentStudioTab; label: string }[] = [
+    { id: "overview", label: "总览" },
+    { id: "deliverables", label: "成果物中心" },
+    { id: "dependency", label: "依赖关系图" },
+    { id: "debug", label: "依赖调试" },
+    { id: "mainline", label: "主线调试" },
+  ];
+
+  const taskSlugs = data.taskTemplates.map((template) => template.slug);
 
   const chapter1Report = buildChapter1AcceptanceFromStudio(data);
   const chapter1Items = [
@@ -305,8 +323,57 @@ export function ContentStudioPanel({
         <p className="mt-1 text-sm text-zinc-400">
           可视化查看地点、行动、任务与剧情之间的关系，辅助配置与排查。
         </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {tabLinks.map((tab) => (
+            <Link
+              key={tab.id}
+              href={
+                tab.id === "overview"
+                  ? "/ops/content-studio"
+                  : `/ops/content-studio?tab=${tab.id}`
+              }
+              className={`rounded-md px-3 py-1.5 text-sm ${
+                activeTab === tab.id
+                  ? "bg-sky-600 text-white"
+                  : "border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
+              }`}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
+      {activeTab === "deliverables" ? (
+        <section>
+          <ContentStudioArtifactPanel data={data} />
+        </section>
+      ) : null}
+
+      {activeTab === "dependency" ? (
+        <section>
+          <h2 className="mb-3 text-lg font-medium text-zinc-200">任务—成果物依赖关系</h2>
+          <ContentStudioDependencyFlow
+            graph={data.dependencyGraph}
+            knownArtifactSlugs={new Set(data.artifactDefinitions.map((def) => def.slug))}
+          />
+        </section>
+      ) : null}
+
+      {activeTab === "debug" ? (
+        <section>
+          <ContentStudioDependencyDebugPanel taskSlugs={taskSlugs} />
+        </section>
+      ) : null}
+
+      {activeTab === "mainline" ? (
+        <section>
+          <ContentStudioMainlineDebugPanel />
+        </section>
+      ) : null}
+
+      {activeTab === "overview" ? (
+        <>
       <section>
         <h2 className="mb-3 text-lg font-medium text-zinc-200">内容总览</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -757,6 +824,8 @@ export function ContentStudioPanel({
           </CardContent>
         </Card>
       </section>
+        </>
+      ) : null}
     </div>
   );
 }

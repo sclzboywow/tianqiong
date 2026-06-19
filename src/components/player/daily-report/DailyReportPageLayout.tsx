@@ -1,48 +1,39 @@
 import type { ReactNode } from "react";
+import { taskHudShell } from "../tasks/taskBoardUi";
 
 type DailyReportPageLayoutProps = {
   header: ReactNode;
-  summaryMobile: ReactNode;
-  categorySidebar: ReactNode;
-  categoryChips: ReactNode;
   timeline: ReactNode;
-  summaryDesktop: ReactNode;
-  keyChanges: ReactNode;
   nextSuggestion: ReactNode;
+  keyChanges: ReactNode | null;
+  quickLinks: ReactNode;
 };
 
 export function DailyReportPageLayout({
   header,
-  summaryMobile,
-  categorySidebar,
-  categoryChips,
   timeline,
-  summaryDesktop,
-  keyChanges,
   nextSuggestion,
+  keyChanges,
+  quickLinks,
 }: DailyReportPageLayoutProps) {
   return (
-    <div className="space-y-4 lg:space-y-5">
+    <div className={taskHudShell}>
       {header}
 
-      <div className="lg:hidden">{summaryMobile}</div>
-      <div className="lg:hidden">{categoryChips}</div>
+      <div className="grid grid-cols-1 gap-0 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <main className="min-w-0 border-cyan-400/10 p-3 xl:border-r">{timeline}</main>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-5">
-        <main className="min-w-0 space-y-4">
-          <div className="hidden lg:block">{categoryChips}</div>
-          {timeline}
-        </main>
-
-        <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-          <div className="hidden lg:block">{summaryDesktop}</div>
-          <div className="hidden lg:block">
-            <div className="mb-2 px-1 text-xs font-medium text-[#8EA3B8]">日志分类</div>
-            {categorySidebar}
-          </div>
-          {keyChanges}
+        <aside className="hidden space-y-2.5 p-3 xl:sticky xl:top-4 xl:block xl:self-start">
           {nextSuggestion}
+          {keyChanges}
+          {quickLinks}
         </aside>
+      </div>
+
+      <div className="space-y-2.5 border-t border-cyan-400/10 p-3 xl:hidden">
+        {nextSuggestion}
+        {keyChanges}
+        {quickLinks}
       </div>
     </div>
   );

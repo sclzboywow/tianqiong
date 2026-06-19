@@ -8,7 +8,7 @@ import { seedPayloadCollections } from "../src/lib/payloadSeed";
 async function seedPayload() {
   try {
     const { getPayload } = await import("payload");
-    const config = (await import("../payload.config")).default;
+    const config = (await import("@payload-config")).default;
     const payload = await getPayload({ config });
     const overwrite = process.env.SEED_OVERWRITE === "true";
     const stats = await seedPayloadCollections(payload, TASK_TEMPLATES, { overwrite });

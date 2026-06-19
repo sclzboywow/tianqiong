@@ -8,12 +8,11 @@ import type {
 import { filterLogItemsByCategory } from "@/game/dailyReportPresentationEngine";
 import { DailyReportPageLayout } from "./DailyReportPageLayout";
 import { DailyReportHeader } from "./DailyReportHeader";
-import { DailyReportCategorySidebar } from "./DailyReportCategorySidebar";
 import { DailyReportCategoryChips } from "./DailyReportCategoryChips";
 import { DailyReportTimeline } from "./DailyReportTimeline";
-import { DailyReportSummaryCard } from "./DailyReportSummaryCard";
 import { DailyReportKeyChangesCard } from "./DailyReportKeyChangesCard";
 import { DailyReportNextSuggestionCard } from "./DailyReportNextSuggestionCard";
+import { DailyReportQuickLinks } from "./DailyReportQuickLinks";
 
 type DailyReportClientProps = {
   data: DailyReportViewData;
@@ -21,40 +20,44 @@ type DailyReportClientProps = {
 
 export function DailyReportClient({ data }: DailyReportClientProps) {
   const [activeCategory, setActiveCategory] = useState<DailyReportCategoryId>("all");
+  const isArchiveEmpty = data.summary.totalLogs === 0;
 
   const filteredLogs = useMemo(
     () => filterLogItemsByCategory(data.logItems, activeCategory),
     [data.logItems, activeCategory],
   );
 
-  const summaryCard = <DailyReportSummaryCard summary={data.summary} />;
-  const keyChangesCard = <DailyReportKeyChangesCard changes={data.keyChanges} />;
-  const nextSuggestionCard = (
-    <DailyReportNextSuggestionCard suggestion={data.nextSuggestion} />
-  );
+  const keyChangesCard =
+    data.keyChanges.length > 0 ? (
+      <DailyReportKeyChangesCard changes={data.keyChanges} />
+    ) : null;
 
   return (
     <DailyReportPageLayout
-      header={<DailyReportHeader />}
-      summaryMobile={summaryCard}
-      categorySidebar={
-        <DailyReportCategorySidebar
-          categories={data.categories}
-          activeId={activeCategory}
-          onSelect={setActiveCategory}
-        />
-      }
-      categoryChips={
-        <DailyReportCategoryChips
-          categories={data.categories}
-          activeId={activeCategory}
-          onSelect={setActiveCategory}
-        />
-      }
-      timeline={<DailyReportTimeline items={filteredLogs} />}
-      summaryDesktop={summaryCard}
+      header={<DailyReportHeader summary={data.summary} />}
+      nextSuggestion={<DailyReportNextSuggestionCard suggestion={data.nextSuggestion} />}
       keyChanges={keyChangesCard}
-      nextSuggestion={nextSuggestionCard}
+      quickLinks={<DailyReportQuickLinks />}
+      timeline={
+        <DailyReportTimeline
+          items={filteredLogs}
+          isArchiveEmpty={isArchiveEmpty}
+          primaryAction={
+            isArchiveEmpty
+              ? { href: data.nextSuggestion.href, label: data.nextSuggestion.buttonLabel }
+              : undefined
+          }
+          categoryChips={
+            isArchiveEmpty ? null : (
+              <DailyReportCategoryChips
+                categories={data.categories}
+                activeId={activeCategory}
+                onSelect={setActiveCategory}
+              />
+            )
+          }
+        />
+      }
     />
   );
 }

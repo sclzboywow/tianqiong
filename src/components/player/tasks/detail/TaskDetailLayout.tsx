@@ -1,29 +1,31 @@
 import type { ReactNode } from "react";
+import { taskHudShell } from "../taskBoardUi";
 
 type TaskDetailLayoutProps = {
   header: ReactNode;
-  intel: ReactNode;
+  decision: ReactNode;
   story: ReactNode;
-  impact: ReactNode;
-  result: ReactNode;
+  intel: ReactNode;
+  logs: ReactNode;
 };
 
-export function TaskDetailLayout({ header, intel, story, impact, result }: TaskDetailLayoutProps) {
+export function TaskDetailLayout({ header, decision, story, intel, logs }: TaskDetailLayoutProps) {
   return (
-    <div className="space-y-4 lg:space-y-5">
+    <div className={taskHudShell}>
       {header}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-5">
-        <main className="min-w-0 space-y-4 lg:space-y-5">
+      <div className="grid grid-cols-1 gap-0 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <main className="min-w-0 space-y-3 border-cyan-400/10 p-3 xl:border-r">
+          <div className="xl:hidden">{decision}</div>
           {story}
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-            {intel}
-            {impact}
-          </div>
+          {intel}
+          <div className="xl:hidden">{logs}</div>
         </main>
 
-        <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">{result}</aside>
+        <aside className="hidden space-y-3 p-3 xl:sticky xl:top-4 xl:block xl:self-start">
+          {decision}
+          {logs}
+        </aside>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import { prisma } from "@/prisma/client";
 import type { LogType } from "@/game/prisma-types";
 import { CHARACTER_GROWTH_LOG_PREFIX } from "./playerProgressEngine";
+import { getLocationDisplayNameById } from "./locationDisplayName";
+import { NPC_INTERACTION_LOG_PREFIX } from "./npcInteractionEngine";
 
 const SEASON_ID = process.env.SEASON_ID || "season-1";
 
@@ -107,6 +109,39 @@ export async function getRecentLocationActionLogs(
         { content: { contains: location.name } },
         { content: { contains: location.id } },
       ],
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: { id: true, content: true, createdAt: true },
+  });
+}
+
+export function buildNpcInteractionLogLocationFilter(location: { id: string; name: string }) {
+  const displayName = getLocationDisplayNameById(location.id);
+  return {
+    AND: [
+      { content: { startsWith: NPC_INTERACTION_LOG_PREFIX } },
+      {
+        OR: [
+          { content: { contains: `@${location.id}` } },
+          { content: { contains: location.name } },
+          { content: { contains: displayName } },
+        ],
+      },
+    ],
+  };
+}
+
+export async function getRecentNpcInteractionLogs(
+  location: { id: string; name: string },
+  limit = 5,
+  seasonId = SEASON_ID,
+): Promise<GameLogSummary[]> {
+  return prisma.gameLog.findMany({
+    where: {
+      seasonId,
+      logType: "SYSTEM",
+      ...buildNpcInteractionLogLocationFilter(location),
     },
     orderBy: { createdAt: "desc" },
     take: limit,

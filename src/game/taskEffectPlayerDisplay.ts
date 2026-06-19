@@ -81,6 +81,7 @@ const CHOICE_ID_LABELS: Record<string, string> = {
 /** 玩家日志正文清理：去除技术 slug 与枚举 */
 export function sanitizePlayerLogContent(content: string): string {
   let text = sanitizeTaskLogContent(content)
+    .replace(/^【NPC互动】@[^\s]+\s*/, "【NPC互动】")
     .replace(/^【协同地图】/, "")
     .replace(/^【事件池】/, "")
     .replace(/【([^】]+)】/g, "「$1」")

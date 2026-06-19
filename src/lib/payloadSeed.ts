@@ -1,11 +1,17 @@
 import type { Payload } from "payload";
 import { TASK_TEMPLATES } from "@/data/taskTemplates";
-import { NPCS, AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
+import { ARTIFACT_DEFINITIONS } from "@/data/artifactDefinitions";
+import { AREAS, ITEMS, DAILY_REPORT_TEMPLATES } from "@/data/content";
+import { NPC_PROFILES } from "@/data/npcProfiles";
+import { buildNpcProfilePayloadData } from "@/lib/npcProfilePayload";
 import { ACHIEVEMENTS } from "@/data/achievements";
 import { MAP_LOCATIONS } from "@/data/locations";
+import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 import { LOCATION_ACTIONS } from "@/data/locationActions";
 import { CHAPTER1_EVENTS } from "@/data/chapter1Content";
-import type { TaskTemplateData, EventTemplateData } from "@/game/types";
+import { CONSTRUCTION_PROJECT_EVENTS } from "@/data/constructionProjectEvents";
+import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
+import type { TaskTemplateData, EventTemplateData, ArtifactDefinitionData } from "@/game/types";
 import {
   choiceEffectsToRows,
   metricEffectsToRows,
@@ -18,10 +24,17 @@ import {
   inferAreaUnlockStage,
   inferItemCategory,
   inferMapLocationCategory,
-  inferNpcCategory,
-  inferNpcUnlockStage,
   inferTaskCategory,
 } from "@/payload/contentCategories";
+
+/** chapter1 + 旧 STAGE_TASK_TEMPLATES：不自动生成可触发事件，避免空 location 约束下漏回事件池 */
+const LEGACY_AUTO_EVENT_TASK_SLUGS = new Set(
+  STAGE_TASK_TEMPLATES.map((template) => template.slug),
+);
+
+function isLegacyAutoEventTask(template: TaskTemplateData): boolean {
+  return LEGACY_AUTO_EVENT_TASK_SLUGS.has(template.slug);
+}
 
 export type CollectionSeedStats = {
   created: number;
@@ -33,6 +46,7 @@ export type PayloadSeedStats = {
   npcs: CollectionSeedStats;
   areas: CollectionSeedStats;
   storyEntries: CollectionSeedStats;
+  artifactDefinitions: CollectionSeedStats;
   taskTemplates: CollectionSeedStats;
   eventTemplates: CollectionSeedStats;
   items: CollectionSeedStats;
@@ -55,6 +69,7 @@ function emptySeedStats(): PayloadSeedStats {
     npcs: emptyCollectionStats(),
     areas: emptyCollectionStats(),
     storyEntries: emptyCollectionStats(),
+    artifactDefinitions: emptyCollectionStats(),
     taskTemplates: emptyCollectionStats(),
     eventTemplates: emptyCollectionStats(),
     items: emptyCollectionStats(),
@@ -83,6 +98,28 @@ async function applySeedRecord(
     return;
   }
   stats.skipped++;
+}
+
+function buildArtifactDefinitionPayloadData(definition: ArtifactDefinitionData) {
+  return {
+    slug: definition.slug,
+    name: definition.name,
+    artifactType: definition.artifactType,
+    stage: definition.stage,
+    description: definition.description,
+    reusable: definition.reusable ?? false,
+    versioned: definition.versioned ?? true,
+    expires: definition.expires ?? 0,
+    defaultStatus: definition.defaultStatus || "draft",
+    allowedStatuses: (definition.allowedStatuses || []).map((item) => ({
+      status: item.status,
+      label: item.label,
+    })),
+    sourceNpcNames: (definition.sourceNpcNames || []).map((name) => ({ name })),
+    sourceLocationSlugs: (definition.sourceLocationSlugs || []).map((slug) => ({ slug })),
+    tags: (definition.tags || []).map((tag) => ({ tag })),
+    enabled: definition.enabled ?? true,
+  };
 }
 
 function buildTaskTemplatePayloadData(template: TaskTemplateData) {
@@ -118,6 +155,19 @@ function buildTaskTemplatePayloadData(template: TaskTemplateData) {
     inkFile: template.inkFile,
     baseSuccessRate: template.baseSuccessRate || 60,
     triggerBroadcast: template.triggerBroadcast || false,
+    inputArtifacts: (template.inputArtifacts || []).map((item) => ({
+      artifactSlug: item.artifactSlug,
+      minStatus: item.minStatus,
+      quantity: item.quantity ?? 1,
+    })),
+    outputArtifacts: (template.outputArtifacts || []).map((item) => ({
+      artifactSlug: item.artifactSlug,
+      status: item.status,
+      versionBump: item.versionBump ?? false,
+    })),
+    prerequisiteTaskSlugs: (template.prerequisiteTaskSlugs || []).map((slug) => ({ slug })),
+    requiredMilestones: (template.requiredMilestones || []).map((milestone) => ({ milestone })),
+    blockPolicy: template.blockPolicy || "hard_block",
     enabled: true,
   };
 }
@@ -162,7 +212,7 @@ function buildEventTemplatePayloadData(template: TaskTemplateData) {
     npcList: template.sourceName ? [{ npc: template.sourceName }] : [],
     eventType: template.sourceType,
     inkFile: template.inkFile,
-    storySlug: template.inkFile,
+    storySlug: template.storySlug || template.inkFile,
     recommendedJobs: (template.requiredJobs || []).map((j) => ({ job: j })),
     baseSuccessRate: template.baseSuccessRate || 60,
     triggerBroadcast: template.triggerBroadcast || false,
@@ -199,13 +249,17 @@ function buildStoryEntryPayloadData(template: TaskTemplateData, storyType: "task
   };
 }
 
-function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
+function buildManualEventPayloadData(
+  event: Partial<EventTemplateData>,
+  options: { forceDisabled?: boolean } = {},
+) {
   const triggerAreaNames = event.area && areaNames.has(event.area) ? [event.area] : [];
+  const enabled = options.forceDisabled ? false : (event.enabled ?? true);
   return {
     slug: event.slug,
     title: event.title,
     description: event.description,
-    category: "mainline",
+    category: options.forceDisabled ? "legacy" : "mainline",
     rarity: event.rarity || "R",
     area: event.area,
     inkFile: event.inkFile,
@@ -218,7 +272,21 @@ function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
     weight: event.weight ?? 10,
     onceOnly: event.onceOnly ?? false,
     cooldownDays: event.cooldownDays ?? 0,
-    enabled: event.enabled ?? true,
+    enabled,
+    artifactEffects: (event.artifactEffects || []).map((item) => ({
+      artifactSlug: item.artifactSlug,
+      status: item.status,
+      versionBump: item.versionBump ?? false,
+    })),
+    taskEffects: (event.taskEffects || [])
+      .filter((item) => item.action === "spawn")
+      .map((item) => ({
+        action: "spawn" as const,
+        taskSlug: item.taskSlug,
+      })),
+    metricEffectsList: event.metricEffects
+      ? metricEffectsToRows(event.metricEffects)
+      : [],
   };
 }
 
@@ -244,25 +312,13 @@ export async function seedPayloadCollections(
   const overwrite = options.overwrite ?? false;
   const stats = emptySeedStats();
 
-  for (const npc of NPCS) {
-    const category = inferNpcCategory(npc.type, (npc as { category?: string }).category);
-    const data = {
-      name: npc.name,
-      category,
-      type: npc.type,
-      description: npc.description,
-      defaultRelation: npc.defaultRelation,
-      quotes: npc.quotes.map((q) => ({ quote: q })),
-      relatedMetrics: npc.relatedMetrics.map((m) => ({ metric: m })),
-      ...buildUnlockPayloadData({
-        unlockStage: npc.unlockStage || inferNpcUnlockStage(npc.type),
-        unlockMilestones: npc.unlockMilestones,
-        relatedLocationSlugs: npc.relatedLocationSlugs,
-        visibleWhenLocked: npc.visibleWhenLocked,
-      }),
-      enabled: true,
-    };
-    const existing = await payload.find({ collection: "npcs", where: { name: { equals: npc.name } } });
+  for (const profile of NPC_PROFILES) {
+    const data = buildNpcProfilePayloadData(profile);
+    const existing = await payload.find({
+      collection: "npcs",
+      where: { slug: { equals: profile.id } },
+      limit: 1,
+    });
     const doc = existing.docs[0];
     await applySeedRecord(
       stats.npcs,
@@ -274,13 +330,18 @@ export async function seedPayloadCollections(
   }
 
   for (const area of AREAS) {
-    const category = inferAreaCategory(area.name, area.stage, (area as { category?: string }).category);
+    const category = inferAreaCategory(area.name, area.stage, area.category);
     const data = {
+      slug: area.slug,
       name: area.name,
+      shortName: area.shortName,
+      sandtableRegionId: area.sandtableRegionId,
+      sandtableZoneId: area.sandtableZoneId,
       category,
       description: area.description,
       stage: area.stage,
       riskTags: area.riskTags.map((t) => ({ tag: t })),
+      sortOrder: area.sortOrder,
       ...buildUnlockPayloadData({
         unlockStage: area.unlockStage || inferAreaUnlockStage(area.name, area.stage),
         unlockMilestones: area.unlockMilestones,
@@ -289,7 +350,7 @@ export async function seedPayloadCollections(
       }),
       enabled: true,
     };
-    const existing = await payload.find({ collection: "areas", where: { name: { equals: area.name } } });
+    const existing = await payload.find({ collection: "areas", where: { slug: { equals: area.slug } } });
     const doc = existing.docs[0];
     await applySeedRecord(
       stats.areas,
@@ -297,6 +358,22 @@ export async function seedPayloadCollections(
       Boolean(doc),
       () => payload.create({ collection: "areas", data }),
       () => payload.update({ collection: "areas", id: doc.id, data }),
+    );
+  }
+
+  for (const definition of ARTIFACT_DEFINITIONS) {
+    const data = buildArtifactDefinitionPayloadData(definition);
+    const existing = await payload.find({
+      collection: "artifact-definitions",
+      where: { slug: { equals: definition.slug } },
+    });
+    const doc = existing.docs[0];
+    await applySeedRecord(
+      stats.artifactDefinitions,
+      overwrite,
+      Boolean(doc),
+      () => payload.create({ collection: "artifact-definitions", data }),
+      () => payload.update({ collection: "artifact-definitions", id: doc.id, data }),
     );
   }
 
@@ -333,6 +410,26 @@ export async function seedPayloadCollections(
   }
 
   for (const template of templates) {
+    const eventSlug = `evt_${template.slug}`;
+
+    if (isLegacyAutoEventTask(template)) {
+      const existing = await payload.find({
+        collection: "event-templates",
+        where: { slug: { equals: eventSlug } },
+        limit: 1,
+      });
+      const doc = existing.docs[0];
+      if (doc) {
+        await payload.update({
+          collection: "event-templates",
+          id: doc.id,
+          data: { enabled: false },
+        });
+        stats.eventTemplates.updated += 1;
+      }
+      continue;
+    }
+
     const data = buildEventTemplatePayloadData(template);
     const existing = await payload.find({
       collection: "event-templates",
@@ -350,7 +447,24 @@ export async function seedPayloadCollections(
 
   for (const event of CHAPTER1_EVENTS) {
     if (!event.slug) continue;
-    const data = buildChapter1EventPayloadData(event);
+    const data = buildManualEventPayloadData(event, { forceDisabled: true });
+    const existing = await payload.find({
+      collection: "event-templates",
+      where: { slug: { equals: event.slug } },
+    });
+    const doc = existing.docs[0];
+    if (doc) {
+      await payload.update({ collection: "event-templates", id: doc.id, data });
+      stats.eventTemplates.updated++;
+    } else {
+      await payload.create({ collection: "event-templates", data });
+      stats.eventTemplates.created++;
+    }
+  }
+
+  for (const event of CONSTRUCTION_PROJECT_EVENTS) {
+    if (!event.slug) continue;
+    const data = buildManualEventPayloadData(event);
     const existing = await payload.find({
       collection: "event-templates",
       where: { slug: { equals: event.slug } },
@@ -432,9 +546,12 @@ export async function seedPayloadCollections(
 
   for (const [index, loc] of MAP_LOCATIONS.entries()) {
     const category = inferMapLocationCategory(loc.group);
+    const placement = getMapLocationSandtablePlacement(loc.id);
     const data = {
       slug: loc.id,
       name: loc.name,
+      sandtableRegionId: placement.regionId,
+      sandtableZoneId: placement.zoneId,
       type: loc.type,
       group: loc.group,
       category,

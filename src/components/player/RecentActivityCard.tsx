@@ -1,12 +1,15 @@
 import Link from "next/link";
 import type { GameLogSummary } from "@/game/logEngine";
 import { sanitizePlayerLogContent } from "@/game/taskEffectPlayerDisplay";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "./playerTheme";
+import {
+  taskDetailDivider,
+  taskDetailPanel,
+  taskDetailPanelHeader,
+} from "./tasks/taskBoardUi";
 
 type RecentActivityCardProps = {
   logs: GameLogSummary[];
   maxItems?: number;
-  title?: string;
 };
 
 function formatLogTime(date: Date) {
@@ -16,28 +19,30 @@ function formatLogTime(date: Date) {
   }).format(date);
 }
 
-export function RecentActivityCard({ logs, maxItems = 5, title = "指挥记录" }: RecentActivityCardProps) {
+export function RecentActivityCard({ logs, maxItems = 3 }: RecentActivityCardProps) {
   const displayLogs = logs.slice(0, maxItems);
 
   return (
-    <section className={playerCardClass}>
-      <div className={`${playerCardHeaderClass} flex items-center justify-between gap-3`}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">{title}</h3>
-        <span className="text-xs text-[#8EA3B8]">{displayLogs.length} 条</span>
+    <section className={taskDetailPanel}>
+      <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
+        <h3 className="text-sm font-medium text-cyan-100">最近记录</h3>
+        {displayLogs.length > 0 ? (
+          <span className="text-[11px] text-slate-500">{displayLogs.length} 条</span>
+        ) : null}
       </div>
 
-      <div className={playerCardBodyClass}>
+      <div className="p-3">
         {displayLogs.length === 0 ? (
-          <p className="text-[13px] text-[#8EA3B8] lg:text-sm">暂无行动、事件或任务记录。</p>
+          <p className="text-xs text-slate-500">暂无行动、事件或任务记录。</p>
         ) : (
-          <ol className="relative space-y-3 before:absolute before:left-[5px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-[rgba(60,160,255,0.16)]">
+          <ol className={`${taskDetailDivider} space-y-0`}>
             {displayLogs.map((log) => (
-              <li key={log.id} className="relative pl-5">
-                <span className="absolute left-0 top-1.5 size-2.5 rounded-full border border-[#2EA8FF] bg-[#07111F]" />
-                <p className="text-[11px] tabular-nums text-[#8EA3B8]">
+              <li key={log.id} className="relative py-2 pl-3">
+                <span className="absolute left-0 top-[13px] size-1 bg-cyan-400/30" />
+                <p className="text-[10px] tabular-nums text-slate-600">
                   {formatLogTime(log.createdAt)}
                 </p>
-                <p className="mt-0.5 text-[13px] leading-relaxed text-[#EAF3FF]/90 lg:text-sm">
+                <p className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-slate-300/90">
                   {sanitizePlayerLogContent(log.content)}
                 </p>
               </li>
@@ -47,9 +52,9 @@ export function RecentActivityCard({ logs, maxItems = 5, title = "指挥记录" 
 
         <Link
           href="/daily-report"
-          className="mt-4 inline-block text-xs text-[#2EA8FF] hover:underline"
+          className="mt-3 inline-block text-xs text-cyan-400/80 hover:text-cyan-300"
         >
-          查看全部动态 →
+          查看项目复盘台 →
         </Link>
       </div>
     </section>

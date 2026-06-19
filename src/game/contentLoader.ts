@@ -1,8 +1,40 @@
 import { TASK_TEMPLATES } from "@/data/taskTemplates";
-import type { TaskTemplateData, ResolutionMode } from "./types";
+import type { TaskTemplateData, ResolutionMode, TaskBlockPolicy, ArtifactRequirement, ArtifactEffect } from "./types";
 import type { ProjectStageId } from "./projectStages";
 import { inferMinResolveCount, inferResolutionMode } from "./taskEngine";
 import { resolveTaskTemplateEffects, type TaskTemplateEffectDoc } from "./taskTemplateEffectMapper";
+
+function mapArtifactRequirements(raw: unknown): ArtifactRequirement[] {
+  if (!Array.isArray(raw)) return [];
+  const results: ArtifactRequirement[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { artifactSlug?: string; minStatus?: string; quantity?: number };
+    if (!row.artifactSlug?.trim()) continue;
+    results.push({
+      artifactSlug: row.artifactSlug.trim(),
+      minStatus: row.minStatus?.trim() || undefined,
+      quantity: row.quantity ?? undefined,
+    });
+  }
+  return results;
+}
+
+function mapArtifactEffects(raw: unknown): ArtifactEffect[] {
+  if (!Array.isArray(raw)) return [];
+  const results: ArtifactEffect[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { artifactSlug?: string; status?: string; versionBump?: boolean };
+    if (!row.artifactSlug?.trim() || !row.status?.trim()) continue;
+    results.push({
+      artifactSlug: row.artifactSlug.trim(),
+      status: row.status.trim(),
+      versionBump: row.versionBump ?? undefined,
+    });
+  }
+  return results;
+}
 
 function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
   const rarity = doc.rarity as string;
@@ -38,6 +70,17 @@ function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
     ),
     triggerBroadcast: doc.triggerBroadcast as boolean | undefined,
     category: doc.category as string | undefined,
+    inputArtifacts: mapArtifactRequirements(doc.inputArtifacts),
+    outputArtifacts: mapArtifactEffects(doc.outputArtifacts),
+    prerequisiteTaskSlugs:
+      (doc.prerequisiteTaskSlugs as { slug: string }[] | null)
+        ?.map((item) => item.slug)
+        .filter(Boolean) || [],
+    requiredMilestones:
+      (doc.requiredMilestones as { milestone: string }[] | null)
+        ?.map((item) => item.milestone)
+        .filter(Boolean) || [],
+    blockPolicy: (doc.blockPolicy as TaskBlockPolicy | undefined) ?? "hard_block",
   };
 }
 

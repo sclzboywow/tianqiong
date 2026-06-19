@@ -50,7 +50,7 @@ export function PlayerBottomNav({ pendingTaskCount = 0 }: PlayerBottomNavProps) 
                   />
                 ) : null}
                 {showBadge ? (
-                  <span className="absolute -right-1.5 -top-1 flex size-4 items-center justify-center rounded-full bg-[#EF4444] text-[9px] font-medium text-white">
+                  <span className="absolute -right-1.5 -top-1 flex size-4 items-center justify-center rounded-full bg-[#EF4444] text-[11px] font-medium text-white">
                     {pendingTaskCount > 9 ? "9+" : pendingTaskCount}
                   </span>
                 ) : null}

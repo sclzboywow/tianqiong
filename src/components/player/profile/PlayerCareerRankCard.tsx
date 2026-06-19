@@ -1,102 +1,176 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { Award } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { CareerRankView } from "@/game/careerRankEngine";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
+import {
+  taskDetailDivider,
+  taskDetailPanel,
+  taskDetailPanelHeader,
+} from "../tasks/taskBoardUi";
+import { ProfileExpandButton } from "./profileExpand";
+
+const REQUIREMENT_PREVIEW_LIMIT = 3;
 
 type PlayerCareerRankCardProps = {
   career: CareerRankView;
 };
 
 export function PlayerCareerRankCard({ career }: PlayerCareerRankCardProps) {
+  const [requirementsExpanded, setRequirementsExpanded] = useState(false);
+  const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+
   const { currentRank, nextRank, requirements, progressPercent, unlocks, bonusDescription } =
     career;
 
+  const sortedRequirements = useMemo(
+    () =>
+      [...requirements].sort((a, b) => {
+        if (a.passed !== b.passed) return a.passed ? 1 : -1;
+        return 0;
+      }),
+    [requirements],
+  );
+
+  const pendingRequirements = sortedRequirements.filter((req) => !req.passed);
+  const visibleRequirements = requirementsExpanded
+    ? sortedRequirements
+    : sortedRequirements.slice(0, REQUIREMENT_PREVIEW_LIMIT);
+
+  const hasPermissionDetails = unlocks.length > 0 || !!bonusDescription;
+
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <div className="flex items-center gap-2">
-          <Award className="size-4 text-[#FACC15]" />
-          <h3 className="text-base font-semibold text-[#EAF3FF]">职业阶位</h3>
-        </div>
-        <p className="mt-1 text-xs text-[#8EA3B8]">项目管理权限成长路线</p>
+    <section className={taskDetailPanel}>
+      <div className={taskDetailPanelHeader}>
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
+          <Award className="size-3.5 text-violet-400/80" />
+          职业晋升
+        </h3>
       </div>
 
-      <div className={playerCardBodyClass}>
-        <div className="rounded-lg border border-[rgba(250,204,21,0.25)] bg-[rgba(250,204,21,0.08)] px-3 py-3">
-          <p className="text-xs text-[#FACC15]/80">当前阶位</p>
-          <p className="mt-0.5 text-lg font-semibold text-[#EAF3FF]">{currentRank.title}</p>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-[#8EA3B8]">
-            {currentRank.description}
-          </p>
+      <div className="space-y-2 p-3">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px]">
+          <span>
+            <span className="text-slate-600">当前 </span>
+            <span className="text-violet-200/90">{currentRank.title}</span>
+          </span>
+          {nextRank ? (
+            <>
+              <span className="text-slate-700">→</span>
+              <span>
+                <span className="text-slate-600">下一阶 </span>
+                <span className="text-cyan-100">{nextRank.title}</span>
+              </span>
+            </>
+          ) : (
+            <span className="text-emerald-400/85">已达最高阶位</span>
+          )}
         </div>
 
         {nextRank ? (
-          <div className="mt-3">
-            <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span className="text-[#8EA3B8]">
-                晋升至「{nextRank.title}」
-              </span>
-              <span className="tabular-nums text-[#EAF3FF]">{progressPercent}%</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#1E88FF] to-[#2EA8FF]"
-                style={{ width: `${progressPercent}%` }}
-              />
+          <>
+            {pendingRequirements.length > 0 ? (
+              <div className="bg-cyan-950/10 px-2.5 py-2">
+                <p className="text-sm font-medium text-cyan-100">
+                  下一阶还差 {pendingRequirements.length} 项
+                </p>
+                <p className="mt-0.5 text-[13px] text-slate-500">
+                  优先完成未达成条件即可推进晋升
+                </p>
+              </div>
+            ) : (
+              <p className="text-[11px] text-emerald-400/85">晋升条件已满足，等待系统确认</p>
+            )}
+
+            <div>
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="text-slate-600">晋升进度</span>
+                <span className="tabular-nums text-cyan-200/90">{progressPercent}%</span>
+              </div>
+              <div className="h-1 overflow-hidden bg-slate-950/40">
+                <div className="h-full bg-cyan-400/40" style={{ width: `${progressPercent}%` }} />
+              </div>
             </div>
 
-            {requirements.length > 0 ? (
-              <>
-                <ul className="mt-3 space-y-2">
-                  {requirements.map((req) => (
+            {sortedRequirements.length > 0 ? (
+              <div>
+                <p className="mb-1 text-xs font-medium text-slate-600">晋升条件</p>
+                <ul className={`${taskDetailDivider} bg-slate-950/10`}>
+                  {visibleRequirements.map((req) => (
                     <li
                       key={req.label}
-                      className="flex items-start justify-between gap-2 rounded-lg border border-[rgba(60,160,255,0.1)] bg-[rgba(5,11,20,0.45)] px-3 py-2"
+                      className={cn(
+                        "flex items-start justify-between gap-2 px-1 py-1.5 text-[11px]",
+                        !req.passed && "bg-cyan-950/15",
+                      )}
                     >
                       <span
-                        className={`text-[13px] leading-snug ${
-                          req.passed ? "text-[#22C55E]" : "text-[#EAF3FF]/90"
-                        }`}
+                        className={cn(
+                          req.passed
+                            ? "text-slate-600 line-through decoration-slate-700"
+                            : "font-medium text-cyan-100",
+                        )}
                       >
                         {req.passed ? "✓ " : "○ "}
                         {req.label}
                       </span>
-                      <span className="shrink-0 text-xs tabular-nums text-[#8EA3B8]">
+                      <span
+                        className={cn(
+                          "shrink-0 tabular-nums",
+                          req.passed ? "text-slate-700" : "text-cyan-300/80",
+                        )}
+                      >
                         {req.current}/{String(req.target)}
                       </span>
                     </li>
                   ))}
                 </ul>
-                {requirements.some((req) => req.type === "mainline") ? (
-                  <p className="mt-2 text-xs text-[#8EA3B8]">
-                    主线任务仅统计你参与并提交方案的任务。
-                  </p>
+                {sortedRequirements.length > REQUIREMENT_PREVIEW_LIMIT ? (
+                  <ProfileExpandButton
+                    expanded={requirementsExpanded}
+                    onClick={() => setRequirementsExpanded((value) => !value)}
+                    expandLabel={`展开全部条件（${sortedRequirements.length}条）`}
+                    collapseLabel="收起条件"
+                  />
                 ) : null}
-              </>
+              </div>
             ) : null}
-          </div>
-        ) : (
-          <p className="mt-3 text-[13px] text-[#22C55E]">已达最高职业阶位</p>
-        )}
-
-        {unlocks.length > 0 ? (
-          <div className="mt-4">
-            <p className="text-xs text-[#8EA3B8]">当前阶位权限</p>
-            <ul className="mt-2 space-y-1.5">
-              {unlocks.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2 text-[13px] text-[#EAF3FF]/85"
-                >
-                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#FACC15]" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
+          </>
         ) : null}
 
-        {bonusDescription ? (
-          <p className="mt-3 text-[11px] leading-relaxed text-[#8EA3B8]">{bonusDescription}</p>
+        {hasPermissionDetails ? (
+          <div className="border-t border-cyan-400/5 pt-1.5">
+            {!permissionsExpanded ? (
+              <ProfileExpandButton
+                expanded={false}
+                onClick={() => setPermissionsExpanded(true)}
+                expandLabel="查看阶位权限"
+                collapseLabel="收起阶位权限"
+              />
+            ) : (
+              <div className="space-y-1.5">
+                {unlocks.length > 0 ? (
+                  <ul className="space-y-0.5">
+                    {unlocks.map((item) => (
+                      <li key={item} className="text-[13px] leading-[1.4] text-slate-400">
+                        · {item}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {bonusDescription ? (
+                  <p className="text-xs leading-[1.4] text-slate-500">{bonusDescription}</p>
+                ) : null}
+                <ProfileExpandButton
+                  expanded
+                  onClick={() => setPermissionsExpanded(false)}
+                  expandLabel="查看阶位权限"
+                  collapseLabel="收起阶位权限"
+                />
+              </div>
+            )}
+          </div>
         ) : null}
       </div>
     </section>

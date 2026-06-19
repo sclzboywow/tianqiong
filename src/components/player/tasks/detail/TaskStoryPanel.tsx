@@ -1,210 +1,113 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { TaskStoryChoice, TaskStoryState } from "@/game/taskDetailPresentationEngine";
-import { buildStorySegments } from "@/game/storySegmentParser";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../../playerTheme";
+import { useState } from "react";
+import type { TaskStoryState } from "@/game/taskDetailPresentationEngine";
+import { buildStorySegments, type StorySegment } from "@/game/storySegmentParser";
+import { ScrollText } from "lucide-react";
+import {
+  taskDetailDivider,
+  taskDetailPanel,
+  taskDetailPanelHeader,
+  taskDetailTagMuted,
+} from "../taskBoardUi";
+import {
+  TaskDetailExpandButton,
+  buildFieldSummary,
+  pickKeyStorySegments,
+} from "./taskDetailExpand";
 
 type TaskStoryPanelProps = {
   story: TaskStoryState | null;
   inkAvailable: boolean;
-  isActive: boolean;
-  isJoined: boolean;
-  hasSubmitted: boolean;
-  loading: boolean;
-  onJoin: () => void;
-  onChoose: (choiceId: string, choiceText: string) => void;
-  pending?: {
-    message: string;
-    submittedCount: number;
-    requiredCount: number;
-  } | null;
-  showChoices: boolean;
-  error?: string | null;
 };
 
-export function TaskStoryPanel({
-  story,
-  inkAvailable,
-  isActive,
-  isJoined,
-  hasSubmitted,
-  loading,
-  onJoin,
-  onChoose,
-  pending,
-  showChoices,
-  error,
-}: TaskStoryPanelProps) {
-  const lines = story?.lines?.length ? story.lines : ["暂无剧情文本。"];
-  const choices = story?.choices || [];
-  const storySegments = buildStorySegments(lines);
-  const shouldShowChoiceReplay =
-    inkAvailable && choices.length > 0 && !showChoices && (hasSubmitted || !isActive);
+function StorySegmentRow({ segment }: { segment: StorySegment }) {
+  if (segment.type === "dialogue") {
+    return (
+      <div className="px-3 py-2.5">
+        <span className="text-[11px] text-slate-500">{segment.speaker}</span>
+        <p className="mt-0.5 text-[13px] leading-[1.5] text-slate-200">{segment.text}</p>
+      </div>
+    );
+  }
 
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">现场对话与处理方案</h3>
-        <p className="mt-1 text-xs text-[#8EA3B8]">先看现场冲突，再选择你的处理口径。</p>
+    <div className="px-3 py-2.5">
+      <span className="text-[11px] text-slate-500">旁白</span>
+      <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-[1.5] text-slate-300">
+        {segment.text}
+      </p>
+    </div>
+  );
+}
+
+export function TaskStoryPanel({ story, inkAvailable }: TaskStoryPanelProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!inkAvailable) {
+    return (
+      <section className={taskDetailPanel}>
+        <div className={taskDetailPanelHeader}>
+          <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
+            <ScrollText className="size-3.5 text-cyan-400/80" />
+            现场记录
+          </h3>
+        </div>
+        <div className="px-3 py-2.5">
+          <p className="text-xs text-slate-500">暂无现场记录。</p>
+        </div>
+      </section>
+    );
+  }
+
+  const lines = story?.lines?.length ? story.lines : ["暂无剧情文本。"];
+  const storySegments = buildStorySegments(lines);
+  const keySegments = pickKeyStorySegments(storySegments, 3);
+  const visibleSegments = expanded ? storySegments : keySegments;
+  const hasMore = storySegments.length > keySegments.length;
+
+  return (
+    <section className={taskDetailPanel}>
+      <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
+          <ScrollText className="size-3.5 text-cyan-400/80" />
+          现场记录
+        </h3>
+        <span className={taskDetailTagMuted}>{storySegments.length} 条</span>
       </div>
 
-      <div className={`${playerCardBodyClass} space-y-4`}>
-        {error && (
-          <p className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[#FCA5A5]">
-            {error}
-          </p>
-        )}
+      <div className="space-y-2 px-3 py-2.5">
+        <div>
+          <p className="mb-0.5 text-xs font-medium text-slate-600">现场摘要</p>
+          <p className="text-[13px] leading-[1.5] text-slate-400">{buildFieldSummary(storySegments)}</p>
+        </div>
 
-        {!inkAvailable && (
-          <p className="rounded-lg border border-[rgba(250,204,21,0.35)] bg-[rgba(250,204,21,0.08)] px-4 py-3 text-sm text-[#FDE68A]">
-            该任务尚未配置剧情，无法进入处理。
-          </p>
-        )}
-
-        {inkAvailable && (
-          <div className="rounded-xl border border-[rgba(60,160,255,0.16)] bg-[rgba(5,11,20,0.45)] p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-medium text-[#2EA8FF]">现场记录</p>
-                <p className="mt-0.5 text-xs text-[#8EA3B8]">已按发言和旁白整理，便于快速判断。</p>
-              </div>
-              <span className="rounded-full border border-[rgba(60,160,255,0.2)] px-2 py-0.5 text-xs text-[#8EA3B8]">
-                {storySegments.length} 条
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {storySegments.map((segment) =>
-                segment.type === "dialogue" ? (
-                  <div key={segment.key} className="flex gap-3">
-                    <div className="mt-5 flex size-8 shrink-0 items-center justify-center rounded-full border border-[rgba(60,160,255,0.28)] bg-[rgba(30,136,255,0.12)] text-xs font-semibold text-[#93C5FD]">
-                      {segment.speaker.slice(0, 1)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="px-1 text-xs text-[#8EA3B8]">{segment.speaker}</p>
-                      <p className="mt-1 rounded-2xl rounded-tl-sm border border-[rgba(60,160,255,0.18)] bg-[rgba(10,24,40,0.86)] px-4 py-3 text-[15px] leading-relaxed text-[#EAF3FF]">
-                        {segment.text}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    key={segment.key}
-                    className="rounded-xl border border-[rgba(142,163,184,0.14)] bg-[rgba(255,255,255,0.03)] px-4 py-3"
-                  >
-                    <p className="mb-1 text-xs text-[#8EA3B8]">现场旁白</p>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#C9D7E6]">
-                      {segment.text}
-                    </p>
-                  </div>
-                ),
-              )}
-            </div>
-          </div>
-        )}
-
-        {!isJoined && isActive && inkAvailable && (
-          <div className="rounded-xl border border-[rgba(30,136,255,0.22)] bg-[rgba(30,136,255,0.08)] p-4">
-            <p className="text-sm font-medium text-[#EAF3FF]">你还未加入该任务</p>
-            <p className="mt-1 text-sm leading-relaxed text-[#8EA3B8]">
-              加入后才能代表项目组提交处理方案。
-            </p>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={onJoin}
-              className="mt-3 flex h-11 w-full items-center justify-center rounded-lg bg-[#1E88FF] text-sm font-medium text-white hover:bg-[#2EA8FF] disabled:opacity-60"
-            >
-              {loading ? (
-                <span className="inline-flex items-center gap-2">
-                  <LoaderCircle className="size-4 animate-spin" />
-                  加入中
-                </span>
-              ) : (
-                "加入任务并开始处理"
-              )}
-            </button>
-          </div>
-        )}
-
-        {showChoices && choices.length > 0 && (
-          <div className="space-y-3">
-            <div>
-              <h4 className="text-sm font-semibold text-[#EAF3FF]">选择处理方案</h4>
-              <p className="mt-1 text-xs text-[#8EA3B8]">不同方案会影响进度、风险、信任和关键节点。</p>
-            </div>
-            {choices.map((choice: TaskStoryChoice) => (
-              <div
-                key={choice.choiceId}
-                className="rounded-xl border border-[rgba(60,160,255,0.22)] bg-[rgba(5,11,20,0.55)] px-4 py-3"
-              >
-                <div className="flex gap-3">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[rgba(30,136,255,0.16)] text-xs font-semibold text-[#93C5FD]">
-                    {choice.index + 1}
-                  </span>
-                  <p className="min-w-0 flex-1 text-sm font-medium leading-relaxed text-[#EAF3FF]">
-                    {choice.text}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => onChoose(choice.choiceId, choice.text)}
-                  className={cn(
-                    "mt-3 flex h-9 w-full items-center justify-center rounded-lg text-sm font-medium transition-colors",
-                    "bg-[#1E88FF] text-white hover:bg-[#2EA8FF]",
-                    "disabled:cursor-not-allowed disabled:opacity-60",
-                  )}
-                >
-                  选择该方案
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {shouldShowChoiceReplay && (
-          <div className="space-y-3">
-            <div>
-              <h4 className="text-sm font-semibold text-[#EAF3FF]">当时可选方案</h4>
-              <p className="mt-1 text-xs text-[#8EA3B8]">
-                {isActive ? "你已提交或暂不可选择，以下为方案回看。" : "任务已结算，以下为当时的处理选项。"}
-              </p>
-            </div>
-            <div className="grid gap-2">
-              {choices.map((choice: TaskStoryChoice) => (
-                <div
-                  key={choice.choiceId}
-                  className="flex gap-3 rounded-xl border border-[rgba(60,160,255,0.14)] bg-[rgba(5,11,20,0.36)] px-4 py-3"
-                >
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[rgba(60,160,255,0.2)] text-xs text-[#8EA3B8]">
-                    {choice.index + 1}
-                  </span>
-                  <p className="min-w-0 flex-1 text-sm leading-relaxed text-[#C9D7E6]">{choice.text}</p>
-                </div>
+        {!expanded && keySegments.length > 0 ? (
+          <div>
+            <p className="mb-1 text-xs font-medium text-slate-600">关键记录</p>
+            <div className={`${taskDetailDivider} bg-slate-950/10`}>
+              {keySegments.map((segment) => (
+                <StorySegmentRow key={segment.key} segment={segment} />
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
-        {pending && (
-          <div className="rounded-lg border border-[rgba(30,136,255,0.35)] bg-[rgba(30,136,255,0.08)] px-4 py-3 text-sm text-[#93C5FD]">
-            <p>{pending.message}</p>
-            <p className="mt-1 text-xs text-[#8EA3B8]">
-              当前提交：{pending.submittedCount}/{pending.requiredCount}
-            </p>
+        {expanded ? (
+          <div className={`${taskDetailDivider} bg-slate-950/10`}>
+            {visibleSegments.map((segment) => (
+              <StorySegmentRow key={segment.key} segment={segment} />
+            ))}
           </div>
-        )}
+        ) : null}
 
-        {isJoined && isActive && hasSubmitted && !pending && choices.length === 0 && (
-          <p className="text-sm text-[#8EA3B8]">你已提交方案，请等待结算或查看右侧结果。</p>
-        )}
-
-        {!isActive && !inkAvailable && (
-          <p className="text-sm text-[#8EA3B8]">任务已结束，可在右侧查看结算摘要。</p>
-        )}
+        {hasMore ? (
+          <TaskDetailExpandButton
+            expanded={expanded}
+            onClick={() => setExpanded((value) => !value)}
+            expandLabel={`展开完整现场记录（${storySegments.length}条）`}
+          />
+        ) : null}
       </div>
     </section>
   );

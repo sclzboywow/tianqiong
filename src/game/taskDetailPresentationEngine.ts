@@ -8,8 +8,12 @@ import { getRecentLogsForTask } from "./logEngine";
 import { resolveInkFileFromStorySlug } from "./storyEntryLoader";
 import { getStageDisplayName } from "./projectStages";
 import type { MetricEffects } from "./types";
+import type { MapLocation } from "@/data/locations";
+import type { LocationAction } from "@/data/locationActions";
 import {
   buildTaskItem,
+  buildTemplateToLocationIdMap,
+  buildTemplateToLocationNameMap,
   type TaskItemType,
   type TaskWithParticipants,
 } from "./taskPresentationEngine";
@@ -47,6 +51,9 @@ export type TaskDetailViewData = {
   stageName: string;
   area: string;
   sourceName: string;
+  sourceLocationName: string | null;
+  sourceLocationId: string | null;
+  locationHref: string | null;
   resolutionModeLabel: string;
   baseSuccessRate: number;
   requiredJobs: string[];
@@ -101,8 +108,28 @@ export async function buildTaskDetailViewData(
   task: TaskWithParticipants,
   project: ProjectState,
   userId: string,
+  options?: {
+    locations?: MapLocation[];
+    locationActions?: LocationAction[];
+  },
 ): Promise<TaskDetailViewData> {
-  const item = buildTaskItem(task, project);
+  const sourceLocationId =
+    options?.locations && options?.locationActions
+      ? buildTemplateToLocationIdMap(options.locations, options.locationActions).get(
+          task.templateId,
+        ) ?? null
+      : null;
+  const sourceLocationName =
+    options?.locations && options?.locationActions
+      ? buildTemplateToLocationNameMap(options.locations, options.locationActions).get(
+          task.templateId,
+        ) ?? null
+      : null;
+
+  const item = buildTaskItem(task, project, {
+    sourceLocationId,
+    sourceLocationName,
+  });
   const templates = await getTaskTemplates();
   const template = templates.find((entry) => entry.slug === task.templateId);
   const storySlug = template?.storySlug?.trim() || undefined;
@@ -138,6 +165,9 @@ export async function buildTaskDetailViewData(
     stageName: getStageDisplayName(task.stage || project.currentStage),
     area: item.area,
     sourceName: item.sourceName,
+    sourceLocationName: item.sourceLocationName,
+    sourceLocationId: item.sourceLocationId,
+    locationHref: item.locationHref,
     resolutionModeLabel: item.resolutionMode,
     baseSuccessRate: item.baseSuccessRate,
     requiredJobs: item.requiredJobs,

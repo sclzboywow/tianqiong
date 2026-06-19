@@ -1,53 +1,60 @@
+import Link from "next/link";
 import { History } from "lucide-react";
 import type { ProfileViewData } from "@/game/profilePresentationEngine";
-import { playerCardBodyClass, playerCardClass, playerCardHeaderClass } from "../playerTheme";
+import {
+  taskDetailExpandButton,
+  taskDetailPanel,
+  taskDetailPanelHeader,
+} from "../tasks/taskBoardUi";
+
+const GROWTH_PREVIEW_LIMIT = 3;
 
 type PlayerRecentGrowthCardProps = {
   logs: ProfileViewData["recentGrowth"];
-  maxItems?: number;
 };
 
 function formatLogTime(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", {
-    month: "numeric",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
 }
 
-export function PlayerRecentGrowthCard({ logs, maxItems = 5 }: PlayerRecentGrowthCardProps) {
-  const displayLogs = logs.slice(0, maxItems);
+export function PlayerRecentGrowthCard({ logs }: PlayerRecentGrowthCardProps) {
+  const displayLogs = logs.slice(0, GROWTH_PREVIEW_LIMIT);
 
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <div className="flex items-center gap-2">
-          <History className="size-4 text-[#2EA8FF]" />
-          <h3 className="text-base font-semibold text-[#EAF3FF]">成长履历</h3>
-        </div>
+    <section className={taskDetailPanel}>
+      <div className={taskDetailPanelHeader}>
+        <h3 className="flex items-center gap-2 text-sm font-medium text-cyan-100">
+          <History className="size-3.5 text-cyan-400/80" />
+          最近成长
+        </h3>
       </div>
 
-      <div className={playerCardBodyClass}>
+      <div className="px-3 py-2">
         {displayLogs.length === 0 ? (
-          <p className="text-[13px] text-[#8EA3B8] lg:text-sm">
+          <p className="text-xs text-slate-500">
             暂无成长记录。完成任务结算后，奖励与升级动态会显示在这里。
           </p>
         ) : (
-          <ol className="relative space-y-3 before:absolute before:left-[5px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-[rgba(60,160,255,0.16)]">
+          <ul className="relative border-l border-cyan-400/8 pl-3">
             {displayLogs.map((log) => (
-              <li key={log.id} className="relative pl-5">
-                <span className="absolute left-0 top-1.5 size-2.5 rounded-full border border-[#2EA8FF] bg-[#07111F]" />
-                <p className="text-[11px] tabular-nums text-[#8EA3B8]">
-                  {formatLogTime(log.createdAt)}
-                </p>
-                <p className="mt-0.5 text-[13px] leading-relaxed text-[#EAF3FF]/90 lg:text-sm">
+              <li key={log.id} className="relative pb-2.5 last:pb-0">
+                <span className="absolute -left-[13px] top-1 size-1 bg-cyan-400/40" />
+                <p className="text-[10px] tabular-nums text-slate-700">{formatLogTime(log.createdAt)}</p>
+                <p className="mt-0.5 line-clamp-2 text-[13px] leading-[1.45] text-slate-400">
                   {log.content}
                 </p>
               </li>
             ))}
-          </ol>
+          </ul>
         )}
+        <Link href="/daily-report" className={`${taskDetailExpandButton} mt-2 inline-block`}>
+          查看全部日志
+        </Link>
       </div>
     </section>
   );

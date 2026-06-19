@@ -1,4 +1,5 @@
 import type { ProjectStageId } from "@/game/projectStages";
+import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 
 export type LocationType =
   | "owner_office"
@@ -12,6 +13,8 @@ export type MapLocation = {
   name: string;
   type: LocationType;
   group: string;
+  sandtableRegionId: string;
+  sandtableZoneId: string;
   description: string;
   unlockStage: ProjectStageId;
   unlockMilestones?: string[];
@@ -38,7 +41,7 @@ export const LOCATION_GROUP_ORDER = [
   "施工现场",
 ] as const;
 
-export const MAP_LOCATIONS: MapLocation[] = [
+export const MAP_LOCATION_SEED: Omit<MapLocation, "sandtableRegionId" | "sandtableZoneId">[] = [
   // —— 建设主体（10） ——
   {
     id: "owner_gm_office",
@@ -64,8 +67,10 @@ export const MAP_LOCATIONS: MapLocation[] = [
       "prepare_master_plan",
       "create_risk_register",
       "coordinate_first_meeting",
+      "confirm_project_need",
+      "prepare_master_control_plan",
     ],
-    relatedAreaNames: ["项目总控"],
+    relatedAreaNames: ["项目管理部"],
     relatedNpcNames: ["甲方代表", "总承包单位"],
     riskTags: ["progress", "coordination"],
     achievementHooks: ["first_owner_office_visit"],
@@ -78,7 +83,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     description: "建设主体侧资料归档、台账管理与验收资料统筹区域。",
     unlockStage: "INITIATION",
     relatedTaskSlugs: ["create_document_ledger", "complete_archive"],
-    relatedAreaNames: ["项目资料室"],
+    relatedAreaNames: ["档案资料室"],
     riskTags: ["document", "acceptance"],
     achievementHooks: ["first_archive_visit"],
   },
@@ -108,6 +113,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
       "confirm_planning_condition",
       "prepare_approval_docs",
       "plan_construction_permit",
+      "prepare_approval_application_package",
     ],
     relatedNpcNames: ["甲方代表"],
     riskTags: ["approval", "document"],
@@ -132,7 +138,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "建设主体",
     description: "负责招标文件编制、单位比选和合同签订协调。",
     unlockStage: "PROCUREMENT",
-    relatedTaskSlugs: ["finalize_tender_docs", "select_main_contractor"],
+    relatedTaskSlugs: ["finalize_tender_docs", "select_main_contractor", "prepare_bidding_plan", "sign_supervision_contract", "sign_construction_contract"],
     relatedNpcNames: ["甲方代表", "供应商"],
     riskTags: ["contract", "schedule"],
     achievementHooks: ["unlock_procurement_office"],
@@ -143,8 +149,13 @@ export const MAP_LOCATIONS: MapLocation[] = [
     type: "owner_office",
     group: "建设主体",
     description: "负责资金计划、付款审核和成本压力监控。",
-    unlockStage: "PROCUREMENT",
-    relatedTaskSlugs: ["prepare_cost_estimate", "supplier_delay"],
+    unlockStage: "APPROVAL",
+    relatedTaskSlugs: [
+      "prepare_cost_estimate",
+      "supplier_delay",
+      "prepare_funding_source_statement",
+      "prepare_funding_certificate",
+    ],
     relatedNpcNames: ["甲方代表"],
     riskTags: ["cost"],
     achievementHooks: ["unlock_finance_dept"],
@@ -182,7 +193,14 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "项目部",
     description: "用于召开协调会、推进会和多人协作任务。",
     unlockStage: "INITIATION",
-    relatedTaskSlugs: ["setup_project_team", "organize_drawing_review", "opening_joint_inspection"],
+    relatedTaskSlugs: [
+      "setup_project_team",
+      "coordinate_first_meeting",
+      "close_design_issues",
+      "organize_drawing_review",
+      "opening_joint_inspection",
+      "hold_project_kickoff_meeting",
+    ],
     relatedNpcNames: ["监理单位", "总承包单位"],
     riskTags: ["coordination"],
     achievementHooks: ["first_meeting_room"],
@@ -200,7 +218,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
       "hidden_acceptance_missing",
       "complete_archive",
     ],
-    relatedAreaNames: ["项目资料室"],
+    relatedAreaNames: ["资料室"],
     relatedNpcNames: ["监理单位"],
     riskTags: ["document", "acceptance"],
     achievementHooks: ["first_document_room"],
@@ -215,7 +233,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     description: "集中办理发改、自规、住建等前期审批事项，是报批阶段的重要外部地点。",
     unlockStage: "APPROVAL",
     unlockMilestones: ["approvalPathConfirmed"],
-    relatedTaskSlugs: ["confirm_approval_path", "prepare_approval_docs"],
+    relatedTaskSlugs: ["confirm_approval_path", "prepare_approval_docs", "submit_approval_application", "obtain_approval_reply"],
     riskTags: ["approval"],
     achievementHooks: ["first_gov_service_visit"],
   },
@@ -227,7 +245,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     description: "涉及规划条件、方案审查、建设工程规划许可和规划核实。",
     unlockStage: "APPROVAL",
     unlockMilestones: ["approvalPathConfirmed"],
-    relatedTaskSlugs: ["confirm_planning_condition"],
+    relatedTaskSlugs: ["confirm_planning_condition", "consult_planning_condition", "obtain_land_pre_review_opinion"],
     riskTags: ["planning", "approval"],
     achievementHooks: ["first_planning_bureau_visit"],
   },
@@ -237,9 +255,15 @@ export const MAP_LOCATIONS: MapLocation[] = [
     type: "government",
     group: "政府单位",
     description: "涉及施工许可、质量安全监督、消防审查、竣工验收备案等事项。",
-    unlockStage: "APPROVAL",
-    unlockMilestones: ["permitPlanDone"],
-    relatedTaskSlugs: ["plan_construction_permit", "pass_fire_acceptance", "pass_completion_acceptance"],
+    unlockStage: "CONSTRUCTION",
+    unlockMilestones: ["contractBoundaryClear"],
+    relatedTaskSlugs: [
+      "plan_construction_permit",
+      "pass_fire_acceptance",
+      "pass_completion_acceptance",
+      "prepare_quality_safety_supervision",
+      "submit_construction_permit_application",
+    ],
     relatedNpcNames: ["质监站"],
     riskTags: ["permit", "fire", "acceptance"],
     achievementHooks: ["first_housing_bureau_visit"],
@@ -261,6 +285,10 @@ export const MAP_LOCATIONS: MapLocation[] = [
       "design_reply_delayed",
       "drawing_mismatch",
       "atrium_upgrade_request",
+      "organize_scheme_design",
+      "prepare_construction_drawing",
+      "revise_scheme_design_text",
+      "revise_construction_drawing",
     ],
     relatedNpcNames: ["设计院"],
     riskTags: ["design", "quality", "schedule"],
@@ -272,8 +300,12 @@ export const MAP_LOCATIONS: MapLocation[] = [
     type: "third_party",
     group: "第三方机构",
     description: "负责编制控制价、清单、预算审核和成本测算。",
-    unlockStage: "PROCUREMENT",
-    relatedTaskSlugs: ["prepare_cost_estimate"],
+    unlockStage: "APPROVAL",
+    relatedTaskSlugs: [
+      "prepare_cost_estimate",
+      "commission_project_proposal",
+      "prepare_feasibility_report",
+    ],
     riskTags: ["cost"],
     achievementHooks: ["first_cost_consultant_visit"],
   },
@@ -289,6 +321,32 @@ export const MAP_LOCATIONS: MapLocation[] = [
     riskTags: ["quality", "document"],
     achievementHooks: ["first_testing_center_visit"],
   },
+  {
+    id: "third_drawing_review_agency",
+    name: "施工图审查机构",
+    type: "third_party",
+    group: "第三方机构",
+    description: "负责施工图审查并出具审查合格书。",
+    unlockStage: "DESIGN",
+    relatedTaskSlugs: ["submit_drawing_review"],
+    relatedAreaNames: ["施工图审查机构"],
+    riskTags: ["design", "quality"],
+  },
+  {
+    id: "third_tendering_agency",
+    name: "招标代理公司",
+    type: "third_party",
+    group: "第三方机构",
+    description: "负责招标文件编制、开评标组织与中标通知。",
+    unlockStage: "PROCUREMENT",
+    relatedTaskSlugs: [
+      "prepare_tender_document",
+      "approve_tender_document",
+      "issue_bid_winning_notice",
+    ],
+    relatedAreaNames: ["招标代理公司"],
+    riskTags: ["contract"],
+  },
 
   // —— 施工现场 ——
   {
@@ -298,7 +356,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "施工现场",
     description: "商户进场、消防通道、夜间施工投诉等事件高发区域。",
     unlockStage: "CONSTRUCTION",
-    relatedAreaNames: ["L1商业街"],
+    relatedAreaNames: ["L1 · 首层"],
     relatedTaskSlugs: [
       "fire_corridor_blocked",
       "merchant_early_entry",
@@ -359,7 +417,7 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "施工现场",
     description: "机电设备通道，涉及管线碰撞、调试和检修通道。",
     unlockStage: "CONSTRUCTION",
-    relatedAreaNames: ["B1设备走廊"],
+    relatedAreaNames: ["B1 · 地下一层"],
     relatedTaskSlugs: [
       "mep_collision",
       "equipment_debug_unready",
@@ -377,13 +435,22 @@ export const MAP_LOCATIONS: MapLocation[] = [
     group: "施工现场",
     description: "物业钥匙移交、接管协调和缺陷消项办理区域。",
     unlockStage: "ACCEPTANCE",
-    relatedAreaNames: ["物业交接区"],
+    relatedAreaNames: ["物业工程部"],
     relatedTaskSlugs: ["property_key_handover", "complete_property_handover"],
     relatedNpcNames: ["物业公司"],
     riskTags: ["handover", "document"],
     achievementHooks: ["first_handover_zone_visit"],
   },
 ];
+
+export const MAP_LOCATIONS: MapLocation[] = MAP_LOCATION_SEED.map((location) => {
+  const placement = getMapLocationSandtablePlacement(location.id);
+  return {
+    ...location,
+    sandtableRegionId: placement.regionId,
+    sandtableZoneId: placement.zoneId,
+  };
+});
 
 export function getMapLocationById(id: string): MapLocation | undefined {
   return MAP_LOCATIONS.find((loc) => loc.id === id);

@@ -29,6 +29,7 @@ async function ensureColumn(
 async function main() {
   const client = createClient({ url: databaseUrl });
   await ensureColumn(client, "payload_locked_documents_rels", "story_entries_id", "INTEGER");
+  await ensureColumn(client, "payload_locked_documents_rels", "artifact_definitions_id", "INTEGER");
   console.log("payload locked documents schema fix complete.");
 }
 

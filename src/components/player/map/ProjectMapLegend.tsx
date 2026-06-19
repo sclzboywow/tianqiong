@@ -13,7 +13,7 @@ const LEGEND_ITEMS: Array<{
     key: "pending",
     label: "红色数字：本地点待办任务数",
     preview: (
-      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[9px] font-semibold text-white">
+      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[11px] font-semibold text-white">
         2
       </span>
     ),
@@ -22,7 +22,7 @@ const LEGEND_ITEMS: Array<{
     key: "recommended",
     label: "黄色推荐：当前建议前往",
     preview: (
-      <span className="inline-flex items-center gap-0.5 rounded-md border border-[rgba(250,204,21,0.45)] bg-[rgba(250,204,21,0.18)] px-1 py-0.5 text-[9px] text-[#FACC15]">
+      <span className="inline-flex items-center gap-0.5 rounded-md border border-[rgba(250,204,21,0.45)] bg-[rgba(250,204,21,0.18)] px-1 py-0.5 text-[11px] text-[#FACC15]">
         <Sparkles className="size-2.5" />
         推荐
       </span>
@@ -50,7 +50,7 @@ const LEGEND_ITEMS: Array<{
     key: "npc",
     label: "NPC：该地点有关联角色",
     preview: (
-      <span className="inline-flex items-center gap-0.5 rounded-md border border-[rgba(60,160,255,0.25)] bg-[rgba(10,24,40,0.95)] px-1 py-0.5 text-[9px] text-[#8EA3B8]">
+      <span className="inline-flex items-center gap-0.5 rounded-md border border-[rgba(60,160,255,0.25)] bg-[rgba(10,24,40,0.95)] px-1 py-0.5 text-[11px] text-[#8EA3B8]">
         <Users className="size-2.5 text-[#2EA8FF]" />2
       </span>
     ),

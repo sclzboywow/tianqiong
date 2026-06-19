@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import type { ProjectState, Task } from "@prisma/client";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import type { NpcProfile } from "@/data/npcProfiles";
 import {
-  AlertTriangle,
   CheckCircle2,
   CircleDot,
   ClipboardList,
-  DoorOpen,
-  Eye,
   Lock,
   Maximize2,
   Minus,
@@ -16,7 +15,6 @@ import {
   ShieldAlert,
   Sparkles,
   Star,
-  Users,
   ZoomIn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,11 +26,19 @@ import type {
   SandtableLocationNode,
   SandtableRegion,
 } from "@/game/locationSandtablePresentationEngine";
+import { LocationDetailPanel } from "./LocationDetailPanel";
+import { LocationSceneOverlay } from "./LocationSceneOverlay";
+import { useLiveNpcProfiles } from "./useLiveNpcProfiles";
 
 type FilterId = "all" | LocationNodeStatus;
 
 type LocationSandTablePageProps = {
   data: LocationSandtableViewData;
+  project: ProjectState;
+  tasks: Task[];
+  completedNpcTaskActionIds?: string[];
+  npcProfiles?: Record<string, NpcProfile>;
+  npcProfileRevision?: string;
 };
 
 const FILTERS: { id: FilterId; label: string; icon: typeof CircleDot }[] = [
@@ -51,15 +57,6 @@ const REGION_BORDER: Record<LocationRegionId, string> = {
   professional_service: "border-fuchsia-400/30 shadow-[inset_0_0_20px_rgba(217,70,239,0.05)]",
   construction_site: "border-sky-400/45 shadow-[inset_0_0_32px_rgba(56,189,248,0.08)]",
   opening_prep: "border-purple-400/35 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]",
-};
-
-const STATUS_LABELS: Record<LocationNodeStatus, string> = {
-  recommended: "推荐地点",
-  has_task: "有任务",
-  has_event: "有事件",
-  locked: "锁定",
-  completed: "已完成",
-  normal: "普通地点",
 };
 
 const MIN_ZOOM = 0.55;
@@ -88,10 +85,10 @@ function LocationTopHud({ data }: { data: LocationSandtableViewData }) {
     <header className="shrink-0 border-b border-cyan-400/15 px-4 py-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-wide text-cyan-50">协同地图</h1>
-          <p className="mt-0.5 text-[11px] text-slate-500">项目全景沙盘 · 六区协同视图</p>
+          <h1 className="text-xl font-semibold tracking-wide text-cyan-50 lg:text-2xl">协同地图</h1>
+          <p className="mt-0.5 text-xs text-slate-500">项目全景沙盘 · 六区协同视图</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="inline-flex items-center gap-1.5 border border-cyan-400/25 bg-cyan-950/30 px-2.5 py-1 text-cyan-100">
             <CircleDot className="size-3 text-cyan-300" />
             当前阶段：{data.currentStageName}
@@ -163,8 +160,13 @@ function MapNodePill({
       {isCompleted && !isRecommended ? <CheckCircle2 className="size-3 shrink-0 text-emerald-300" /> : null}
       {isLocked ? <Lock className="size-3 shrink-0" /> : null}
       <span className="min-w-0 truncate whitespace-nowrap">{node.name}</span>
+      {(node.presentNpcCount ?? 0) > 0 ? (
+        <span className="shrink-0 border border-emerald-400/35 bg-emerald-400/10 px-1 text-[11px] text-emerald-200">
+          NPC {node.presentNpcCount}
+        </span>
+      ) : null}
       {active ? (
-        <span className="shrink-0 border border-cyan-300/40 px-1 text-[9px] text-cyan-200">当前</span>
+        <span className="shrink-0 border border-cyan-300/40 px-1 text-[11px] text-cyan-200">当前</span>
       ) : null}
     </button>
   );
@@ -189,7 +191,7 @@ function MapZoneGroup({
 
   return (
     <div>
-      <p className="mb-1 truncate whitespace-nowrap text-[10px] text-slate-500">{label}</p>
+      <p className="mb-1 truncate whitespace-nowrap text-[11px] text-slate-500">{label}</p>
       <div className={cn("gap-1", layout === "stack" ? "flex flex-col" : "flex flex-wrap")}>
         {nodes.map((node) => (
           <MapNodePill
@@ -309,7 +311,7 @@ function ConstructionSiteMap({ region, selectedId, filter, onSelect }: RegionMap
 
         <div className="relative min-w-0 border border-cyan-400/30 bg-[linear-gradient(180deg,rgba(8,47,73,0.35),rgba(2,6,23,0.8))] px-2 py-2">
           <div className="pointer-events-none absolute inset-x-4 top-3 bottom-3 border border-dashed border-cyan-400/20" />
-          <p className="relative mb-2 text-center text-[10px] font-medium text-cyan-200">楼栋垂直空间</p>
+          <p className="relative mb-2 text-center text-xs font-medium text-cyan-200">楼栋垂直空间</p>
           <div className="relative flex w-full flex-col gap-0.5">
             {stackNodes.map((node) => (
               <MapNodePill
@@ -465,7 +467,7 @@ function ZoomableMapViewport({
           <MapBlueprint data={data} selectedId={selectedId} filter={filter} onSelect={onSelect} />
         </div>
       </div>
-      <p className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-slate-600">
+      <p className="pointer-events-none absolute bottom-2 left-3 text-[11px] text-slate-500">
         拖动画布平移 · Ctrl+滚轮缩放
       </p>
     </div>
@@ -513,7 +515,7 @@ function MapControlBar({
         })}
       </div>
 
-      <div className="flex items-center gap-2 text-[11px] text-slate-400">
+      <div className="flex items-center gap-2 text-xs text-slate-400">
         <ZoomIn className="size-3.5 text-cyan-400" />
         <button
           type="button"
@@ -561,178 +563,60 @@ function MapControlBar({
   );
 }
 
-function LocationDetailPanel({
-  node,
-  regionName,
-  zoneName,
-}: {
-  node?: SandtableLocationNode;
-  regionName?: string;
-  zoneName?: string;
-}) {
-  if (!node) {
-    return (
-      <aside className="flex h-full w-full flex-col border-l border-cyan-400/15 bg-[#060d18]/90 p-4 text-sm text-slate-500">
-        点击地图上的地点查看详情
-      </aside>
-    );
-  }
+export function LocationSandTablePage({
+  data,
+  project,
+  tasks,
+  completedNpcTaskActionIds,
+  npcProfiles,
+  npcProfileRevision = "static-0",
+}: LocationSandTablePageProps) {
+  useLiveNpcProfiles(npcProfiles ?? {}, npcProfileRevision);
 
-  return (
-    <aside className="flex h-full w-full flex-col overflow-y-auto border-l border-cyan-400/20 bg-[#060d18]/95 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate whitespace-nowrap text-[11px] text-slate-500">
-            {regionName} / {zoneName}
-          </p>
-          <h2 className="mt-1 truncate whitespace-nowrap text-base font-semibold text-cyan-50">
-            {node.name}
-          </h2>
-        </div>
-        <span
-          className={cn(
-            "shrink-0 border px-2 py-0.5 text-[10px] whitespace-nowrap",
-            node.status === "recommended" && "border-yellow-400/40 text-yellow-100",
-            node.status === "has_task" && "border-amber-400/40 text-amber-100",
-            node.status === "has_event" && "border-rose-400/40 text-rose-100",
-            node.status === "completed" && "border-emerald-400/40 text-emerald-100",
-            node.status === "locked" && "border-slate-600/30 text-slate-500",
-            node.status === "normal" && "border-cyan-400/25 text-cyan-100",
-          )}
-        >
-          {STATUS_LABELS[node.status]}
-        </span>
-      </div>
+  const searchParams = useSearchParams();
+  const focusLocationId = searchParams.get("focus");
 
-      {node.description ? (
-        <p className="mt-3 border border-cyan-400/10 bg-slate-950/50 p-3 text-[13px] leading-6 text-slate-300">
-          {node.description}
-        </p>
-      ) : null}
-
-      <DetailSection icon={Users} title="相关 NPC">
-        <TokenList items={node.relatedNpcNames} empty="暂无明确 NPC" />
-      </DetailSection>
-
-      <DetailSection icon={DoorOpen} title="可执行行动">
-        <TokenList
-          items={
-            node.locked
-              ? ["等待解锁"]
-              : node.availableActionLabels?.length
-                ? node.availableActionLabels
-                : ["现场查看", "同步信息", "发起协同"]
-          }
-          empty="暂无行动"
-        />
-      </DetailSection>
-
-      <DetailSection icon={ClipboardList} title="相关任务">
-        <TokenList
-          items={node.relatedTaskTitles?.length ? node.relatedTaskTitles : node.relatedTaskSlugs}
-          empty="暂无任务"
-        />
-      </DetailSection>
-
-      <DetailSection icon={AlertTriangle} title="影响指标">
-        <TokenList items={node.impactLabels?.length ? node.impactLabels : node.riskTags} empty="暂无风险标签" />
-      </DetailSection>
-
-      <div className="mt-auto space-y-2 pt-4">
-        {node.canEnter && node.href && !node.locked ? (
-          <Link
-            href={node.href}
-            className="flex h-10 items-center justify-center gap-2 bg-cyan-400 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
-          >
-            <DoorOpen className="size-4" />
-            进入地点
-          </Link>
-        ) : (
-          <button
-            type="button"
-            disabled
-            className="flex h-10 w-full items-center justify-center gap-2 bg-slate-800 text-sm text-slate-500"
-          >
-            <Lock className="size-4" />
-            进入地点
-          </button>
-        )}
-        <div className="grid grid-cols-2 gap-2">
-          <Link
-            href="/tasks"
-            className="flex h-9 items-center justify-center gap-1.5 border border-cyan-400/20 text-xs text-cyan-100 hover:border-cyan-400/40"
-          >
-            <ClipboardList className="size-3.5" />
-            查看任务
-          </Link>
-          <button
-            type="button"
-            className="flex h-9 items-center justify-center gap-1.5 border border-cyan-400/20 text-xs text-cyan-100 hover:border-cyan-400/40"
-          >
-            <Eye className="size-3.5" />
-            设为关注
-          </button>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function DetailSection({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: typeof Users;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mt-4">
-      <h3 className="mb-2 flex items-center gap-2 text-xs font-medium text-cyan-100">
-        <Icon className="size-3.5 text-cyan-400" />
-        {title}
-      </h3>
-      {children}
-    </section>
-  );
-}
-
-function TokenList({ items, empty }: { items?: string[]; empty: string }) {
-  const normalized = (items || []).filter(Boolean);
-  if (normalized.length === 0) return <p className="text-[11px] text-slate-600">{empty}</p>;
-
-  return (
-    <div className="flex flex-wrap gap-1">
-      {normalized.map((item) => (
-        <span
-          key={item}
-          className="max-w-full truncate whitespace-nowrap border border-cyan-400/15 bg-slate-950/60 px-2 py-0.5 text-[11px] text-slate-400"
-          title={item}
-        >
-          {item}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-export function LocationSandTablePage({ data }: LocationSandTablePageProps) {
   const shellRef = useRef<HTMLElement>(null);
   const nodes = useMemo(() => flattenNodes(data), [data]);
-  const defaultNodeId = data.recommendedNode?.id || nodes.find((node) => !node.locked)?.id;
+  const defaultNodeId =
+    (focusLocationId && nodes.some((node) => node.id === focusLocationId) ? focusLocationId : null) ||
+    data.recommendedNode?.id ||
+    nodes.find((node) => !node.locked)?.id;
   const [selectedId, setSelectedId] = useState(defaultNodeId);
+  const [sceneNodeId, setSceneNodeId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterId>("all");
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
   const selectedNode = nodes.find((node) => node.id === selectedId) || data.recommendedNode;
+  const sceneNode = sceneNodeId ? nodes.find((node) => node.id === sceneNodeId) : undefined;
   const selectedRegion = data.regions.find((region) =>
     region.zones.some((zone) => zone.nodes.some((node) => node.id === selectedNode?.id)),
   );
   const selectedZone = selectedRegion?.zones.find((zone) =>
     zone.nodes.some((node) => node.id === selectedNode?.id),
   );
+  const sceneRegion = sceneNode
+    ? data.regions.find((region) =>
+        region.zones.some((zone) => zone.nodes.some((node) => node.id === sceneNode.id)),
+      )
+    : undefined;
+  const sceneZone = sceneRegion?.zones.find((zone) =>
+    zone.nodes.some((node) => node.id === sceneNode?.id),
+  );
+
+  const handleSelectNode = useCallback((node: SandtableLocationNode) => {
+    setSelectedId(node.id);
+  }, []);
+
+  const handleEnterScene = useCallback((node: SandtableLocationNode) => {
+    setSelectedId(node.id);
+    setSceneNodeId(node.id);
+  }, []);
+
+  const handleCloseScene = useCallback(() => {
+    setSceneNodeId(null);
+  }, []);
 
   const clampZoom = useCallback((value: number) => {
     return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
@@ -765,17 +649,17 @@ export function LocationSandTablePage({ data }: LocationSandTablePageProps) {
   return (
     <section
       ref={shellRef}
-      className="flex h-[min(860px,calc(100vh-140px))] flex-col overflow-hidden border border-cyan-400/20 bg-[#050B14]"
+      className="relative flex h-[min(860px,calc(100vh-140px))] flex-col overflow-hidden border border-cyan-400/20 bg-[#050B14]"
     >
       <LocationTopHud data={data} />
 
-      <div className="flex min-h-0 flex-1">
+      <div className={cn("flex min-h-0 flex-1 transition-opacity", sceneNode && "opacity-60")}>
         <div className="flex min-w-0 flex-1 flex-col">
           <ZoomableMapViewport
             data={data}
             selectedId={selectedNode?.id}
             filter={activeFilter}
-            onSelect={(node) => setSelectedId(node.id)}
+            onSelect={handleSelectNode}
             zoom={zoom}
             pan={pan}
             onPanChange={setPan}
@@ -794,11 +678,12 @@ export function LocationSandTablePage({ data }: LocationSandTablePageProps) {
           />
         </div>
 
-        <div className="hidden w-[340px] shrink-0 lg:block">
+        <div className="hidden w-[300px] shrink-0 lg:block">
           <LocationDetailPanel
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
+            onEnter={handleEnterScene}
           />
         </div>
       </div>
@@ -809,8 +694,21 @@ export function LocationSandTablePage({ data }: LocationSandTablePageProps) {
             node={selectedNode}
             regionName={selectedRegion?.name}
             zoneName={selectedZone?.name}
+            onEnter={handleEnterScene}
           />
         </div>
+      ) : null}
+
+      {sceneNode ? (
+        <LocationSceneOverlay
+          node={sceneNode}
+          regionName={sceneRegion?.name}
+          zoneName={sceneZone?.name}
+          project={project}
+          tasks={tasks}
+          completedActionIds={completedNpcTaskActionIds}
+          onClose={handleCloseScene}
+        />
       ) : null}
     </section>
   );

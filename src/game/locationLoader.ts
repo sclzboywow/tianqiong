@@ -1,12 +1,17 @@
 import { MAP_LOCATIONS, type MapLocation, type LocationType } from "@/data/locations";
+import { getMapLocationSandtablePlacement } from "@/data/mapLocationSandtable";
 import type { ProjectStageId } from "./projectStages";
 
 function mapPayloadDoc(doc: Record<string, unknown>): MapLocation {
+  const slug = doc.slug as string;
+  const placement = getMapLocationSandtablePlacement(slug);
   return {
-    id: doc.slug as string,
+    id: slug,
     name: doc.name as string,
     type: doc.type as LocationType,
     group: doc.group as string,
+    sandtableRegionId: (doc.sandtableRegionId as string) || placement.regionId,
+    sandtableZoneId: (doc.sandtableZoneId as string) || placement.zoneId,
     description: (doc.description as string) || "",
     unlockStage: doc.unlockStage as ProjectStageId,
     unlockMilestones: (doc.unlockMilestones as { milestone: string }[] | null)

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { LocationSandTablePage } from "@/components/player/locations/LocationSandTablePage";
 import { getCurrentUserId } from "@/lib/session";
@@ -8,11 +9,15 @@ import { listTasks } from "@/game/taskEngine";
 import { getMapLocations } from "@/game/locationLoader";
 import { getLocationActions } from "@/game/locationActionLoader";
 import { buildLocationSandtableViewData } from "@/game/locationSandtablePresentationEngine";
+import { ensureMergedNpcProfiles } from "@/game/npcProfileLoader";
+import { getNpcTaskActionProgress } from "@/game/npcTaskActionProgressEngine";
 import {
   getChapterInfo,
   getNextRecommendedAction,
   getPendingTaskGroups,
 } from "@/game/playerGuidanceEngine";
+
+export const dynamic = "force-dynamic";
 
 export default async function LocationsPage() {
   const userId = await getCurrentUserId();
@@ -37,6 +42,8 @@ export default async function LocationsPage() {
   const pendingCount =
     pendingGroups.mainline.length + pendingGroups.emergency.length;
 
+  const { profiles: npcProfiles, revision: npcProfileRevision } = await ensureMergedNpcProfiles();
+
   const sandtableData = await buildLocationSandtableViewData({
     project,
     tasks,
@@ -45,13 +52,26 @@ export default async function LocationsPage() {
     recommendedAction,
   });
 
+  const completedNpcTaskActionIds = await getNpcTaskActionProgress({
+    taskSlugs: tasks.map((task) => task.templateId),
+  });
+
   return (
     <PlayerShell
       chapterSubtitle={chapterInfo.chapterSubtitle}
       userNickname={user.nickname}
       pendingTaskCount={pendingCount}
     >
-      <LocationSandTablePage data={sandtableData} />
+      <Suspense fallback={<div className="border border-cyan-400/20 bg-[#050B14] p-8 text-sm text-slate-500">加载协同地图…</div>}>
+        <LocationSandTablePage
+          data={sandtableData}
+          project={project}
+          tasks={tasks}
+          completedNpcTaskActionIds={completedNpcTaskActionIds}
+          npcProfiles={npcProfiles}
+          npcProfileRevision={npcProfileRevision}
+        />
+      </Suspense>
     </PlayerShell>
   );
 }

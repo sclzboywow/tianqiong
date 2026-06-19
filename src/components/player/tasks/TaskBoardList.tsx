@@ -2,183 +2,168 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import type {
-  TaskBoardCategory,
-  TaskBoardCategoryId,
-  TaskItem,
-} from "@/game/taskPresentationEngine";
+import type { TaskBoardCategory, TaskBoardCategoryId, TaskItem } from "@/game/taskPresentationEngine";
 import { taskMatchesCategory } from "@/game/taskPresentationEngine";
-import { playerCardClass } from "../playerTheme";
+import { taskHudPanel, taskHudPanelHeader } from "./taskBoardUi";
 import { TaskBoardCategoryChips } from "./TaskBoardCategoryChips";
-import { TaskBoardCard } from "./TaskBoardCard";
+import { TaskBoardCompactRow } from "./TaskBoardCompactRow";
 
 type TaskBoardListProps = {
   taskItems: TaskItem[];
   categories: TaskBoardCategory[];
+  excludeTaskId?: string;
 };
 
-type Lane = {
-  id: string;
+type PendingSection = {
+  id: "mainline" | "emergency" | "collaboration";
   title: string;
-  description: string;
   items: TaskItem[];
-  emptyText: string;
 };
 
-const CATEGORY_COPY: Record<TaskBoardCategoryId, { title: string; description: string }> = {
-  all: {
-    title: "全部待处理",
-    description: "按处理优先级拆成队列，避免所有任务挤成一堆。",
-  },
+const CATEGORY_COPY: Record<Exclude<TaskBoardCategoryId, "all">, { title: string; description: string }> = {
   mainline: {
-    title: "主线任务",
+    title: "主线推进",
     description: "优先推动章节目标和阶段关键节点。",
   },
   emergency: {
-    title: "突发事件",
-    description: "这些事项可能带来风险扩散，建议及时处理。",
+    title: "突发风险",
+    description: "风险类事项，建议在协同地图及时处理。",
   },
   collaboration: {
-    title: "协作任务",
+    title: "协作待办",
     description: "需要多人或特定岗位配合完成。",
   },
   completed: {
-    title: "已完成",
-    description: "历史结算记录，主要用于回看处理结果。",
+    title: "已完成归档",
+    description: "历史结算记录，用于复盘处理结果。",
   },
 };
 
-function BoardLane({ lane }: { lane: Lane }) {
+function PendingQueueSection({ section }: { section: PendingSection }) {
   return (
-    <section className={cn(playerCardClass, "overflow-hidden")}>
-      <div className="border-b border-[rgba(60,160,255,0.12)] px-4 py-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-[#EAF3FF]">{lane.title}</h2>
-            <p className="mt-1 text-xs leading-relaxed text-[#8EA3B8]">{lane.description}</p>
-          </div>
-          <span className="rounded-full border border-[rgba(60,160,255,0.18)] px-2 py-0.5 text-xs tabular-nums text-[#8EA3B8]">
-            {lane.items.length}
-          </span>
-        </div>
+    <div>
+      <div className="mb-1.5 flex items-center justify-between gap-2 px-0.5">
+        <h3 className="text-sm font-medium text-cyan-100">{section.title}</h3>
+        <span className="text-[10px] tabular-nums text-slate-600">{section.items.length}</span>
       </div>
-
-      <div className="space-y-3 p-3">
-        {lane.items.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-[rgba(60,160,255,0.16)] px-4 py-6 text-center text-sm text-[#8EA3B8]">
-            {lane.emptyText}
-          </p>
-        ) : (
-          lane.items.map((item) => <TaskBoardCard key={item.id} item={item} />)
-        )}
-      </div>
-    </section>
+      <ul className="space-y-1.5">
+        {section.items.map((item) => (
+          <li key={item.id}>
+            <TaskBoardCompactRow item={item} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
-export function TaskBoardList({ taskItems, categories }: TaskBoardListProps) {
+function PendingQueueView({
+  sections,
+  hasExcludedPriority,
+}: {
+  sections: PendingSection[];
+  hasExcludedPriority: boolean;
+}) {
+  const visibleSections = sections.filter((section) => section.items.length > 0);
+
+  if (visibleSections.length === 0) {
+    return (
+      <p className="border border-dashed border-cyan-400/10 px-3 py-4 text-center text-xs text-slate-500">
+        {hasExcludedPriority ? "其他队列暂无待处理项。" : "当前无待处理任务。"}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {visibleSections.map((section) => (
+        <PendingQueueSection key={section.id} section={section} />
+      ))}
+    </div>
+  );
+}
+
+export function TaskBoardList({ taskItems, categories, excludeTaskId }: TaskBoardListProps) {
   const [activeCategory, setActiveCategory] = useState<TaskBoardCategoryId>("all");
+
+  const pendingItems = useMemo(
+    () => taskItems.filter((item) => !item.isCompleted && item.id !== excludeTaskId),
+    [excludeTaskId, taskItems],
+  );
 
   const filtered = useMemo(
     () => taskItems.filter((item) => taskMatchesCategory(item, activeCategory)),
     [activeCategory, taskItems],
   );
 
-  const lanes = useMemo<Lane[]>(() => {
-    const active = taskItems.filter((item) => !item.isCompleted);
-    const mainline = active.filter((item) => item.isMainline);
-    const emergency = active.filter((item) => !item.isMainline && item.isEmergency);
-    const collaboration = active.filter(
-      (item) => !item.isMainline && !item.isEmergency && item.isCollaboration,
-    );
-    const other = active.filter(
-      (item) => !item.isMainline && !item.isEmergency && !item.isCollaboration,
-    );
-
-    const result: Lane[] = [
+  const pendingSections = useMemo<PendingSection[]>(() => {
+    return [
       {
         id: "mainline",
         title: "主线推进",
-        description: "会影响章节目标和阶段门，优先处理。",
-        items: mainline,
-        emptyText: "当前没有待处理主线任务。",
+        items: pendingItems.filter((item) => item.isMainline),
       },
       {
         id: "emergency",
         title: "突发风险",
-        description: "风险类、广播类、稀有度较高的事项。",
-        items: emergency,
-        emptyText: "当前没有突发风险。",
+        items: pendingItems.filter((item) => !item.isMainline && item.isEmergency),
       },
       {
         id: "collaboration",
         title: "协作待办",
-        description: "需要多人提交或岗位协同的任务。",
-        items: collaboration,
-        emptyText: "当前没有协作任务。",
+        items: pendingItems.filter(
+          (item) => !item.isMainline && !item.isEmergency && item.isCollaboration,
+        ),
       },
     ];
+  }, [pendingItems]);
 
-    if (other.length > 0) {
-      result.push({
-        id: "other",
-        title: "其他待办",
-        description: "未归入主线、突发、协作的普通事项。",
-        items: other,
-        emptyText: "暂无其他待办。",
-      });
-    }
-
-    return result;
-  }, [taskItems]);
-
-  const copy = CATEGORY_COPY[activeCategory];
+  const isAll = activeCategory === "all";
+  const copy = isAll ? null : CATEGORY_COPY[activeCategory as Exclude<TaskBoardCategoryId, "all">];
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-2xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.42)] p-3">
-        <div className="mb-3 flex flex-col gap-1 px-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-medium text-[#2EA8FF]">任务筛选</p>
-            <p className="text-xs text-[#8EA3B8]">按队列查看，不再把所有任务堆成资料卡。</p>
+    <section className={taskHudPanel}>
+      <div className={cn(taskHudPanelHeader, "space-y-2")}>
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-sm font-medium text-cyan-50">
+              {isAll ? "待处理队列" : copy?.title}
+            </h2>
+            <p className="mt-0.5 text-[13px] text-slate-500">
+              {isAll ? "按影响排序，必要时前往地点处理。" : copy?.description}
+            </p>
           </div>
+          {!isAll ? (
+            <span className="shrink-0 text-[10px] tabular-nums text-slate-500">{filtered.length} 项</span>
+          ) : null}
         </div>
         <TaskBoardCategoryChips
           categories={categories}
           activeId={activeCategory}
           onSelect={setActiveCategory}
         />
-      </section>
+      </div>
 
-      {activeCategory === "all" ? (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          {lanes.map((lane) => (
-            <BoardLane key={lane.id} lane={lane} />
-          ))}
-        </div>
-      ) : (
-        <section className={cn(playerCardClass, "p-4")}>
-          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-[#EAF3FF]">{copy.title}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-[#8EA3B8]">{copy.description}</p>
-            </div>
-            <span className="text-xs tabular-nums text-[#8EA3B8]">{filtered.length} 项</span>
-          </div>
-
-          {filtered.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-[rgba(60,160,255,0.16)] px-4 py-8 text-center text-sm text-[#8EA3B8]">
-              该分类下暂无任务。
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-              {filtered.map((item) => (
-                <TaskBoardCard key={item.id} item={item} />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-    </div>
+      <div className="p-3">
+        {isAll ? (
+          <PendingQueueView
+            sections={pendingSections}
+            hasExcludedPriority={Boolean(excludeTaskId)}
+          />
+        ) : filtered.length === 0 ? (
+          <p className="border border-dashed border-cyan-400/10 px-4 py-6 text-center text-xs text-slate-500">
+            该分类下暂无任务。
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {filtered.map((item) => (
+              <li key={item.id}>
+                <TaskBoardCompactRow item={item} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }

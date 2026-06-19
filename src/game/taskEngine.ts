@@ -8,6 +8,7 @@ import {
 } from "./projectEngine";
 import { normalizeStageId } from "./projectStages";
 import { STAGE_TASK_TEMPLATES } from "@/data/stageTaskTemplates";
+import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
 import { writeGameLog } from "./logEngine";
 import { calculateRewards, applySpiritCost } from "./rewardEngine";
 import { applyExpWithLevelUp, CHARACTER_GROWTH_LOG_PREFIX } from "./playerProgressEngine";
@@ -16,6 +17,8 @@ import { broadcastMajorEvent } from "./broadcastEngine";
 import { checkAchievements } from "./achievementEngine";
 import { rollSuccess } from "@/utils/random";
 import type { ChoiceEffectsMap, MetricEffects, ResolutionMode, TaskTemplateData } from "./types";
+import { buildDependencyContext, evaluateTaskTemplateDependencies } from "./dependencyEngine";
+import { applyArtifactEffects } from "./artifactEngine";
 
 const SEASON_ID = process.env.SEASON_ID || "season-1";
 
@@ -206,6 +209,7 @@ async function grantParticipantRewards(
     gold: number;
     reputation: number;
   }> = [];
+  const failedUserIds: string[] = [];
 
   for (const participant of submittedParticipants) {
     if (participant.rewardStatus === "GRANTED") {
@@ -219,68 +223,78 @@ async function grantParticipantRewards(
       continue;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: participant.userId } });
-    if (!user) continue;
+    try {
+      const user = await prisma.user.findUnique({ where: { id: participant.userId } });
+      if (!user) continue;
 
-    const isJobMatched = requiredJobs.includes(user.job);
-    const contribution =
-      getBaseContribution(task.rarity) +
-      (isJobMatched ? 1 : 0) +
-      (participant.choiceId === finalChoiceId ? 2 : 0) +
-      (success ? 2 : 0);
+      const isJobMatched = requiredJobs.includes(user.job);
+      const contribution =
+        getBaseContribution(task.rarity) +
+        (isJobMatched ? 1 : 0) +
+        (participant.choiceId === finalChoiceId ? 2 : 0) +
+        (success ? 2 : 0);
 
-    const rewards = calculateRewards({ rarity: task.rarity, success, contribution });
+      const rewards = calculateRewards({ rarity: task.rarity, success, contribution });
 
-    const { newLevel, newExp, levelsGained } = applyExpWithLevelUp(
-      user.level,
-      user.exp,
-      rewards.exp,
-    );
+      const { newLevel, newExp, levelsGained } = applyExpWithLevelUp(
+        user.level,
+        user.exp,
+        rewards.exp,
+      );
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        exp: newExp,
-        gold: user.gold + rewards.gold,
-        reputation: user.reputation + rewards.reputation,
-        spirit: applySpiritCost(user.spirit),
-        level: newLevel,
-      },
-    });
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          exp: newExp,
+          gold: user.gold + rewards.gold,
+          reputation: user.reputation + rewards.reputation,
+          spirit: applySpiritCost(user.spirit),
+          level: newLevel,
+        },
+      });
 
-    await writeGameLog({
-      userId: user.id,
-      logType: "SYSTEM",
-      content: `${CHARACTER_GROWTH_LOG_PREFIX}${user.nickname}完成「${task.title}」，获得经验 +${rewards.exp}、金币 +${rewards.gold}、声望 +${rewards.reputation}。`,
-    });
-
-    if (levelsGained > 0) {
       await writeGameLog({
         userId: user.id,
         logType: "SYSTEM",
-        content: `${CHARACTER_GROWTH_LOG_PREFIX}${user.nickname}提升至 Lv.${newLevel}。`,
+        content: `${CHARACTER_GROWTH_LOG_PREFIX}${user.nickname}完成「${task.title}」，获得经验 +${rewards.exp}、金币 +${rewards.gold}、声望 +${rewards.reputation}。`,
       });
+
+      if (levelsGained > 0) {
+        await writeGameLog({
+          userId: user.id,
+          logType: "SYSTEM",
+          content: `${CHARACTER_GROWTH_LOG_PREFIX}${user.nickname}提升至 Lv.${newLevel}。`,
+        });
+      }
+
+      await checkAchievements(user.id, {
+        choiceId: participant.choiceId!,
+        taskRarity: task.rarity,
+        success,
+      });
+
+      await prisma.taskParticipant.update({
+        where: { id: participant.id },
+        data: {
+          contribution,
+          rewardStatus: "GRANTED",
+          status: success ? "RESOLVED" : "FAILED",
+        },
+      });
+
+      rewardsList.push({ userId: user.id, ...rewards });
+    } catch (error) {
+      failedUserIds.push(participant.userId);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          `[taskEngine] grantParticipantRewards failed for user ${participant.userId} on task ${task.id}:`,
+          error,
+        );
+      }
     }
-
-    await prisma.taskParticipant.update({
-      where: { id: participant.id },
-      data: {
-        contribution,
-        rewardStatus: "GRANTED",
-        status: success ? "RESOLVED" : "FAILED",
-      },
-    });
-
-    await checkAchievements(user.id, {
-      choiceId: participant.choiceId!,
-      taskRarity: task.rarity,
-      success,
-    });
-
-    rewardsList.push({ userId: user.id, ...rewards });
   }
 
-  return rewardsList;
+  return { rewards: rewardsList, failedUserIds };
 }
 
 export async function listTasks(status?: string) {
@@ -462,37 +476,88 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
 
   await applyTaskOutcomeEffects(appliedEffects, success, SEASON_ID);
 
+  const resolvedAt = new Date();
+  let stageTemplates: Awaited<ReturnType<typeof import("./contentLoader").getTaskTemplates>> | null =
+    null;
+
   if (success) {
     const milestoneEffects = parseJson<Record<string, boolean>>(task.milestoneEffects || "{}", {});
     if (Object.keys(milestoneEffects).length > 0) {
       await applyMilestoneEffects(milestoneEffects, SEASON_ID);
     }
-    const advanceResult = await advanceStageIfReady(SEASON_ID);
-    if (advanceResult.advanced) {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const templates = await getTaskTemplates();
-      await spawnTasksFromTemplates(templates);
+
+    const { getTaskTemplates } = await import("./contentLoader");
+    stageTemplates = await getTaskTemplates();
+    const template = stageTemplates.find((item) => item.slug === task.templateId);
+    if (template?.outputArtifacts?.length) {
+      await applyArtifactEffects(SEASON_ID, template.outputArtifacts, {
+        sourceType: "task",
+        sourceId: task.id,
+        note: `任务「${task.title}」完成产出`,
+      });
     }
   }
-
-  const npcList = task.sourceName ? [task.sourceName] : [];
-  await applyNpcEffectsFromMetrics(appliedEffects, npcList);
-
-  const allRewards = await grantParticipantRewards(
-    task,
-    submittedParticipants,
-    success,
-    finalChoiceId,
-  );
 
   await prisma.task.update({
     where: { id: task.id },
     data: {
       status: success ? "COMPLETED" : "FAILED",
       finalChoiceId,
-      resolvedAt: new Date(),
+      resolvedAt,
     },
   });
+
+  if (success && stageTemplates) {
+    const advanceResult = await advanceStageIfReady(SEASON_ID);
+    if (advanceResult.advanced) {
+      const { getTaskTemplates: loadTemplates } = await import("./contentLoader");
+      const templates = await loadTemplates();
+      const project = await getProjectState(SEASON_ID);
+      const nextStageTemplates = filterTemplatesForCurrentStage(
+        templates,
+        normalizeStageId(project?.currentStage),
+      );
+      await spawnTasksFromTemplates(nextStageTemplates);
+    }
+  }
+
+  const npcList = task.sourceName ? [task.sourceName] : [];
+  await applyNpcEffectsFromMetrics(appliedEffects, npcList);
+
+  let allRewards: Array<{
+    userId: string;
+    contribution: number;
+    exp: number;
+    gold: number;
+    reputation: number;
+  }> = [];
+
+  try {
+    const rewardResult = await grantParticipantRewards(
+      task,
+      submittedParticipants,
+      success,
+      finalChoiceId,
+    );
+    allRewards = rewardResult.rewards;
+
+    if (rewardResult.failedUserIds.length > 0) {
+      const outcomeLabel = success ? "完成" : "失败";
+      await writeGameLog({
+        logType: "SYSTEM",
+        content: `任务「${task.title}」已${outcomeLabel}，但 ${rewardResult.failedUserIds.length} 名参与者奖励/成就处理异常（用户 ID: ${rewardResult.failedUserIds.join(", ")}），rewardStatus 保持 PENDING，请人工补偿。`,
+      });
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "未知错误";
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[taskEngine] grantParticipantRewards failed:", error);
+    }
+    await writeGameLog({
+      logType: "SYSTEM",
+      content: `任务「${task.title}」已${success ? "完成" : "失败"}，但奖励/成就处理异常：${reason}。相关参与者 rewardStatus 保持 PENDING，请人工补偿。`,
+    });
+  }
 
   const effectSummary = JSON.stringify(appliedEffects);
   await writeGameLog({
@@ -552,15 +617,27 @@ export function filterTemplatesForCurrentStage(
   currentStage?: string | null,
 ) {
   const normalized = normalizeStageId(currentStage);
-  const mainlineSlugs = STAGE_TASK_TEMPLATES.filter((template) => template.stage === normalized).map(
-    (template) => template.slug,
-  );
 
-  if (mainlineSlugs.length > 0) {
-    const mainline = mainlineSlugs
+  const constructionMainlineSlugs = CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter(
+    (template) => template.stage === normalized && template.category === "mainline",
+  ).map((template) => template.slug);
+
+  if (constructionMainlineSlugs.length > 0) {
+    const constructionMainline = constructionMainlineSlugs
       .map((slug) => templates.find((template) => template.slug === slug))
       .filter((template): template is TaskTemplateData => !!template);
-    if (mainline.length === mainlineSlugs.length) return mainline;
+    if (constructionMainline.length > 0) return constructionMainline;
+  }
+
+  const legacyMainlineSlugs = STAGE_TASK_TEMPLATES.filter(
+    (template) => template.stage === normalized,
+  ).map((template) => template.slug);
+
+  if (legacyMainlineSlugs.length > 0) {
+    const legacyMainline = legacyMainlineSlugs
+      .map((slug) => templates.find((template) => template.slug === slug))
+      .filter((template): template is TaskTemplateData => !!template);
+    if (legacyMainline.length === legacyMainlineSlugs.length) return legacyMainline;
   }
 
   const matched = templates.filter((template) => template.stage === normalized);
@@ -579,6 +656,10 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
     where: { seasonId: SEASON_ID, templateId: template.slug, status: { in: ["PENDING", "IN_PROGRESS"] } },
   });
   if (existing) return existing;
+
+  const dependencyContext = await buildDependencyContext(SEASON_ID);
+  const dependency = await evaluateTaskTemplateDependencies(template, dependencyContext);
+  if (!dependency.available) return null;
 
   const project = await getProjectState();
   const resolutionMode = template.resolutionMode ?? inferResolutionMode(template.rarity);
@@ -627,7 +708,13 @@ export async function createTaskFromTemplate(template: TaskTemplateData) {
 export async function createTaskFromTemplateSlug(
   templateSlug: string,
   options?: { allowCompletedRepeat?: boolean },
-): Promise<{ task: Task; created: boolean; skipReason?: "active" | "completed" } | null> {
+): Promise<{
+  task?: Task;
+  created: boolean;
+  skipReason?: "active" | "completed" | "dependency_blocked";
+  dependencyReasons?: string[];
+  templateTitle?: string;
+} | null> {
   const { getTaskTemplates } = await import("./contentLoader");
   const templates = await getTaskTemplates();
   const template = templates.find((item) => item.slug === templateSlug);
@@ -653,7 +740,26 @@ export async function createTaskFromTemplateSlug(
     };
   }
 
+  const dependencyContext = await buildDependencyContext(SEASON_ID);
+  const dependency = await evaluateTaskTemplateDependencies(template, dependencyContext);
+  if (!dependency.available) {
+    return {
+      created: false,
+      skipReason: "dependency_blocked",
+      dependencyReasons: dependency.blockingReasons,
+      templateTitle: template.title,
+    };
+  }
+
   const task = await createTaskFromTemplate(template);
+  if (!task) {
+    return {
+      created: false,
+      skipReason: "dependency_blocked",
+      dependencyReasons: dependency.blockingReasons,
+      templateTitle: template.title,
+    };
+  }
   return { task, created: true };
 }
 
@@ -664,7 +770,8 @@ export async function spawnTasksFromTemplates(templates: TaskTemplateData[]) {
   const created = [];
   for (const template of pool) {
     if (template) {
-      created.push(await createTaskFromTemplate(template));
+      const task = await createTaskFromTemplate(template);
+      if (task) created.push(task);
     }
   }
   return created;

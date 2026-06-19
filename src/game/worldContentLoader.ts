@@ -1,6 +1,19 @@
-import { NPCS, AREAS, type NpcData, type AreaData } from "@/data/content";
+import { NPC_PROFILES, type NpcProfile } from "@/data/npcProfiles";
+import { AREAS, type NpcData, type AreaData } from "@/data/content";
 import { inferAreaUnlockStage, inferNpcUnlockStage } from "@/payload/contentCategories";
 import type { ProjectStageId } from "./projectStages";
+
+function profileToNpcData(profile: NpcProfile): NpcData {
+  return {
+    name: profile.name,
+    type: profile.payloadType,
+    description: profile.description,
+    defaultRelation: 50,
+    quotes: [],
+    relatedMetrics: [],
+    unlockStage: inferNpcUnlockStage(profile.payloadType),
+  };
+}
 
 function mapPayloadNpc(doc: Record<string, unknown>): NpcData {
   const type = doc.type as string;
@@ -28,9 +41,14 @@ function mapPayloadArea(doc: Record<string, unknown>): AreaData {
   const name = doc.name as string;
   const stage = (doc.stage as string) || "";
   return {
+    slug: (doc.slug as string) || name,
     name,
+    shortName: (doc.shortName as string) || name,
+    sandtableRegionId: (doc.sandtableRegionId as string) || "",
+    sandtableZoneId: (doc.sandtableZoneId as string) || "",
     description: (doc.description as string) || "",
     stage,
+    category: doc.category as string | undefined,
     riskTags: ((doc.riskTags as { tag: string }[] | null) || []).map((item) => item.tag).filter(Boolean),
     unlockStage: inferAreaUnlockStage(name, stage, doc.unlockStage as ProjectStageId | undefined),
     unlockMilestones: ((doc.unlockMilestones as { milestone: string }[] | null) || [])
@@ -40,6 +58,7 @@ function mapPayloadArea(doc: Record<string, unknown>): AreaData {
       .map((item) => item.slug)
       .filter(Boolean),
     visibleWhenLocked: Boolean(doc.visibleWhenLocked),
+    sortOrder: (doc.sortOrder as number) ?? 0,
   };
 }
 
@@ -51,14 +70,14 @@ export async function getNpcs(): Promise<NpcData[]> {
     const result = await payload.find({
       collection: "npcs",
       where: { enabled: { equals: true } },
-      limit: 100,
+      limit: 200,
     });
 
-    if (result.docs.length === 0) return NPCS;
+    if (result.docs.length === 0) return NPC_PROFILES.map(profileToNpcData);
 
     return result.docs.map((doc) => mapPayloadNpc(doc as Record<string, unknown>));
   } catch {
-    return NPCS;
+    return NPC_PROFILES.map(profileToNpcData);
   }
 }
 

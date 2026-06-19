@@ -18,182 +18,36 @@ export type NpcData = {
 } & UnlockableWorldContent;
 
 export type AreaData = {
+  slug: string;
   name: string;
+  shortName: string;
+  sandtableRegionId: string;
+  sandtableZoneId: string;
   description: string;
   stage: string;
   category?: string;
   riskTags: string[];
+  sortOrder: number;
 } & UnlockableWorldContent;
 
-export const NPCS: NpcData[] = [
-  {
-    name: "甲方代表",
-    type: "owner",
-    description: "重进度、重效果、重汇报",
-    defaultRelation: 50,
-    quotes: ["领导明天要看现场。", "这个效果还能不能再提升一下？"],
-    relatedMetrics: ["progress", "ownerTrust", "cost"],
-    unlockStage: "INITIATION",
-  },
-  {
-    name: "监理单位",
-    type: "supervisor",
-    description: "卡流程、重闭合",
-    defaultRelation: 50,
-    quotes: ["整改未闭合，不能签。"],
-    relatedMetrics: ["quality", "dataIntegrity"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "质监站",
-    type: "regulator",
-    description: "监管检查",
-    defaultRelation: 40,
-    quotes: ["检测报告补齐。"],
-    relatedMetrics: ["quality", "dataIntegrity"],
-    unlockStage: "ACCEPTANCE",
-  },
-  {
-    name: "消防专家",
-    type: "fire",
-    description: "后期核心压力源",
-    defaultRelation: 45,
-    quotes: ["消防通道为什么被占用？"],
-    relatedMetrics: ["fireRisk", "safety"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "总承包单位",
-    type: "contractor",
-    description: "统筹现场",
-    defaultRelation: 55,
-    quotes: ["今晚必须收口。"],
-    relatedMetrics: ["progress", "safety"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "专业分包",
-    type: "subcontractor",
-    description: "专项施工",
-    defaultRelation: 50,
-    quotes: ["我们这边人手不够。"],
-    relatedMetrics: ["progress", "quality"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "设计院",
-    type: "design",
-    description: "图纸与变更",
-    defaultRelation: 50,
-    quotes: ["变更单还没出。"],
-    relatedMetrics: ["dataIntegrity", "quality"],
-    unlockStage: "DESIGN",
-  },
-  {
-    name: "供应商",
-    type: "supplier",
-    description: "材料设备供应",
-    defaultRelation: 50,
-    quotes: ["货还在路上。"],
-    relatedMetrics: ["cost", "progress"],
-    unlockStage: "PROCUREMENT",
-  },
-  {
-    name: "商户/运营团队",
-    type: "merchant",
-    description: "提前进场诉求",
-    defaultRelation: 55,
-    quotes: ["我们想提前进场装修。"],
-    relatedMetrics: ["progress", "ownerTrust"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "物业公司",
-    type: "property",
-    description: "移交接管",
-    defaultRelation: 50,
-    quotes: ["钥匙什么时候交？"],
-    relatedMetrics: ["propertyHandover", "dataIntegrity"],
-    unlockStage: "ACCEPTANCE",
-  },
-];
+/** @deprecated 旧世界泛称 NPC 已移除，运行时请使用 NPC_PROFILES / Payload npcs */
+export const NPCS: NpcData[] = [];
 
-const BASE_AREAS: AreaData[] = [
-  {
-    name: "项目总控",
-    description: "项目级主线任务、阶段门推进、综合协调与运营调度的虚拟管理场景。",
-    stage: "管理",
-    riskTags: ["coordination", "management", "mainline"],
-    unlockStage: "INITIATION",
-    relatedLocationSlugs: ["owner_project_management_dept"],
-    visibleWhenLocked: false,
-  },
-  {
-    name: "L1商业街",
-    description: "商户集中区域",
-    stage: "精装修",
-    riskTags: ["消防", "商户"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "商业中庭",
-    description: "开业形象核心区",
-    stage: "精装修",
-    riskTags: ["质量", "效果"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "B1设备走廊",
-    description: "机电设备通道",
-    stage: "机电",
-    riskTags: ["机电", "安全"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "消防泵房",
-    description: "消防核心设施",
-    stage: "消防",
-    riskTags: ["消防"],
-    unlockStage: "CONSTRUCTION",
-  },
-  {
-    name: "项目资料室",
-    description: "竣工资料归档",
-    stage: "资料",
-    riskTags: ["资料"],
-    unlockStage: "INITIATION",
-  },
-  {
-    name: "物业交接区",
-    description: "物业移交办理",
-    stage: "移交",
-    riskTags: ["移交"],
-    unlockStage: "ACCEPTANCE",
-  },
-  {
-    name: "材料堆场",
-    description: "材料进场堆放",
-    stage: "材料",
-    riskTags: ["材料", "安全"],
-    unlockStage: "CONSTRUCTION",
-  },
-];
-
-const BASE_AREA_NAMES = new Set(BASE_AREAS.map((area) => area.name));
-
-export const AREAS: AreaData[] = [
-  ...BASE_AREAS,
-  ...LOCATION_SANDTABLE_AREAS.filter((area) => !BASE_AREA_NAMES.has(area.name)).map((area) => ({
-    name: area.name,
-    category: area.category,
-    description: area.description,
-    stage: area.stage,
-    riskTags: area.riskTags,
-    unlockStage: area.unlockStage,
-    relatedLocationSlugs: area.relatedLocationSlugs,
-    visibleWhenLocked: area.visibleWhenLocked,
-  })),
-];
+export const AREAS: AreaData[] = LOCATION_SANDTABLE_AREAS.map((area, index) => ({
+  slug: area.id,
+  name: area.name,
+  shortName: area.shortName,
+  sandtableRegionId: area.regionId,
+  sandtableZoneId: area.zoneId,
+  category: area.category,
+  description: area.description,
+  stage: area.stage,
+  riskTags: area.riskTags,
+  unlockStage: area.unlockStage,
+  relatedLocationSlugs: area.relatedLocationSlugs,
+  visibleWhenLocked: area.visibleWhenLocked,
+  sortOrder: index,
+}));
 
 export const ITEMS = [
   { slug: "safety_helmet", name: "安全帽", rarity: "R", description: "基础安全防护", effectType: "safety", effectValue: 2, usable: true },

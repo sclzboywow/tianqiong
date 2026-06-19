@@ -1,124 +1,102 @@
-import { Coins, Heart, Sparkles, Star } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { ProfileViewData } from "@/game/profilePresentationEngine";
 import {
   PLAYER_SPIRIT_MAX,
   PLAYER_STAMINA_MAX,
-  playerCardBodyClass,
-  playerCardClass,
-  playerCardHeaderClass,
 } from "../playerTheme";
+import {
+  taskDetailPanel,
+  taskDetailPanelHeader,
+} from "../tasks/taskBoardUi";
 
 type PlayerResourcesCardProps = {
   profile: Pick<ProfileViewData, "stamina" | "spirit" | "gold" | "reputation">;
 };
 
-function meterFillColor(kind: "stamina" | "spirit") {
-  return kind === "stamina" ? "#22C55E" : "#2EA8FF";
+function spiritHint(spirit: number): string {
+  const pct = Math.round((spirit / PLAYER_SPIRIT_MAX) * 100);
+  return `精神 ${spirit}/${PLAYER_SPIRIT_MAX}（${pct}%）`;
 }
 
-function ResourceMeter({
+function resolveActionStatus(stamina: number, spirit: number) {
+  const staminaPct = stamina / PLAYER_STAMINA_MAX;
+  const spiritPct = spirit / PLAYER_SPIRIT_MAX;
+  const minPct = Math.min(staminaPct, spiritPct);
+  const spiritLow = spiritPct < 0.4;
+
+  if (minPct >= 0.6 && !spiritLow) {
+    return {
+      label: "状态良好，可继续处理任务",
+      className: "text-emerald-400/90",
+    };
+  }
+  if (minPct >= 0.35) {
+    return {
+      label: spiritLow
+        ? `${spiritHint(spirit)}，注意力偏弱，建议优先处理低消耗任务或先在协同地图休整`
+        : "状态一般，建议优先处理低消耗任务",
+      className: "text-amber-300/90",
+    };
+  }
+  return {
+    label: spiritLow
+      ? `${spiritHint(spirit)}，暂不宜接高风险或多人协作任务，建议休整后再提交方案`
+      : "状态偏低，建议谨慎处理高风险任务",
+    className: "text-rose-400/85",
+  };
+}
+
+function InlineResourceBar({
   label,
   value,
   max,
-  kind,
-  icon: Icon,
 }: {
   label: string;
   value: number;
   max: number;
-  kind: "stamina" | "spirit";
-  icon: LucideIcon;
 }) {
-  const color = meterFillColor(kind);
   const percent = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
 
   return (
-    <div className="rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-3">
-      <div className="flex items-center gap-2.5">
-        <div
-          className="flex size-8 shrink-0 items-center justify-center rounded-md"
-          style={{
-            backgroundColor: `${color}18`,
-            border: `1px solid ${color}35`,
-          }}
-        >
-          <Icon className="size-4" style={{ color }} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-[#8EA3B8]">{label}</span>
-            <span className="text-sm font-medium tabular-nums text-[#EAF3FF]">
-              {value}/{max}
-            </span>
-          </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${percent}%`, backgroundColor: color }}
-            />
-          </div>
-        </div>
+    <div className="flex items-center gap-2">
+      <span className="w-7 shrink-0 text-[11px] text-slate-500">{label}</span>
+      <div className="h-1 min-w-0 flex-1 overflow-hidden bg-slate-950/40">
+        <div className="h-full bg-cyan-400/45" style={{ width: `${percent}%` }} />
       </div>
-    </div>
-  );
-}
-
-function ResourceStat({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: number;
-  icon: LucideIcon;
-  color: string;
-}) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-[rgba(60,160,255,0.12)] bg-[rgba(5,11,20,0.5)] px-3 py-3">
-      <div
-        className="flex size-8 shrink-0 items-center justify-center rounded-md"
-        style={{
-          backgroundColor: `${color}18`,
-          border: `1px solid ${color}35`,
-        }}
-      >
-        <Icon className="size-4" style={{ color }} />
-      </div>
-      <div>
-        <p className="text-xs text-[#8EA3B8]">{label}</p>
-        <p className="text-lg font-semibold tabular-nums text-[#EAF3FF]">{value}</p>
-      </div>
+      <span className="w-12 shrink-0 text-right text-[10px] tabular-nums text-slate-400">
+        {value}/{max}
+      </span>
     </div>
   );
 }
 
 export function PlayerResourcesCard({ profile }: PlayerResourcesCardProps) {
+  const status = resolveActionStatus(profile.stamina, profile.spirit);
+
   return (
-    <section className={playerCardClass}>
-      <div className={playerCardHeaderClass}>
-        <h3 className="text-base font-semibold text-[#EAF3FF]">资源状态</h3>
-        <p className="mt-0.5 text-xs text-[#8EA3B8]">体力、精神与项目资源概览</p>
+    <section className={taskDetailPanel}>
+      <div className={`${taskDetailPanelHeader} py-2`}>
+        <h3 className="text-sm font-medium text-cyan-100">行动状态</h3>
       </div>
 
-      <div className={`${playerCardBodyClass} grid grid-cols-1 gap-2.5 sm:grid-cols-2`}>
-        <ResourceMeter
-          label="体力"
-          value={profile.stamina}
-          max={PLAYER_STAMINA_MAX}
-          kind="stamina"
-          icon={Heart}
-        />
-        <ResourceMeter
-          label="精神"
-          value={profile.spirit}
-          max={PLAYER_SPIRIT_MAX}
-          kind="spirit"
-          icon={Sparkles}
-        />
-        <ResourceStat label="金币" value={profile.gold} icon={Coins} color="#FACC15" />
-        <ResourceStat label="声望" value={profile.reputation} icon={Star} color="#FACC15" />
+      <div className="space-y-1.5 px-3 pb-2.5 pt-1">
+        <p className={cn("text-xs font-medium", status.className)}>{status.label}</p>
+
+        <div className="space-y-1">
+          <InlineResourceBar label="体力" value={profile.stamina} max={PLAYER_STAMINA_MAX} />
+          <InlineResourceBar label="精神" value={profile.spirit} max={PLAYER_SPIRIT_MAX} />
+        </div>
+
+        <div className="flex flex-wrap gap-x-4 text-[11px] tabular-nums text-slate-400">
+          <span>
+            <span className="text-slate-600">金币 </span>
+            {profile.gold}
+          </span>
+          <span>
+            <span className="text-slate-600">声望 </span>
+            {profile.reputation}
+          </span>
+        </div>
       </div>
     </section>
   );
