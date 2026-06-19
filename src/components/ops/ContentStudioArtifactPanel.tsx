@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ContentStudioData } from "@/game/contentStudioLoader";
-import { payloadAdminUrl } from "@/game/contentStudioLoader";
+import { payloadAdminUrl } from "@/lib/payloadAdminUrl";
 import { PROJECT_STAGES } from "@/game/projectStages";
 import { resolveAllowedStatuses } from "@/data/artifactDefinitions";
 

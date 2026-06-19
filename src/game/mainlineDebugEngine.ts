@@ -203,7 +203,18 @@ export async function completeMainlineTaskBySlug(taskSlug: string, userId?: stri
       ? "steady_push"
       : Object.keys(template.choiceEffects || {})[0] || "immediate_fix";
 
-  const result = await resolveChoice(task.id, debugUserId, choiceId);
+  const prevForceSuccess = process.env.CHAPTER1_FLOW_TEST;
+  process.env.CHAPTER1_FLOW_TEST = "1";
+  let result;
+  try {
+    result = await resolveChoice(task.id, debugUserId, choiceId);
+  } finally {
+    if (prevForceSuccess === undefined) {
+      delete process.env.CHAPTER1_FLOW_TEST;
+    } else {
+      process.env.CHAPTER1_FLOW_TEST = prevForceSuccess;
+    }
+  }
 
   let project = await getProjectState(SEASON_ID);
 

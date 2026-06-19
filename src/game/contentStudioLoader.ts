@@ -15,6 +15,9 @@ import { getEventTemplates } from "./eventTemplateLoader";
 import { getStoryEntries } from "./storyEntryLoader";
 import { getNpcs, getAreas } from "./worldContentLoader";
 import { loadArtifactDefinitions } from "./artifactLoader";
+import { payloadAdminUrl } from "@/lib/payloadAdminUrl";
+
+export { payloadAdminUrl };
 
 export type { EventTemplateData };
 
@@ -411,9 +414,4 @@ export function getEventTemplateBySlug(
   slug: string,
 ): EventTemplateData | undefined {
   return data.eventTemplates.find((event) => event.slug === slug);
-}
-
-export function payloadAdminUrl(collection: string, docId?: string | number): string {
-  if (docId) return `/admin/collections/${collection}/${docId}`;
-  return `/admin/collections/${collection}`;
 }
