@@ -91,7 +91,7 @@ export interface DependencyContext {
 }
 
 export type EventTaskEffect = {
-  action: "spawn" | "complete" | "fail";
+  action: "spawn";
   taskSlug: string;
 };
 

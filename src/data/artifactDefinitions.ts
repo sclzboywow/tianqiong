@@ -1,11 +1,39 @@
 import type { ArtifactDefinitionData } from "@/game/types";
 
-const STANDARD_STATUSES = [
+export const STANDARD_ARTIFACT_STATUSES = [
   { status: "draft", label: "草稿" },
   { status: "in_review", label: "审核中" },
   { status: "confirmed", label: "已确认" },
   { status: "approved", label: "已批准" },
 ] as const;
+
+export type StandardArtifactStatus = (typeof STANDARD_ARTIFACT_STATUSES)[number]["status"];
+
+/** allowedStatuses 为空时使用标准状态集 */
+export function resolveAllowedStatuses(
+  definition: Pick<ArtifactDefinitionData, "allowedStatuses" | "defaultStatus">,
+) {
+  if (definition.allowedStatuses && definition.allowedStatuses.length > 0) {
+    return definition.allowedStatuses;
+  }
+  return STANDARD_ARTIFACT_STATUSES.map((item) => ({ ...item }));
+}
+
+export function usesStandardStatusFallback(
+  definition: Pick<ArtifactDefinitionData, "allowedStatuses">,
+): boolean {
+  return !definition.allowedStatuses?.length;
+}
+
+export function formatAllowedStatusLabel(
+  definition: Pick<ArtifactDefinitionData, "allowedStatuses" | "defaultStatus">,
+  status: string,
+): string {
+  const allowed = resolveAllowedStatuses(definition);
+  return allowed.find((item) => item.status === status)?.label || status;
+}
+
+const STANDARD_STATUSES = STANDARD_ARTIFACT_STATUSES;
 
 function artifact(
   slug: string,
@@ -20,7 +48,7 @@ function artifact(
     artifactType,
     stage,
     defaultStatus: "draft",
-    allowedStatuses: [...STANDARD_STATUSES],
+    allowedStatuses: STANDARD_ARTIFACT_STATUSES.map((item) => ({ ...item })),
     reusable: false,
     versioned: true,
     expires: 0,

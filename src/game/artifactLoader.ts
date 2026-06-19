@@ -1,5 +1,10 @@
-import { ARTIFACT_DEFINITIONS, getStaticArtifactDefinitionBySlug } from "@/data/artifactDefinitions";
-import type { ArtifactDefinitionData, ArtifactStatusEntry, ArtifactType } from "./types";
+import type { ArtifactDefinitionData, ArtifactStatusEntry } from "./types";
+import {
+  ARTIFACT_DEFINITIONS,
+  getStaticArtifactDefinitionBySlug,
+  resolveAllowedStatuses,
+} from "@/data/artifactDefinitions";
+import type { ArtifactType } from "./types";
 import type { ProjectStageId } from "./projectStages";
 
 const ARTIFACT_TYPE_VALUES = new Set<ArtifactType>([
@@ -23,8 +28,16 @@ function mapAllowedStatuses(raw: unknown): ArtifactStatusEntry[] | undefined {
   return entries.length > 0 ? entries : undefined;
 }
 
-function mapPayloadDoc(doc: Record<string, unknown>): ArtifactDefinitionData {
+function normalizeDefinition(definition: ArtifactDefinitionData): ArtifactDefinitionData {
   return {
+    ...definition,
+    defaultStatus: definition.defaultStatus || "draft",
+    allowedStatuses: resolveAllowedStatuses(definition),
+  };
+}
+
+function mapPayloadDoc(doc: Record<string, unknown>): ArtifactDefinitionData {
+  const raw: ArtifactDefinitionData = {
     slug: String(doc.slug || ""),
     name: String(doc.name || ""),
     artifactType: (ARTIFACT_TYPE_VALUES.has(doc.artifactType as ArtifactType)
@@ -48,9 +61,14 @@ function mapPayloadDoc(doc: Record<string, unknown>): ArtifactDefinitionData {
     enabled: doc.enabled !== false,
     payloadDocId: doc.id as string | number,
   };
+  return normalizeDefinition(raw);
 }
 
 let cachedDefinitions: ArtifactDefinitionData[] | null = null;
+
+export function clearArtifactDefinitionCache() {
+  cachedDefinitions = null;
+}
 
 export async function loadArtifactDefinitions(): Promise<ArtifactDefinitionData[]> {
   if (cachedDefinitions) return cachedDefinitions;
@@ -66,7 +84,7 @@ export async function loadArtifactDefinitions(): Promise<ArtifactDefinitionData[
     });
 
     if (result.docs.length === 0) {
-      cachedDefinitions = ARTIFACT_DEFINITIONS;
+      cachedDefinitions = ARTIFACT_DEFINITIONS.map(normalizeDefinition);
       return cachedDefinitions;
     }
 
@@ -75,7 +93,7 @@ export async function loadArtifactDefinitions(): Promise<ArtifactDefinitionData[
       .filter((item) => item.slug.trim().length > 0);
     return cachedDefinitions;
   } catch {
-    cachedDefinitions = ARTIFACT_DEFINITIONS;
+    cachedDefinitions = ARTIFACT_DEFINITIONS.map(normalizeDefinition);
     return cachedDefinitions;
   }
 }
@@ -84,9 +102,8 @@ export async function getArtifactDefinitionBySlug(
   slug: string,
 ): Promise<ArtifactDefinitionData | undefined> {
   const definitions = await loadArtifactDefinitions();
-  return definitions.find((item) => item.slug === slug) ?? getStaticArtifactDefinitionBySlug(slug);
-}
-
-export function clearArtifactDefinitionCache() {
-  cachedDefinitions = null;
+  const found = definitions.find((item) => item.slug === slug);
+  if (found) return found;
+  const fallback = getStaticArtifactDefinitionBySlug(slug);
+  return fallback ? normalizeDefinition(fallback) : undefined;
 }

@@ -263,10 +263,12 @@ function buildChapter1EventPayloadData(event: Partial<EventTemplateData>) {
       status: item.status,
       versionBump: item.versionBump ?? false,
     })),
-    taskEffects: (event.taskEffects || []).map((item) => ({
-      action: item.action,
-      taskSlug: item.taskSlug,
-    })),
+    taskEffects: (event.taskEffects || [])
+      .filter((item) => item.action === "spawn")
+      .map((item) => ({
+        action: "spawn" as const,
+        taskSlug: item.taskSlug,
+      })),
     metricEffectsList: event.metricEffects
       ? metricEffectsToRows(event.metricEffects)
       : [],

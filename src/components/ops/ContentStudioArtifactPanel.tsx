@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ContentStudioData } from "@/game/contentStudioLoader";
 import { payloadAdminUrl } from "@/game/contentStudioLoader";
 import { PROJECT_STAGES } from "@/game/projectStages";
+import { resolveAllowedStatuses } from "@/data/artifactDefinitions";
 
 type ContentStudioArtifactPanelProps = {
   data: ContentStudioData;
@@ -17,7 +18,17 @@ function stageLabel(stageId?: string) {
   return PROJECT_STAGES.find((stage) => stage.id === stageId)?.name || stageId;
 }
 
+function formatRefs(refs?: { slug: string; title: string }[]) {
+  if (!refs?.length) return "—";
+  return refs.map((item) => item.title).join("、");
+}
+
 export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelProps) {
+  const knownSlugs = useMemo(
+    () => new Set(data.artifactDefinitions.map((item) => item.slug)),
+    [data.artifactDefinitions],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -40,16 +51,21 @@ export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelP
             <tr>
               <th className="px-3 py-2 text-left font-medium">名称</th>
               <th className="px-3 py-2 text-left font-medium">slug</th>
-              <th className="px-3 py-2 text-left font-medium">类型</th>
               <th className="px-3 py-2 text-left font-medium">阶段</th>
               <th className="px-3 py-2 text-left font-medium">默认状态</th>
-              <th className="px-3 py-2 text-left font-medium">状态流</th>
+              <th className="px-3 py-2 text-left font-medium">允许状态</th>
+              <th className="px-3 py-2 text-left font-medium">产出任务</th>
+              <th className="px-3 py-2 text-left font-medium">依赖任务</th>
+              <th className="px-3 py-2 text-left font-medium">事件影响</th>
               <th className="px-3 py-2 text-left font-medium">启用</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {data.artifactDefinitions.map((artifact) => {
               const docId = data.artifactDefinitionDocIds[artifact.slug];
+              const statusFlow = resolveAllowedStatuses(artifact)
+                .map((item) => item.label || item.status)
+                .join(" → ");
               return (
                 <tr key={artifact.slug} className="bg-zinc-950/40 hover:bg-zinc-900/40">
                   <td className="px-3 py-2">
@@ -66,13 +82,17 @@ export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelP
                     )}
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-zinc-500">{artifact.slug}</td>
-                  <td className="px-3 py-2">{artifact.artifactType}</td>
                   <td className="px-3 py-2">{stageLabel(artifact.stage)}</td>
                   <td className="px-3 py-2">{artifact.defaultStatus || "draft"}</td>
+                  <td className="px-3 py-2 text-xs text-zinc-400">{statusFlow || "—"}</td>
                   <td className="px-3 py-2 text-xs text-zinc-400">
-                    {(artifact.allowedStatuses || [])
-                      .map((item) => item.label || item.status)
-                      .join(" → ") || "—"}
+                    {formatRefs(data.artifactUsage.producedByTasks[artifact.slug])}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-zinc-400">
+                    {formatRefs(data.artifactUsage.requiredByTasks[artifact.slug])}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-zinc-400">
+                    {formatRefs(data.artifactUsage.affectedByEvents[artifact.slug])}
                   </td>
                   <td className="px-3 py-2">
                     <Badge variant={artifact.enabled !== false ? "default" : "outline"}>
@@ -85,16 +105,28 @@ export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelP
           </tbody>
         </table>
       </div>
+
+      {data.dependencyGraph.nodes.some(
+        (node) => node.type === "artifact" && !knownSlugs.has(node.id.replace("artifact:", "")),
+      ) ? (
+        <p className="text-sm text-rose-400">
+          依赖图中存在未定义的成果物 slug（红色节点），请先在 Payload 中补全 artifact-definitions。
+        </p>
+      ) : null}
     </div>
   );
 }
 
 type DependencyDebugResult = {
   available: boolean;
+  taskSlug?: string;
+  templateTitle?: string;
+  configurationOk?: boolean;
   missingArtifacts: { slug: string; name: string; required: string; actual: string }[];
   missingTasks: string[];
   missingMilestones: string[];
   blockingReasons: string[];
+  invalidArtifactSlugs?: { slug: string; role: "input" | "output" }[];
 };
 
 export function ContentStudioDependencyDebugPanel({
@@ -165,16 +197,34 @@ export function ContentStudioDependencyDebugPanel({
         </div>
       </div>
 
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {error ? <p className="text-sm text-rose-400">{error}</p> : null}
 
       {result ? (
         <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 space-y-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-zinc-400">任务：</span>
+            <span className="text-sm text-zinc-200">{result.templateTitle || result.taskSlug}</span>
             <span className="text-sm text-zinc-400">可生成：</span>
             <Badge variant={result.available ? "default" : "destructive"}>
               {result.available ? "是" : "否"}
             </Badge>
+            {result.configurationOk === false ? (
+              <Badge variant="destructive">配置错误</Badge>
+            ) : null}
           </div>
+
+          {result.invalidArtifactSlugs && result.invalidArtifactSlugs.length > 0 ? (
+            <div className="rounded border border-rose-900/50 bg-rose-950/20 p-3">
+              <p className="text-sm font-medium text-rose-300 mb-2">未定义的成果物 slug</p>
+              <ul className="space-y-1 text-sm text-rose-300">
+                {result.invalidArtifactSlugs.map((item) => (
+                  <li key={`${item.role}-${item.slug}`}>
+                    [{item.role === "input" ? "输入" : "产出"}] {item.slug} — 在 artifact-definitions 中不存在
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {result.blockingReasons.length > 0 ? (
             <div>

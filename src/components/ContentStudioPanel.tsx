@@ -351,7 +351,10 @@ export function ContentStudioPanel({
       {activeTab === "dependency" ? (
         <section>
           <h2 className="mb-3 text-lg font-medium text-zinc-200">任务—成果物依赖关系</h2>
-          <ContentStudioDependencyFlow graph={data.dependencyGraph} />
+          <ContentStudioDependencyFlow
+            graph={data.dependencyGraph}
+            knownArtifactSlugs={new Set(data.artifactDefinitions.map((def) => def.slug))}
+          />
         </section>
       ) : null}
 

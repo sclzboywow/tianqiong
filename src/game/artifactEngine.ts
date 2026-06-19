@@ -6,6 +6,7 @@ import type {
   ProjectArtifactRecord,
 } from "./types";
 import { getArtifactDefinitionBySlug, loadArtifactDefinitions } from "./artifactLoader";
+import { formatAllowedStatusLabel, resolveAllowedStatuses } from "@/data/artifactDefinitions";
 
 export type ArtifactLogSource = {
   sourceType: "task" | "event" | "system";
@@ -14,9 +15,7 @@ export type ArtifactLogSource = {
 };
 
 export function getStatusOrdinal(definition: ArtifactDefinitionData, status: string): number {
-  const statuses =
-    definition.allowedStatuses?.map((item) => item.status) ||
-    [definition.defaultStatus || "draft"];
+  const statuses = resolveAllowedStatuses(definition).map((item) => item.status);
   const index = statuses.indexOf(status);
   return index >= 0 ? index : -1;
 }
@@ -116,9 +115,7 @@ export async function upsertArtifactStatus(
     throw new Error(`成果物定义不存在: ${slug}`);
   }
 
-  const allowed =
-    definition.allowedStatuses?.map((item) => item.status) ||
-    [definition.defaultStatus || "draft"];
+  const allowed = resolveAllowedStatuses(definition).map((item) => item.status);
   if (!allowed.includes(status)) {
     throw new Error(`成果物 ${slug} 不允许状态 ${status}`);
   }
@@ -200,8 +197,8 @@ export async function applyArtifactEffects(
 export async function getArtifactStatusLabel(slug: string, status: string | null): Promise<string> {
   if (!status) return "未产出";
   const definition = await getArtifactDefinitionBySlug(slug);
-  const label = definition?.allowedStatuses?.find((item) => item.status === status)?.label;
-  return label || status;
+  if (!definition) return status;
+  return formatAllowedStatusLabel(definition, status);
 }
 
 export async function buildArtifactStatusMap(seasonId: string): Promise<Record<string, string | null>> {

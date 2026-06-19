@@ -121,11 +121,7 @@ const TASK_BLOCK_POLICY_OPTIONS = [
   { label: "仅警告（仍允许生成）", value: "warn_only" },
 ];
 
-const EVENT_TASK_EFFECT_OPTIONS = [
-  { label: "生成任务", value: "spawn" },
-  { label: "完成任务", value: "complete" },
-  { label: "任务失败", value: "fail" },
-];
+const EVENT_TASK_EFFECT_OPTIONS = [{ label: "生成任务", value: "spawn" }];
 
 function artifactRequirementFields() {
   return [
@@ -225,6 +221,20 @@ export const ArtifactDefinitions: CollectionConfig = {
     listSearchableFields: ["name", "slug", "artifactType", "stage", "description"],
     description: "项目成果物定义：任务 input/output 与运行时 ProjectArtifact 状态引用此表。",
   },
+  hooks: {
+    afterChange: [
+      async () => {
+        const { clearArtifactDefinitionCache } = await import("@/game/artifactLoader");
+        clearArtifactDefinitionCache();
+      },
+    ],
+    afterDelete: [
+      async () => {
+        const { clearArtifactDefinitionCache } = await import("@/game/artifactLoader");
+        clearArtifactDefinitionCache();
+      },
+    ],
+  },
   fields: [
     { name: "slug", type: "text", label: "标识", required: true, unique: true },
     { name: "name", type: "text", label: "名称", required: true },
@@ -275,7 +285,7 @@ export const ArtifactDefinitions: CollectionConfig = {
       name: "allowedStatuses",
       type: "array",
       label: "允许状态",
-      admin: { description: "按顺序排列，用于比较 minStatus 等级。" },
+      admin: { description: "按顺序排列，用于比较 minStatus 等级。留空则运行时使用标准状态集（草稿→审核中→已确认→已批准）。" },
       fields: [
         { name: "status", type: "text", label: "状态值", required: true },
         { name: "label", type: "text", label: "显示名称" },

@@ -73,6 +73,7 @@ export type ContentStudioData = {
   artifactDefinitions: ArtifactDefinitionData[];
   artifactDefinitionDocIds: Record<string, string | number>;
   dependencyGraph: DependencyGraphData;
+  artifactUsage: ArtifactUsageIndex;
   npcs: NpcData[];
   areas: AreaData[];
 };
@@ -130,6 +131,53 @@ async function loadPayloadDocIdMaps() {
     storyEntryDocIds,
     artifactDefinitionDocIds,
   };
+}
+
+export type ArtifactUsageIndex = {
+  producedByTasks: Record<string, { slug: string; title: string }[]>;
+  requiredByTasks: Record<string, { slug: string; title: string }[]>;
+  affectedByEvents: Record<string, { slug: string; title: string }[]>;
+};
+
+export function buildArtifactUsageIndex(
+  taskTemplates: TaskTemplateData[],
+  eventTemplates: EventTemplateData[],
+): ArtifactUsageIndex {
+  const producedByTasks: ArtifactUsageIndex["producedByTasks"] = {};
+  const requiredByTasks: ArtifactUsageIndex["requiredByTasks"] = {};
+  const affectedByEvents: ArtifactUsageIndex["affectedByEvents"] = {};
+
+  const push = (
+    bucket: Record<string, { slug: string; title: string }[]>,
+    artifactSlug: string,
+    ref: { slug: string; title: string },
+  ) => {
+    if (!artifactSlug.trim()) return;
+    const list = bucket[artifactSlug] || [];
+    if (!list.some((item) => item.slug === ref.slug)) {
+      list.push(ref);
+    }
+    bucket[artifactSlug] = list;
+  };
+
+  for (const template of taskTemplates) {
+    const ref = { slug: template.slug, title: template.title };
+    for (const output of template.outputArtifacts || []) {
+      push(producedByTasks, output.artifactSlug, ref);
+    }
+    for (const input of template.inputArtifacts || []) {
+      push(requiredByTasks, input.artifactSlug, ref);
+    }
+  }
+
+  for (const event of eventTemplates) {
+    const ref = { slug: event.slug, title: event.title };
+    for (const effect of event.artifactEffects || []) {
+      push(affectedByEvents, effect.artifactSlug, ref);
+    }
+  }
+
+  return { producedByTasks, requiredByTasks, affectedByEvents };
 }
 
 export function buildDependencyGraph(
@@ -253,6 +301,7 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
   ]);
 
   const dependencyGraph = buildDependencyGraph(taskTemplates, artifactDefinitions);
+  const artifactUsage = buildArtifactUsageIndex(taskTemplates, eventTemplates);
 
   const actionsByLocation = new Map<string, LocationAction[]>();
   for (const action of locationActions) {
@@ -315,6 +364,7 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     artifactDefinitions,
     artifactDefinitionDocIds: docIds.artifactDefinitionDocIds,
     dependencyGraph,
+    artifactUsage,
     npcs,
     areas,
   };

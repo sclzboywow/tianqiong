@@ -15,10 +15,11 @@ import type { DependencyGraphData } from "@/game/contentStudioLoader";
 
 type ContentStudioDependencyFlowProps = {
   graph: DependencyGraphData;
+  knownArtifactSlugs?: Set<string>;
   className?: string;
 };
 
-function layoutNodes(graph: DependencyGraphData): Node[] {
+function layoutNodes(graph: DependencyGraphData, knownArtifactSlugs?: Set<string>): Node[] {
   const taskNodes = graph.nodes.filter((node) => node.type === "task");
   const artifactNodes = graph.nodes.filter((node) => node.type === "artifact");
 
@@ -32,20 +33,32 @@ function layoutNodes(graph: DependencyGraphData): Node[] {
         ? 40 + taskIndex * 88
         : 40 + artifactIndex * 72;
 
+    const artifactSlug = node.id.replace("artifact:", "");
+    const isMissing = node.type === "artifact" && knownArtifactSlugs && !knownArtifactSlugs.has(artifactSlug);
+
     return {
       id: node.id,
       position: { x, y },
       data: {
-        label: node.label,
+        label: isMissing ? `${node.label} (未定义)` : node.label,
         nodeType: node.type,
         stage: node.stage,
+        isMissing,
       },
       draggable: true,
       style: {
         borderRadius: 8,
-        border: node.type === "task" ? "1px solid rgba(96,165,250,0.45)" : "1px solid rgba(74,222,128,0.45)",
-        background: node.type === "task" ? "rgba(15,23,42,0.95)" : "rgba(20,30,20,0.95)",
-        color: "#e4e4e7",
+        border: isMissing
+          ? "1px solid rgba(248,113,113,0.8)"
+          : node.type === "task"
+            ? "1px solid rgba(96,165,250,0.45)"
+            : "1px solid rgba(74,222,128,0.45)",
+        background: isMissing
+          ? "rgba(69,10,10,0.85)"
+          : node.type === "task"
+            ? "rgba(15,23,42,0.95)"
+            : "rgba(20,30,20,0.95)",
+        color: isMissing ? "#fecaca" : "#e4e4e7",
         fontSize: 12,
         padding: "8px 12px",
         minWidth: 140,
@@ -56,9 +69,10 @@ function layoutNodes(graph: DependencyGraphData): Node[] {
 
 export function ContentStudioDependencyFlow({
   graph,
+  knownArtifactSlugs,
   className,
 }: ContentStudioDependencyFlowProps) {
-  const nodes = useMemo(() => layoutNodes(graph), [graph]);
+  const nodes = useMemo(() => layoutNodes(graph, knownArtifactSlugs), [graph, knownArtifactSlugs]);
   const edges: Edge[] = useMemo(
     () =>
       graph.edges.map((edge) => {
@@ -102,9 +116,11 @@ export function ContentStudioDependencyFlow({
         <ReactFlow nodes={nodes} edges={edges} fitView minZoom={0.4} maxZoom={1.4}>
           <Background gap={16} color="rgba(255,255,255,0.04)" />
           <MiniMap
-            nodeColor={(node) =>
-              (node.data as { nodeType?: string }).nodeType === "task" ? "#3b82f6" : "#22c55e"
-            }
+            nodeColor={(node) => {
+              const data = node.data as { nodeType?: string; isMissing?: boolean };
+              if (data.isMissing) return "#ef4444";
+              return data.nodeType === "task" ? "#3b82f6" : "#22c55e";
+            }}
             maskColor="rgba(0,0,0,0.65)"
           />
           <Controls />

@@ -16,6 +16,7 @@ export type EventTriggerResult = {
   skippedTasks: { slug: string; title: string; reason: string }[];
   blockedTasks: { slug: string; title: string; reasons: string[] }[];
   message: string;
+  error?: string;
 };
 
 export type EventPoolFilterContext = {
@@ -184,16 +185,40 @@ export async function triggerEventForLocationAction(params: {
     const skippedTasks: EventTriggerResult["skippedTasks"] = [];
     const blockedTasks: EventTriggerResult["blockedTasks"] = [];
 
-    if (selected.artifactEffects?.length) {
-      await applyArtifactEffects(SEASON_ID, selected.artifactEffects, {
-        sourceType: "event",
-        sourceId: selected.slug,
-        note: `事件「${selected.title}」触发`,
-      });
+    try {
+      if (selected.artifactEffects?.length) {
+        await applyArtifactEffects(SEASON_ID, selected.artifactEffects, {
+          sourceType: "event",
+          sourceId: selected.slug,
+          note: `事件「${selected.title}」触发`,
+        });
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "成果物效果应用失败";
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[eventPoolEngine] artifactEffects failed:", error);
+      }
+      return {
+        ...empty,
+        error: reason,
+        message: `事件触发失败：${reason}`,
+      };
     }
 
-    if (selected.metricEffects && Object.keys(selected.metricEffects).length > 0) {
-      await applyTaskOutcomeEffects(selected.metricEffects, true, SEASON_ID);
+    try {
+      if (selected.metricEffects && Object.keys(selected.metricEffects).length > 0) {
+        await applyTaskOutcomeEffects(selected.metricEffects, true, SEASON_ID);
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "指标效果应用失败";
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[eventPoolEngine] metricEffects failed:", error);
+      }
+      return {
+        ...empty,
+        error: reason,
+        message: `事件触发失败：${reason}`,
+      };
     }
 
     for (const slug of selected.triggerTaskSlugs || []) {
@@ -301,7 +326,15 @@ export async function triggerEventForLocationAction(params: {
       blockedTasks,
       message,
     };
-  } catch {
-    return empty;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "事件池触发失败";
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[eventPoolEngine] triggerEventForLocationAction failed:", error);
+    }
+    return {
+      ...empty,
+      error: reason,
+      message: `事件触发失败：${reason}`,
+    };
   }
 }

@@ -464,6 +464,10 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
 
   await applyTaskOutcomeEffects(appliedEffects, success, SEASON_ID);
 
+  const resolvedAt = new Date();
+  let stageTemplates: Awaited<ReturnType<typeof import("./contentLoader").getTaskTemplates>> | null =
+    null;
+
   if (success) {
     const milestoneEffects = parseJson<Record<string, boolean>>(task.milestoneEffects || "{}", {});
     if (Object.keys(milestoneEffects).length > 0) {
@@ -471,8 +475,8 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
     }
 
     const { getTaskTemplates } = await import("./contentLoader");
-    const templates = await getTaskTemplates();
-    const template = templates.find((item) => item.slug === task.templateId);
+    stageTemplates = await getTaskTemplates();
+    const template = stageTemplates.find((item) => item.slug === task.templateId);
     if (template?.outputArtifacts?.length) {
       await applyArtifactEffects(SEASON_ID, template.outputArtifacts, {
         sourceType: "task",
@@ -480,10 +484,21 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
         note: `任务「${task.title}」完成产出`,
       });
     }
+  }
 
+  await prisma.task.update({
+    where: { id: task.id },
+    data: {
+      status: success ? "COMPLETED" : "FAILED",
+      finalChoiceId,
+      resolvedAt,
+    },
+  });
+
+  if (success && stageTemplates) {
     const advanceResult = await advanceStageIfReady(SEASON_ID);
     if (advanceResult.advanced) {
-      await spawnTasksFromTemplates(templates);
+      await spawnTasksFromTemplates(stageTemplates);
     }
   }
 
@@ -496,15 +511,6 @@ async function executeFinalizeTask(taskId: string, currentUserId?: string) {
     success,
     finalChoiceId,
   );
-
-  await prisma.task.update({
-    where: { id: task.id },
-    data: {
-      status: success ? "COMPLETED" : "FAILED",
-      finalChoiceId,
-      resolvedAt: new Date(),
-    },
-  });
 
   const effectSummary = JSON.stringify(appliedEffects);
   await writeGameLog({
