@@ -33,8 +33,6 @@ export function formatAllowedStatusLabel(
   return allowed.find((item) => item.status === status)?.label || status;
 }
 
-const STANDARD_STATUSES = STANDARD_ARTIFACT_STATUSES;
-
 function artifact(
   slug: string,
   name: string,

@@ -59,6 +59,8 @@ export type TabDataMap = {
 
 export type ContentOrchestrationPanelProps = {
   initialOverview: ContentOrchestrationOverview;
+  initialTab?: TabId;
+  initialTabData?: Partial<TabDataMap>;
 };
 
 export const TABS: { id: TabId; label: string; short: string }[] = [
@@ -92,7 +94,13 @@ export const TAB_LOADING_LABEL: Record<Exclude<TabId, "overview">, string> = {
   health: "正在加载健康检查...",
 };
 
-export const STAGE_IDS = ["INITIATION", "APPROVAL", "DESIGN", "PROCUREMENT", "CONSTRUCTION"] as const;
+export const STAGE_IDS = [
+  "INITIATION",
+  "APPROVAL",
+  "DESIGN",
+  "PROCUREMENT",
+  "CONSTRUCTION",
+] as const;
 
 export const EVENT_KIND_LABEL: Record<OrchestrationEvent["kind"], string> = {
   construction: "正式建设项目事件",

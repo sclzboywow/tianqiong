@@ -10,7 +10,6 @@ import type {
   ContentOrchestrationOverview,
   OrchestrationAction,
   OrchestrationArtifact,
-  OrchestrationEvent,
   OrchestrationStage,
   OrchestrationStoryEntry,
   OrchestrationTask,

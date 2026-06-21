@@ -37,6 +37,13 @@ type DebugStatus = {
   };
 };
 
+async function fetchStatus(): Promise<DebugStatus> {
+  const res = await fetch("/api/ops/mainline-debug/status");
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "加载失败");
+  return data;
+}
+
 const STAGE_ORDER = ["INITIATION", "APPROVAL", "DESIGN", "PROCUREMENT", "CONSTRUCTION"] as const;
 
 function stageLabel(stageId: string) {
@@ -61,10 +68,7 @@ export function ContentStudioMainlineDebugPanel() {
   const loadStatus = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/ops/mainline-debug/status");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "加载失败");
-      setStatus(data);
+      setStatus(await fetchStatus());
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "加载失败");
     } finally {
@@ -73,8 +77,25 @@ export function ContentStudioMainlineDebugPanel() {
   }, []);
 
   useEffect(() => {
-    void loadStatus();
-  }, [loadStatus]);
+    let cancelled = false;
+
+    void fetchStatus()
+      .then((data) => {
+        if (!cancelled) setStatus(data);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setMessage(error instanceof Error ? error.message : "加载失败");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function postAction(path: string, body?: object) {
     setMessage(null);

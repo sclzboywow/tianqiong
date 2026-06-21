@@ -95,8 +95,9 @@ export async function CommandCenterPanel({ project }: CommandCenterPanelProps) {
               { href: "/profile", label: "角色状态" },
               ...(showOpsNav
                 ? [
-                    { href: "/ops/content-orchestration", label: "项目主线编排" },
-                    { href: "/ops/content-studio", label: "内容编排台" },
+                    { href: "/ops/project-flow", label: "项目流程编排" },
+                    { href: "/ops/content-studio", label: "内容资产" },
+                    { href: "/ops/content-orchestration", label: "技术视图" },
                   ]
                 : []),
             ].map((link) => (

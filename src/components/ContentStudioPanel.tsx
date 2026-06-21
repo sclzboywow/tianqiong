@@ -314,10 +314,16 @@ export function ContentStudioPanel({
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
-            href="/ops/content-orchestration"
+            href="/ops/project-flow"
             className="inline-flex items-center rounded-md border border-sky-700/60 bg-sky-950/40 px-3 py-1.5 text-sm font-medium text-sky-300 hover:bg-sky-900/50"
           >
-            项目主线编排 →
+            返回项目流程编排 →
+          </Link>
+          <Link
+            href="/ops/content-orchestration"
+            className="inline-flex items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-900"
+          >
+            打开技术视图 →
           </Link>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">

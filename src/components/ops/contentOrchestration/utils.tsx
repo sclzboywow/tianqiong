@@ -119,11 +119,19 @@ export function SelectableCard({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
-        "w-full rounded-lg border p-3 text-left transition-colors",
+        "w-full cursor-pointer rounded-lg border p-3 text-left transition-colors",
         selected
           ? "border-sky-600/60 bg-sky-950/20 ring-1 ring-sky-600/40"
           : "border-zinc-800 bg-zinc-950/50 hover:border-zinc-700 hover:bg-zinc-900/80",
@@ -131,7 +139,7 @@ export function SelectableCard({
       )}
     >
       {children}
-    </button>
+    </div>
   );
 }
 

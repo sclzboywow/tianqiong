@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ChevronRight, ClipboardList, Compass, FileClock, UserCircle } from "lucide-react";
+import { ChevronRight, ClipboardList, Compass, FileClock, GitBranch, UserCircle } from "lucide-react";
 import { taskDetailDivider, taskDetailPanel, taskDetailPanelHeader } from "./tasks/taskBoardUi";
 import { CommandCenterGuideButton } from "./ChapterOneOnboardingModal";
+import { canAccessOpsWorkspace } from "@/lib/opsDebugAccess";
 
 const LINKS = [
   { href: "/locations", label: "协同地图", icon: Compass },
@@ -10,7 +11,11 @@ const LINKS = [
   { href: "/profile", label: "角色状态台", icon: UserCircle },
 ] as const;
 
-export function CommandCenterQuickLinks() {
+export async function CommandCenterQuickLinks() {
+  const links = (await canAccessOpsWorkspace())
+    ? [...LINKS, { href: "/ops/project-flow", label: "项目流程编排", icon: GitBranch }]
+    : LINKS;
+
   return (
     <section className={taskDetailPanel}>
       <div className={`${taskDetailPanelHeader} flex items-center justify-between gap-2`}>
@@ -18,7 +23,7 @@ export function CommandCenterQuickLinks() {
         <CommandCenterGuideButton />
       </div>
       <ul className={`${taskDetailDivider} px-3 py-1`}>
-        {LINKS.map(({ href, label, icon: Icon }) => (
+        {links.map(({ href, label, icon: Icon }) => (
           <li key={href}>
             <Link
               href={href}

@@ -80,6 +80,7 @@ export default buildConfig({
     client: {
       url: process.env.DATABASE_URL || "file:./payload.db",
     },
+    transactionOptions: { behavior: "deferred" },
     // 本地 schema 已存在时关闭 push，避免重复 CREATE INDEX 导致 admin 500
     push: process.env.PAYLOAD_DB_PUSH === "true",
   }),

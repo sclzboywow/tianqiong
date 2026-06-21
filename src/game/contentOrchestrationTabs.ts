@@ -32,6 +32,54 @@ import { loadPayloadDocIds } from "./contentOrchestrationPayload";
 import { PROJECT_STAGES } from "./projectStages";
 import type { EventTemplateData, TaskTemplateData } from "./types";
 
+function loadTaskTemplatesSource(refresh: boolean) {
+  return withContentOrchestrationCache(
+    "orchestration:source:task-templates",
+    async () => (await import("./contentLoader")).getTaskTemplates(),
+    { refresh },
+  );
+}
+
+function loadLocationActionsSource(refresh: boolean) {
+  return withContentOrchestrationCache(
+    "orchestration:source:location-actions",
+    async () => (await import("./locationActionLoader")).getLocationActions(),
+    { refresh },
+  );
+}
+
+function loadEventTemplatesSource(refresh: boolean) {
+  return withContentOrchestrationCache(
+    "orchestration:source:event-templates",
+    async () => (await import("./eventTemplateLoader")).getEventTemplates(),
+    { refresh },
+  );
+}
+
+function loadStoryEntriesSource(refresh: boolean) {
+  return withContentOrchestrationCache(
+    "orchestration:source:story-entries",
+    async () => (await import("./storyEntryLoader")).getStoryEntries(),
+    { refresh },
+  );
+}
+
+function loadArtifactDefinitionsSource(refresh: boolean) {
+  return withContentOrchestrationCache(
+    "orchestration:source:artifact-definitions",
+    async () => (await import("./artifactLoader")).loadArtifactDefinitions(),
+    { refresh },
+  );
+}
+
+function loadMapLocationsSource(refresh: boolean) {
+  return withContentOrchestrationCache(
+    "orchestration:source:map-locations",
+    async () => (await import("./locationLoader")).getMapLocations(),
+    { refresh },
+  );
+}
+
 function buildActionIndex(
   locationActions: Array<{ id: string; triggerTaskSlugs?: string[] }>,
 ) {
@@ -243,14 +291,10 @@ export async function loadOrchestrationTasksTab(refresh = false) {
   return withContentOrchestrationCache(
     "orchestration:tasks",
     async () => {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const { getLocationActions } = await import("./locationActionLoader");
-      const { getEventTemplates } = await import("./eventTemplateLoader");
-
       const [taskTemplates, locationActions, eventTemplates, docIds] = await Promise.all([
-        getTaskTemplates(),
-        getLocationActions(),
-        getEventTemplates(),
+        loadTaskTemplatesSource(refresh),
+        loadLocationActionsSource(refresh),
+        loadEventTemplatesSource(refresh),
         loadPayloadDocIds(["task-templates", "story-entries"]),
       ]);
 
@@ -278,14 +322,10 @@ export async function loadOrchestrationArtifactsTab(refresh = false) {
   return withContentOrchestrationCache(
     "orchestration:artifacts",
     async () => {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const { getEventTemplates } = await import("./eventTemplateLoader");
-      const { loadArtifactDefinitions } = await import("./artifactLoader");
-
       const [taskTemplates, eventTemplates, artifactDefinitions, docIds] = await Promise.all([
-        getTaskTemplates(),
-        getEventTemplates(),
-        loadArtifactDefinitions(),
+        loadTaskTemplatesSource(refresh),
+        loadEventTemplatesSource(refresh),
+        loadArtifactDefinitionsSource(refresh),
         loadPayloadDocIds(["artifact-definitions"]),
       ]);
 
@@ -353,14 +393,10 @@ export async function loadOrchestrationActionsTab(refresh = false) {
   return withContentOrchestrationCache(
     "orchestration:actions",
     async () => {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const { getLocationActions } = await import("./locationActionLoader");
-      const { getMapLocations } = await import("./locationLoader");
-
       const [taskTemplates, locationActions, mapLocations, docIds] = await Promise.all([
-        getTaskTemplates(),
-        getLocationActions(),
-        getMapLocations(),
+        loadTaskTemplatesSource(refresh),
+        loadLocationActionsSource(refresh),
+        loadMapLocationsSource(refresh),
         loadPayloadDocIds(["location-actions", "map-locations"]),
       ]);
 
@@ -416,14 +452,10 @@ export async function loadOrchestrationEventsTab(refresh = false) {
   return withContentOrchestrationCache(
     "orchestration:events",
     async () => {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const { getEventTemplates } = await import("./eventTemplateLoader");
-      const { getStoryEntries } = await import("./storyEntryLoader");
-
       const [taskTemplates, eventTemplates, storyEntries, docIds] = await Promise.all([
-        getTaskTemplates(),
-        getEventTemplates(),
-        getStoryEntries(),
+        loadTaskTemplatesSource(refresh),
+        loadEventTemplatesSource(refresh),
+        loadStoryEntriesSource(refresh),
         loadPayloadDocIds(["event-templates"]),
       ]);
 
@@ -503,16 +535,13 @@ export async function loadOrchestrationStoriesTab(refresh = false) {
   return withContentOrchestrationCache(
     "orchestration:stories",
     async () => {
-      const { getTaskTemplates } = await import("./contentLoader");
-      const { getEventTemplates } = await import("./eventTemplateLoader");
-      const { getStoryEntries } = await import("./storyEntryLoader");
       const fs = await import("fs");
       const path = await import("path");
 
       const [taskTemplates, eventTemplates, storyEntries, docIds] = await Promise.all([
-        getTaskTemplates(),
-        getEventTemplates(),
-        getStoryEntries(),
+        loadTaskTemplatesSource(refresh),
+        loadEventTemplatesSource(refresh),
+        loadStoryEntriesSource(refresh),
         loadPayloadDocIds(["story-entries"]),
       ]);
 

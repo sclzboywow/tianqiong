@@ -38,8 +38,6 @@ export const MAINLINE_TASKS_BY_STAGE = PROJECT_STAGES.reduce(
   {} as Record<ProjectStageId, string[]>,
 );
 
-const DEFAULT_CHOICE = "steady_push";
-
 async function pickDebugUserId(explicitUserId?: string): Promise<string> {
   if (explicitUserId) return explicitUserId;
   const user = await prisma.user.findFirst({ orderBy: { createdAt: "asc" } });

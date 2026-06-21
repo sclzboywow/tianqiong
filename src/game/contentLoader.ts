@@ -51,6 +51,8 @@ function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
     sourceType: doc.sourceType as string,
     sourceName: doc.sourceName as string | undefined,
     area: doc.area as string,
+    npcList:
+      (doc.npcList as { npc: string }[] | null)?.map((item) => item.npc).filter(Boolean) || [],
     stage: doc.stage as ProjectStageId | undefined,
     requiredJobs: (doc.requiredJobs as { job: string }[] | null)?.map((j) => j.job) || [],
     requiredCount,

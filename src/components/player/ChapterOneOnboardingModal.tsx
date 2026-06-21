@@ -211,24 +211,23 @@ export function CommandCenterOnboardingProvider({
     shouldAutoShowOnboarding,
     () => false,
   );
-  const [open, setOpen] = useState(false);
-  const [autoTriggered, setAutoTriggered] = useState(false);
+  const [manuallyOpen, setManuallyOpen] = useState(false);
+  const [autoDismissed, setAutoDismissed] = useState(false);
+  const open = manuallyOpen || (shouldAutoOpen && !autoDismissed);
 
-  useEffect(() => {
-    if (shouldAutoOpen && !autoTriggered) {
-      setOpen(true);
-      setAutoTriggered(true);
-    }
-  }, [shouldAutoOpen, autoTriggered]);
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    setManuallyOpen(nextOpen);
+    if (!nextOpen) setAutoDismissed(true);
+  }, []);
 
-  const openGuide = useCallback(() => setOpen(true), []);
+  const openGuide = useCallback(() => setManuallyOpen(true), []);
 
   return (
     <OnboardingContext.Provider value={{ openGuide }}>
       {children}
       <ChapterOneOnboardingModal
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={handleOpenChange}
         recommendedHref={recommendedHref}
         recommendedLocationName={recommendedLocationName}
         recommendedActionLabel={recommendedActionLabel}

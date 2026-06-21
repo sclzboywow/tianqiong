@@ -12,7 +12,6 @@ import {
   MILESTONE_LABELS,
   getStageConfig,
   normalizeStageId,
-  type ProjectStageId,
 } from "./projectStages";
 
 export type RecommendedAction = {

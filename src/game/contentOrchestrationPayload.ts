@@ -24,6 +24,29 @@ const EMPTY_MAPS = (): PayloadDocIdMaps => ({
   artifactDefinitionDocIds: {},
 });
 
+async function loadCollectionDocIds(
+  collection: PayloadDocIdCollection,
+): Promise<Record<string, string | number>> {
+  return withContentOrchestrationCache(
+    `orchestration:source:doc-ids:${collection}`,
+    async () => {
+      try {
+        const { getPayload } = await import("payload");
+        const config = (await import("@payload-config")).default;
+        const payload = await getPayload({ config });
+        const result = await payload.find({ collection, limit: 500, depth: 0 });
+        const ids: Record<string, string | number> = {};
+        for (const doc of result.docs) {
+          if (doc.slug) ids[String(doc.slug)] = doc.id;
+        }
+        return ids;
+      } catch {
+        return {};
+      }
+    },
+  );
+}
+
 export async function loadPayloadDocIds(
   collections: PayloadDocIdCollection[],
 ): Promise<PayloadDocIdMaps> {
@@ -31,71 +54,16 @@ export async function loadPayloadDocIds(
   const needed = new Set(collections);
   if (needed.size === 0) return maps;
 
-  try {
-    const { getPayload } = await import("payload");
-    const config = (await import("@payload-config")).default;
-    const payload = await getPayload({ config });
-
-    const tasks: Promise<void>[] = [];
-
-    if (needed.has("map-locations")) {
-      tasks.push(
-        payload.find({ collection: "map-locations", limit: 500, depth: 0 }).then((res) => {
-          for (const doc of res.docs) {
-            if (doc.slug) maps.mapLocationDocIds[String(doc.slug)] = doc.id;
-          }
-        }),
-      );
-    }
-    if (needed.has("location-actions")) {
-      tasks.push(
-        payload.find({ collection: "location-actions", limit: 500, depth: 0 }).then((res) => {
-          for (const doc of res.docs) {
-            if (doc.slug) maps.locationActionDocIds[String(doc.slug)] = doc.id;
-          }
-        }),
-      );
-    }
-    if (needed.has("task-templates")) {
-      tasks.push(
-        payload.find({ collection: "task-templates", limit: 500, depth: 0 }).then((res) => {
-          for (const doc of res.docs) {
-            if (doc.slug) maps.taskTemplateDocIds[String(doc.slug)] = doc.id;
-          }
-        }),
-      );
-    }
-    if (needed.has("event-templates")) {
-      tasks.push(
-        payload.find({ collection: "event-templates", limit: 500, depth: 0 }).then((res) => {
-          for (const doc of res.docs) {
-            if (doc.slug) maps.eventTemplateDocIds[String(doc.slug)] = doc.id;
-          }
-        }),
-      );
-    }
-    if (needed.has("story-entries")) {
-      tasks.push(
-        payload.find({ collection: "story-entries", limit: 500, depth: 0 }).then((res) => {
-          for (const doc of res.docs) {
-            if (doc.slug) maps.storyEntryDocIds[String(doc.slug)] = doc.id;
-          }
-        }),
-      );
-    }
-    if (needed.has("artifact-definitions")) {
-      tasks.push(
-        payload.find({ collection: "artifact-definitions", limit: 500, depth: 0 }).then((res) => {
-          for (const doc of res.docs) {
-            if (doc.slug) maps.artifactDefinitionDocIds[String(doc.slug)] = doc.id;
-          }
-        }),
-      );
-    }
-
-    await Promise.all(tasks);
-  } catch {
-    // 静态回退时无 Payload 文档 ID
+  const entries = await Promise.all(
+    [...needed].map(async (collection) => [collection, await loadCollectionDocIds(collection)] as const),
+  );
+  for (const [collection, ids] of entries) {
+    if (collection === "map-locations") maps.mapLocationDocIds = ids;
+    if (collection === "location-actions") maps.locationActionDocIds = ids;
+    if (collection === "task-templates") maps.taskTemplateDocIds = ids;
+    if (collection === "event-templates") maps.eventTemplateDocIds = ids;
+    if (collection === "story-entries") maps.storyEntryDocIds = ids;
+    if (collection === "artifact-definitions") maps.artifactDefinitionDocIds = ids;
   }
 
   return maps;
@@ -111,3 +79,4 @@ export async function loadPayloadDocIdMaps(): Promise<PayloadDocIdMaps> {
     "artifact-definitions",
   ]);
 }
+import { withContentOrchestrationCache } from "@/lib/contentOrchestrationCache";
