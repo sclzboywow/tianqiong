@@ -16,6 +16,27 @@ import { getStoryEntries } from "./storyEntryLoader";
 import { getNpcs, getAreas } from "./worldContentLoader";
 import { loadArtifactDefinitions } from "./artifactLoader";
 import { payloadAdminUrl } from "@/lib/payloadAdminUrl";
+import { withOpsDataCache, type OpsDataCacheOptions } from "@/lib/opsDataCache";
+
+const CONTENT_STUDIO_CACHE_KEY = "content-studio";
+
+async function profileAsyncStep<T>(label: string, loader: () => Promise<T>): Promise<T> {
+  console.time(`[ops/content-studio] ${label}`);
+  try {
+    return await loader();
+  } finally {
+    console.timeEnd(`[ops/content-studio] ${label}`);
+  }
+}
+
+function profileSyncStep<T>(label: string, fn: () => T): T {
+  console.time(`[ops/content-studio] ${label}`);
+  try {
+    return fn();
+  } finally {
+    console.timeEnd(`[ops/content-studio] ${label}`);
+  }
+}
 
 export { payloadAdminUrl };
 
@@ -242,55 +263,63 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     docIds,
     artifactDefinitions,
   ] = await Promise.all([
-    getMapLocations(),
-    getLocationActions(),
-    getTaskTemplates(),
-    getEventTemplates(),
-    getStoryEntries(),
-    getNpcs(),
-    getAreas(),
-    loadPayloadDocIdMaps(),
-    loadArtifactDefinitions(),
+    profileAsyncStep("getMapLocations", getMapLocations),
+    profileAsyncStep("getLocationActions", getLocationActions),
+    profileAsyncStep("getTaskTemplates", getTaskTemplates),
+    profileAsyncStep("getEventTemplates", getEventTemplates),
+    profileAsyncStep("getStoryEntries", getStoryEntries),
+    profileAsyncStep("getNpcs", getNpcs),
+    profileAsyncStep("getAreas", getAreas),
+    profileAsyncStep("loadPayloadDocIdMaps", loadPayloadDocIdMaps),
+    profileAsyncStep("loadArtifactDefinitions", loadArtifactDefinitions),
   ]);
 
-  const dependencyGraph = buildDependencyGraph(taskTemplates, artifactDefinitions);
-  const artifactUsage = buildArtifactUsageIndex(taskTemplates, eventTemplates);
+  const dependencyGraph = profileSyncStep("buildDependencyGraph", () =>
+    buildDependencyGraph(taskTemplates, artifactDefinitions),
+  );
+  const artifactUsage = profileSyncStep("buildArtifactUsageIndex", () =>
+    buildArtifactUsageIndex(taskTemplates, eventTemplates),
+  );
 
-  const actionsByLocation = new Map<string, LocationAction[]>();
-  for (const action of locationActions) {
-    const list = actionsByLocation.get(action.locationId) || [];
-    list.push(action);
-    actionsByLocation.set(action.locationId, list);
-  }
+  const locationsByGroup = profileSyncStep("locationsByGroup", () => {
+    const actionsByLocation = new Map<string, LocationAction[]>();
+    for (const action of locationActions) {
+      const list = actionsByLocation.get(action.locationId) || [];
+      list.push(action);
+      actionsByLocation.set(action.locationId, list);
+    }
 
-  const locationsByGroup: Record<string, ContentStudioLocationRow[]> = {};
-  for (const group of LOCATION_GROUP_ORDER) {
-    locationsByGroup[group] = [];
-  }
+    const grouped: Record<string, ContentStudioLocationRow[]> = {};
+    for (const group of LOCATION_GROUP_ORDER) {
+      grouped[group] = [];
+    }
 
-  for (const location of mapLocations) {
-    const actions = actionsByLocation.get(location.id) || [];
-    const triggerTaskSlugs = new Set<string>();
-    for (const action of actions) {
-      for (const slug of action.triggerTaskSlugs || []) {
-        triggerTaskSlugs.add(slug);
+    for (const location of mapLocations) {
+      const actions = actionsByLocation.get(location.id) || [];
+      const triggerTaskSlugs = new Set<string>();
+      for (const action of actions) {
+        for (const slug of action.triggerTaskSlugs || []) {
+          triggerTaskSlugs.add(slug);
+        }
       }
+
+      const row: ContentStudioLocationRow = {
+        location,
+        payloadDocId: docIds.mapLocationDocIds[location.id],
+        actionCount: actions.length,
+        triggerTaskCount: triggerTaskSlugs.size,
+        relatedNpcCount: location.relatedNpcNames?.length || 0,
+        relatedAreaCount: location.relatedAreaNames?.length || 0,
+      };
+
+      if (!grouped[location.group]) {
+        grouped[location.group] = [];
+      }
+      grouped[location.group].push(row);
     }
 
-    const row: ContentStudioLocationRow = {
-      location,
-      payloadDocId: docIds.mapLocationDocIds[location.id],
-      actionCount: actions.length,
-      triggerTaskCount: triggerTaskSlugs.size,
-      relatedNpcCount: location.relatedNpcNames?.length || 0,
-      relatedAreaCount: location.relatedAreaNames?.length || 0,
-    };
-
-    if (!locationsByGroup[location.group]) {
-      locationsByGroup[location.group] = [];
-    }
-    locationsByGroup[location.group].push(row);
-  }
+    return grouped;
+  });
 
   return {
     overview: {
@@ -321,6 +350,14 @@ export async function loadContentStudioData(): Promise<ContentStudioData> {
     npcs,
     areas,
   };
+}
+
+export type LoadContentStudioDataOptions = OpsDataCacheOptions;
+
+export function loadContentStudioDataCached(
+  options: LoadContentStudioDataOptions = {},
+): Promise<ContentStudioData> {
+  return withOpsDataCache(CONTENT_STUDIO_CACHE_KEY, loadContentStudioData, options);
 }
 
 export function getLocationStudioRow(

@@ -1,4 +1,4 @@
-import { loadContentStudioData } from "./contentStudioLoader";
+import { loadContentStudioDataCached } from "./contentStudioLoader";
 import { MILESTONE_LABELS, PROJECT_STAGES } from "./projectStages";
 import type { EventTemplateData, TaskTemplateData } from "./types";
 import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
@@ -62,7 +62,7 @@ export type ProjectFlowData = {
       allowedStatuses: string[];
     }[];
     milestones: { key: string; label: string }[];
-    tasks: { slug: string; title: string }[];
+    tasks: { slug: string; title: string; prerequisiteTaskSlugs: string[] }[];
   };
   summary: {
     tasks: number;
@@ -116,7 +116,7 @@ function eventBusinessType(event: EventTemplateData): string {
 
 export async function loadProjectFlowData(): Promise<ProjectFlowData> {
   const [studio, project] = await Promise.all([
-    loadContentStudioData(),
+    loadContentStudioDataCached(),
     getProjectState(),
   ]);
   const dependencyContext = await buildDependencyContext(
@@ -311,6 +311,7 @@ export async function loadProjectFlowData(): Promise<ProjectFlowData> {
       tasks: studio.taskTemplates.map((task) => ({
         slug: task.slug,
         title: task.title,
+        prerequisiteTaskSlugs: task.prerequisiteTaskSlugs || [],
       })),
     },
     summary: {

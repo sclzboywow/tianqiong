@@ -34,6 +34,7 @@ const schema = z.object({
     )
     .default([]),
   milestoneKeys: z.array(z.string().trim()).default([]),
+  prerequisiteTaskSlugs: z.array(z.string().trim()).default([]),
   storySlug: z.string().trim().optional(),
   inkFile: z.string().trim().optional(),
 });
@@ -73,6 +74,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     inputArtifacts: input.inputArtifacts,
     outputArtifacts: input.outputArtifacts,
     milestoneKeys: input.milestoneKeys,
+    prerequisiteTaskSlugs: input.prerequisiteTaskSlugs,
     storySlug,
   });
   if (issues.length) {
@@ -122,6 +124,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         milestoneEffectList: input.milestoneKeys.map((milestone) => ({
           milestone,
           value: true,
+        })),
+        prerequisiteTaskSlugs: input.prerequisiteTaskSlugs.map((taskSlug) => ({
+          slug: taskSlug,
         })),
         inputArtifacts,
         outputArtifacts,

@@ -3,6 +3,7 @@ import type { ContentStudioData } from "./contentStudioLoader";
 import { MILESTONE_LABELS, PROJECT_STAGES } from "./projectStages";
 import { clearStoryEntryCache } from "./storyEntryLoader";
 import { bustContentOrchestrationCache } from "@/lib/contentOrchestrationCache";
+import { bustOpsDataCache } from "@/lib/opsDataCache";
 import { LEGACY_NPC_NAME_ALIASES } from "@/data/npcProfiles";
 import type { Payload, PayloadRequest } from "payload";
 
@@ -19,6 +20,7 @@ export function validateProjectFlowReferences(
     inputArtifacts: ArtifactInput[];
     outputArtifacts: ArtifactOutput[];
     milestoneKeys: string[];
+    prerequisiteTaskSlugs?: string[];
     storySlug?: string;
     actionSlug?: string;
     eventSlug?: string;
@@ -104,6 +106,15 @@ export function validateProjectFlowReferences(
     if (!MILESTONE_LABELS[key]) issues.push(`关键节点不存在：${key}`);
   }
 
+  const taskSlugs = new Set(studio.taskTemplates.map((task) => task.slug));
+  for (const prereqSlug of input.prerequisiteTaskSlugs || []) {
+    if (prereqSlug === input.slug) {
+      issues.push("不能将当前任务设为自己的前置任务");
+    } else if (!taskSlugs.has(prereqSlug)) {
+      issues.push(`前置任务不存在：${prereqSlug}`);
+    }
+  }
+
   if (existingTask && existingTask.category !== "mainline" && !input.allowExistingNonMainline) {
     issues.push(`任务标识 ${input.slug} 已被非主线任务使用，不能通过流程编排覆盖`);
   }
@@ -187,8 +198,10 @@ export async function getOpsPayloadContext() {
 export function refreshProjectFlowCaches(slug: string) {
   clearStoryEntryCache();
   bustContentOrchestrationCache();
+  bustOpsDataCache();
   revalidatePath("/ops/project-flow");
   revalidatePath(`/ops/project-flow/node/${slug}`);
+  revalidatePath("/ops/content-studio");
   revalidatePath("/ops/content-orchestration");
 }
 

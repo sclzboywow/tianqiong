@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 import { AppSiteHeader } from "@/components/AppSiteHeader";
 import { ContentStudioPanel } from "@/components/ContentStudioPanel";
 import { buildContentHealthCheckFromStudioData } from "@/game/contentHealthCheck";
-import { loadContentStudioData } from "@/game/contentStudioLoader";
+import { loadContentStudioDataCached } from "@/game/contentStudioLoader";
 import { getCurrentUserId } from "@/lib/session";
 
 type ContentStudioPageProps = {
-  searchParams: Promise<{ location?: string; tab?: string }>;
+  searchParams: Promise<{ location?: string; tab?: string; refresh?: string }>;
 };
 
 function parseContentStudioTab(value?: string): "overview" | "deliverables" | "dependency" | "debug" | "mainline" {
@@ -26,8 +26,14 @@ export default async function ContentStudioPage({ searchParams }: ContentStudioP
   if (!userId) redirect("/register");
 
   const params = await searchParams;
-  const data = await loadContentStudioData();
+  console.time("[ops/content-studio] loadContentStudioDataCached");
+  const data = await loadContentStudioDataCached({
+    refresh: params.refresh === "1",
+  });
+  console.timeEnd("[ops/content-studio] loadContentStudioDataCached");
+  console.time("[ops/content-studio] buildContentHealthCheckFromStudioData");
   const healthReport = buildContentHealthCheckFromStudioData(data);
+  console.timeEnd("[ops/content-studio] buildContentHealthCheckFromStudioData");
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">

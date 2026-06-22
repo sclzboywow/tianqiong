@@ -16,7 +16,9 @@ import type {
 import { suggestRiskEventSlug } from "@/game/projectFlowNodeUtils";
 import { cn } from "@/lib/utils";
 
-type EditorTab = "basic" | "task" | "action" | "story" | "events";
+type EditorTab = "basic" | "flow" | "task" | "action" | "story" | "events";
+
+type TaskOption = ProjectFlowData["options"]["tasks"][number];
 
 type EventFormState = {
   slug: string;
@@ -46,6 +48,7 @@ function buildTaskForm(node: ProjectFlowTask, slug: string) {
       status: item.status || "draft",
     })),
     milestoneKeys: node.milestoneLabels.map((item) => item.key),
+    prerequisiteTaskSlugs: [...(node.prerequisiteTaskSlugs || [])],
     inkFile: primaryStory?.inkFile || "",
     storySlug: primaryStory?.slug || node.storySlug || `story_${slug}`,
   };
@@ -89,11 +92,59 @@ function buildEventForms(node: ProjectFlowTask): EventFormState[] {
 
 const TABS: { id: EditorTab; label: string }[] = [
   { id: "basic", label: "节点总览" },
+  { id: "flow", label: "流程关系" },
   { id: "task", label: "任务与成果" },
   { id: "action", label: "办理入口" },
   { id: "story", label: "剧情包装" },
   { id: "events", label: "风险事件" },
 ];
+
+function getSuccessorTasks(tasks: TaskOption[], currentSlug: string) {
+  return tasks.filter(
+    (task) =>
+      task.slug !== currentSlug &&
+      (task.prerequisiteTaskSlugs || []).includes(currentSlug),
+  );
+}
+
+function getFlowRelationWarnings(
+  currentSlug: string,
+  selectedPrerequisites: string[],
+  tasks: TaskOption[],
+): string[] {
+  const warnings: string[] = [];
+  const taskMap = new Map(
+    tasks.map((task) => [task.slug, task.prerequisiteTaskSlugs || []]),
+  );
+  const knownSlugs = new Set(tasks.map((task) => task.slug));
+
+  if (selectedPrerequisites.includes(currentSlug)) {
+    warnings.push("不能将当前任务设为自己的前置任务");
+  }
+
+  for (const prereqSlug of selectedPrerequisites) {
+    if (!knownSlugs.has(prereqSlug)) {
+      warnings.push(`前置任务不存在：${prereqSlug}`);
+    }
+    const visited = new Set<string>();
+    const stack = [prereqSlug];
+    while (stack.length > 0) {
+      const cursor = stack.pop()!;
+      if (cursor === currentSlug) {
+        const title = tasks.find((task) => task.slug === prereqSlug)?.title || prereqSlug;
+        warnings.push(`与「${title}」存在循环依赖`);
+        break;
+      }
+      if (visited.has(cursor)) continue;
+      visited.add(cursor);
+      for (const next of taskMap.get(cursor) || []) {
+        stack.push(next);
+      }
+    }
+  }
+
+  return [...new Set(warnings)];
+}
 
 function parseTab(value: string | null): EditorTab {
   if (value && TABS.some((tab) => tab.id === value)) return value as EditorTab;
@@ -223,6 +274,38 @@ export function ProjectFlowNodeEditor({
     return map;
   }, [options.artifacts]);
 
+  const taskTitleMap = useMemo(
+    () => new Map(options.tasks.map((task) => [task.slug, task.title])),
+    [options.tasks],
+  );
+
+  const successorTasks = useMemo(
+    () => getSuccessorTasks(options.tasks, slug),
+    [options.tasks, slug],
+  );
+
+  const flowWarnings = useMemo(
+    () =>
+      getFlowRelationWarnings(
+        slug,
+        taskForm.prerequisiteTaskSlugs,
+        options.tasks,
+      ),
+    [slug, taskForm.prerequisiteTaskSlugs, options.tasks],
+  );
+
+  const prerequisiteChoices = useMemo(
+    () =>
+      options.tasks
+        .filter((task) => task.slug !== slug)
+        .map((task) => ({
+          value: task.slug,
+          label: task.title,
+          hint: task.slug,
+        })),
+    [options.tasks, slug],
+  );
+
   function setTab(next: EditorTab) {
     router.replace(`/ops/project-flow/node/${slug}?tab=${next}`);
   }
@@ -238,7 +321,11 @@ export function ProjectFlowNodeEditor({
     router.refresh();
   }
 
-  async function patchJson(path: string, body: unknown) {
+  async function patchJson(
+    path: string,
+    body: unknown,
+    options?: { afterSuccess?: () => void },
+  ) {
     setSaving(true);
     setError(null);
     setIssues([]);
@@ -258,6 +345,7 @@ export function ProjectFlowNodeEditor({
         return;
       }
       await refreshNode();
+      options?.afterSuccess?.();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "保存失败");
     } finally {
@@ -458,7 +546,48 @@ export function ProjectFlowNodeEditor({
                 {node.runtime.available ? "可办理" : "等待前置"}
               </p>
             </div>
+            <div>
+              <p className="text-xs text-zinc-500">流程关系</p>
+              <p className="mt-1">
+                前置 {(node.prerequisiteTaskSlugs || []).length} · 后续{" "}
+                {successorTasks.length}
+              </p>
+            </div>
           </div>
+          {!node.runtime.available && node.runtime.blockingReasons.length ? (
+            <div className="rounded-lg border border-amber-900/40 bg-amber-950/10 p-4">
+              <p className="text-xs text-amber-400">阻塞原因</p>
+              <ul className="mt-2 space-y-1 text-sm text-amber-200">
+                {node.runtime.blockingReasons.map((reason) => (
+                  <li key={reason}>· {reason}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {(node.prerequisiteTaskSlugs || []).length ? (
+            <div>
+              <p className="text-xs text-zinc-500">当前前置任务</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(node.prerequisiteTaskSlugs || []).map((taskSlug) => (
+                  <Badge key={taskSlug} variant="outline" className="font-normal">
+                    {taskTitleMap.get(taskSlug) || taskSlug}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {successorTasks.length ? (
+            <div>
+              <p className="text-xs text-zinc-500">后续任务（依赖当前节点）</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {successorTasks.map((task) => (
+                  <Badge key={task.slug} variant="outline" className="font-normal">
+                    {task.title}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {node.configurationIssues.length ? (
             <ul className="space-y-1 text-sm text-amber-300">
               {node.configurationIssues.map((issue) => (
@@ -467,6 +596,13 @@ export function ProjectFlowNodeEditor({
             </ul>
           ) : null}
           <div className="flex flex-wrap gap-2 pt-2">
+            <button
+              type="button"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              onClick={() => setTab("flow")}
+            >
+              调整流程关系
+            </button>
             <button
               type="button"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
@@ -482,6 +618,130 @@ export function ProjectFlowNodeEditor({
               调整办理入口
             </button>
           </div>
+        </section>
+      ) : null}
+
+      {tab === "flow" ? (
+        <section className="space-y-5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs text-sky-300">{stageName}</p>
+              <h2 className="mt-1 text-lg font-medium text-zinc-100">{node.title}</h2>
+              <p className="mt-1 font-mono text-xs text-zinc-600">{slug}</p>
+            </div>
+            <Badge
+              variant="outline"
+              className={cn(
+                node.runtime.available
+                  ? "border-emerald-700 text-emerald-300"
+                  : "border-amber-700 text-amber-300",
+              )}
+            >
+              {node.runtime.available ? "可办理" : "等待前置"}
+            </Badge>
+          </div>
+
+          {!node.runtime.available && node.runtime.blockingReasons.length ? (
+            <div className="rounded-lg border border-amber-900/40 bg-amber-950/10 p-4">
+              <p className="text-xs text-amber-400">当前阻塞原因</p>
+              <ul className="mt-2 space-y-1 text-sm text-amber-200">
+                {node.runtime.blockingReasons.map((reason) => (
+                  <li key={reason}>· {reason}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
+              <p className="text-sm font-medium text-zinc-200">已配置的前置任务</p>
+              {(taskForm.prerequisiteTaskSlugs || []).length ? (
+                <ul className="space-y-2">
+                  {taskForm.prerequisiteTaskSlugs.map((taskSlug) => (
+                    <li
+                      key={taskSlug}
+                      className="rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2"
+                    >
+                      <p className="text-sm text-zinc-100">
+                        {taskTitleMap.get(taskSlug) || taskSlug}
+                      </p>
+                      <p className="font-mono text-[10px] text-zinc-600">{taskSlug}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-zinc-500">尚未配置前置任务，当前节点可并行办理。</p>
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
+              <p className="text-sm font-medium text-zinc-200">后续任务（反向推断）</p>
+              {successorTasks.length ? (
+                <ul className="space-y-2">
+                  {successorTasks.map((task) => (
+                    <li
+                      key={task.slug}
+                      className="rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2"
+                    >
+                      <Link
+                        href={`/ops/project-flow/node/${task.slug}?tab=flow`}
+                        className="text-sm text-sky-300 hover:text-sky-200"
+                      >
+                        {task.title}
+                      </Link>
+                      <p className="font-mono text-[10px] text-zinc-600">{task.slug}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-zinc-500">暂无其他任务将当前节点设为前置。</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Label className="mb-2 block">选择前置任务</Label>
+            <p className="mb-3 text-xs text-zinc-500">
+              多选配置本节点必须先完成的流程任务。当前节点自身不可选。
+            </p>
+            <ChoiceGrid
+              choices={prerequisiteChoices}
+              selected={taskForm.prerequisiteTaskSlugs}
+              onToggle={(value) =>
+                setTaskForm((prev) => ({
+                  ...prev,
+                  prerequisiteTaskSlugs: toggleListValue(
+                    prev.prerequisiteTaskSlugs,
+                    value,
+                  ),
+                }))
+              }
+            />
+          </div>
+
+          {flowWarnings.length ? (
+            <ul className="space-y-1 rounded-lg border border-amber-900/40 bg-amber-950/10 p-4 text-sm text-amber-200">
+              {flowWarnings.map((warning) => (
+                <li key={warning}>· {warning}</li>
+              ))}
+            </ul>
+          ) : null}
+
+          <SaveBar
+            saving={saving}
+            error={error}
+            issues={issues}
+            onSave={() => {
+              if (flowWarnings.length) {
+                setError("请先修正流程关系警告");
+                setIssues(flowWarnings);
+                return;
+              }
+              void patchJson(`/api/ops/project-flow/nodes/${slug}/task`, taskForm, {
+                afterSuccess: () => setTab("basic"),
+              });
+            }}
+          />
         </section>
       ) : null}
 

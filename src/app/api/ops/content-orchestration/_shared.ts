@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { bustContentOrchestrationCache } from "@/lib/contentOrchestrationCache";
+import { bustOpsDataCache } from "@/lib/opsDataCache";
 import { requireOpsAccess } from "@/lib/opsDebugAccess";
 
 const ORCHESTRATION_API_TIMEOUT_MS = 15_000;
@@ -43,7 +44,10 @@ export async function orchestrationApiHandler(
 
   try {
     const refresh = isRefreshRequest(request);
-    if (refresh) bustContentOrchestrationCache();
+    if (refresh) {
+      bustContentOrchestrationCache();
+      bustOpsDataCache();
+    }
     const data = await withTimeout(loader(refresh));
     return NextResponse.json(data);
   } catch (error) {

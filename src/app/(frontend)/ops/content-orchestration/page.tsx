@@ -62,10 +62,14 @@ export default async function ContentOrchestrationPage({
     redirect("/project");
   }
 
+  console.time("[ops/content-orchestration] loadContentOrchestrationOverview");
   const overview = await loadContentOrchestrationOverview();
+  console.timeEnd("[ops/content-orchestration] loadContentOrchestrationOverview");
   const requestedTab = (await searchParams).tab;
   const initialTab = TAB_IDS.find((tab) => tab === requestedTab) || "overview";
+  console.time(`[ops/content-orchestration] loadInitialTabData:${initialTab}`);
   const initialTabData = await loadInitialTabData(initialTab);
+  console.timeEnd(`[ops/content-orchestration] loadInitialTabData:${initialTab}`);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">

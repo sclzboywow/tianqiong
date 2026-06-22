@@ -5,6 +5,7 @@ import { loadContentStudioData } from "@/game/contentStudioLoader";
 import { MILESTONE_LABELS, PROJECT_STAGES } from "@/game/projectStages";
 import { clearStoryEntryCache } from "@/game/storyEntryLoader";
 import { bustContentOrchestrationCache } from "@/lib/contentOrchestrationCache";
+import { bustOpsDataCache } from "@/lib/opsDataCache";
 import { requireOpsAccess } from "@/lib/opsDebugAccess";
 import { LEGACY_NPC_NAME_ALIASES } from "@/data/npcProfiles";
 import type { Payload, PayloadRequest } from "payload";
@@ -392,7 +393,9 @@ export async function POST(request: Request) {
 
       clearStoryEntryCache();
       bustContentOrchestrationCache();
+      bustOpsDataCache();
       revalidatePath("/ops/project-flow");
+      revalidatePath("/ops/content-studio");
       return NextResponse.json({
         ok: true,
         slug: input.slug,
