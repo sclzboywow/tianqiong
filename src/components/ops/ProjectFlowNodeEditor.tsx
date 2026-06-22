@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,79 @@ import type {
   ProjectFlowData,
   ProjectFlowTask,
 } from "@/game/projectFlowLoader";
+import { suggestRiskEventSlug } from "@/game/projectFlowNodeUtils";
 import { cn } from "@/lib/utils";
 
 type EditorTab = "basic" | "task" | "action" | "story" | "events";
+
+type EventFormState = {
+  slug: string;
+  enabled: boolean;
+  title: string;
+  description: string;
+  eventType: string;
+  riskTags: string[];
+  weight: number;
+  onceOnly: boolean;
+  cooldownDays: number;
+};
+
+function buildTaskForm(node: ProjectFlowTask, slug: string) {
+  const primaryStory = node.stories[0];
+  return {
+    title: node.title,
+    description: node.description || "",
+    stage: node.stage || "",
+    npcNames: [...node.npcNames],
+    inputArtifacts: node.inputArtifactLabels.map((item) => ({
+      artifactSlug: item.slug,
+      minStatus: item.status || "draft",
+    })),
+    outputArtifacts: node.outputArtifactLabels.map((item) => ({
+      artifactSlug: item.slug,
+      status: item.status || "draft",
+    })),
+    milestoneKeys: node.milestoneLabels.map((item) => item.key),
+    inkFile: primaryStory?.inkFile || "",
+    storySlug: primaryStory?.slug || node.storySlug || `story_${slug}`,
+  };
+}
+
+function buildActionForm(node: ProjectFlowTask) {
+  const primaryAction = node.actionSlugs[0];
+  const primaryLocationSlug = node.locationNames[0]?.slug || "";
+  return {
+    actionSlug: primaryAction?.slug || "",
+    label: primaryAction?.label || "",
+    description: primaryAction?.description || "",
+    locationSlug: primaryLocationSlug,
+    npcNames: [...node.npcNames],
+  };
+}
+
+function buildStoryForm(node: ProjectFlowTask, slug: string) {
+  const primaryStory = node.stories[0];
+  return {
+    storySlug: primaryStory?.slug || `story_${slug}`,
+    title: primaryStory?.title || node.title,
+    description: primaryStory?.description || node.description || "",
+    inkFile: primaryStory?.inkFile || "",
+  };
+}
+
+function buildEventForms(node: ProjectFlowTask): EventFormState[] {
+  return node.events.map((event) => ({
+    slug: event.slug,
+    enabled: event.enabled !== false,
+    title: event.title,
+    description: event.description || "",
+    eventType: event.eventType || event.businessType,
+    riskTags: [...(event.riskTags || [])],
+    weight: event.weight ?? 10,
+    onceOnly: event.onceOnly ?? false,
+    cooldownDays: event.cooldownDays ?? 0,
+  }));
+}
 
 const TABS: { id: EditorTab; label: string }[] = [
   { id: "basic", label: "节点总览" },
@@ -125,56 +195,20 @@ export function ProjectFlowNodeEditor({
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<string[]>([]);
 
-  const primaryAction = node.actionSlugs[0];
-  const primaryStory = node.stories[0];
-  const primaryLocationSlug = node.locationNames[0]?.slug || "";
-
-  const [taskForm, setTaskForm] = useState({
-    title: node.title,
-    description: node.description || "",
-    stage: node.stage || "",
-    npcNames: [...node.npcNames],
-    inputArtifacts: node.inputArtifactLabels.map((item) => ({
-      artifactSlug: item.slug,
-      minStatus: item.status || "draft",
-    })),
-    outputArtifacts: node.outputArtifactLabels.map((item) => ({
-      artifactSlug: item.slug,
-      status: item.status || "draft",
-    })),
-    milestoneKeys: node.milestoneLabels.map((item) => item.key),
-    inkFile: primaryStory?.inkFile || "",
-    storySlug: primaryStory?.slug || node.storySlug || "",
-  });
-
-  const [actionForm, setActionForm] = useState({
-    actionSlug: primaryAction?.slug || "",
-    label: primaryAction?.label || "",
-    description: primaryAction?.description || "",
-    locationSlug: primaryLocationSlug,
-    npcNames: [...node.npcNames],
-  });
-
-  const [storyForm, setStoryForm] = useState({
-    storySlug: primaryStory?.slug || `story_${slug}`,
-    title: primaryStory?.title || node.title,
-    description: primaryStory?.description || node.description || "",
-    inkFile: primaryStory?.inkFile || "",
-  });
-
-  const [eventForms, setEventForms] = useState(
-    node.events.map((event) => ({
-      slug: event.slug,
-      enabled: event.enabled !== false,
-      title: event.title,
-      description: event.description || "",
-      eventType: event.eventType || event.businessType,
-      riskTags: [...(event.riskTags || [])],
-      weight: event.weight ?? 10,
-      onceOnly: event.onceOnly ?? false,
-      cooldownDays: event.cooldownDays ?? 0,
-    })),
+  const [taskForm, setTaskForm] = useState(() => buildTaskForm(initialNode, slug));
+  const [actionForm, setActionForm] = useState(() => buildActionForm(initialNode));
+  const [storyForm, setStoryForm] = useState(() => buildStoryForm(initialNode, slug));
+  const [eventForms, setEventForms] = useState<EventFormState[]>(() =>
+    buildEventForms(initialNode),
   );
+
+  function applyNodeSnapshot(nextNode: ProjectFlowTask) {
+    setNode(nextNode);
+    setTaskForm(buildTaskForm(nextNode, slug));
+    setActionForm(buildActionForm(nextNode));
+    setStoryForm(buildStoryForm(nextNode, slug));
+    setEventForms(buildEventForms(nextNode));
+  }
 
   const artifactStatusMap = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -200,7 +234,7 @@ export function ProjectFlowNodeEditor({
       node: ProjectFlowTask;
       stageName: string;
     };
-    setNode(data.node);
+    applyNodeSnapshot(data.node);
     router.refresh();
   }
 
@@ -229,6 +263,28 @@ export function ProjectFlowNodeEditor({
     } finally {
       setSaving(false);
     }
+  }
+
+  function addRiskEvent() {
+    const reserved = new Set([
+      ...eventForms.map((event) => event.slug),
+      ...node.events.map((event) => event.slug),
+    ]);
+    const eventSlug = suggestRiskEventSlug(slug, reserved);
+    setEventForms((prev) => [
+      ...prev,
+      {
+        slug: eventSlug,
+        enabled: true,
+        title: `${node.title}补正事件`,
+        description: "",
+        eventType: "材料补正",
+        riskTags: [],
+        weight: 10,
+        onceOnly: false,
+        cooldownDays: 0,
+      },
+    ]);
   }
 
   function toggleListValue(list: string[], value: string) {
@@ -563,7 +619,8 @@ export function ProjectFlowNodeEditor({
                     description: picked.description,
                     locationSlug:
                       node.locationNames.find((loc) => loc.slug)?.slug ||
-                      primaryLocationSlug,
+                      node.locationNames[0]?.slug ||
+                      "",
                     npcNames: [...node.npcNames],
                   });
                 }}
@@ -752,9 +809,17 @@ export function ProjectFlowNodeEditor({
       {tab === "events" ? (
         <section className="space-y-5">
           {eventForms.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">
-              当前节点未挂载事件。
-            </p>
+            <div className="rounded-xl border border-dashed border-zinc-800 p-8 text-center">
+              <p className="text-sm text-zinc-500">当前节点未挂载风险事件。</p>
+              <button
+                type="button"
+                onClick={addRiskEvent}
+                className={cn(buttonVariants({ size: "sm" }), "mt-4 gap-1")}
+              >
+                <Plus className="size-4" />
+                新增风险事件
+              </button>
+            </div>
           ) : (
             eventForms.map((event, index) => (
               <div
@@ -876,7 +941,19 @@ export function ProjectFlowNodeEditor({
               </div>
             ))
           )}
-          {eventForms.length ? (
+          {eventForms.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={addRiskEvent}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1")}
+              >
+                <Plus className="size-4" />
+                新增风险事件
+              </button>
+            </div>
+          ) : null}
+          {eventForms.length > 0 ? (
             <SaveBar
               saving={saving}
               error={error}

@@ -4,10 +4,8 @@ import {
   getOpsPayloadContext,
   refreshProjectFlowCaches,
   upsertPayloadDoc,
-  validateProjectFlowReferences,
-  validationErrorResponse,
 } from "@/game/projectFlowNodeMutations";
-import { resolveMainlineNode } from "../route";
+import { resolveMainlineNode } from "@/game/projectFlowNodeResolver";
 import { requireOpsAccess } from "@/lib/opsDebugAccess";
 
 const eventSchema = z.object({
@@ -45,7 +43,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   }
 
   const resolved = await resolveMainlineNode(slug);
-  if (!resolved.ok) return resolved.response;
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+  }
   const { studio, detail, existingTask } = resolved;
 
   const primaryStory = detail.node.stories[0];
@@ -55,24 +55,20 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     : undefined;
 
   for (const event of parsed.data.events) {
-    const linked = detail.node.events.some((item) => item.slug === event.slug);
-    if (!linked) {
-      return NextResponse.json(
-        { error: "保存前校验未通过", issues: [`事件 ${event.slug} 未挂载到当前流程节点`] },
-        { status: 400 },
-      );
-    }
-    const issues = validateProjectFlowReferences(studio, {
-      slug,
-      stage: detail.node.stage || detail.stageId,
-      npcNames: detail.node.npcNames,
-      inputArtifacts: [],
-      outputArtifacts: [],
-      milestoneKeys: [],
-      eventSlug: event.slug,
-    });
-    if (issues.length) {
-      return NextResponse.json(validationErrorResponse(issues), { status: 400 });
+    const existingEvent = studio.eventTemplates.find((item) => item.slug === event.slug);
+    if (existingEvent) {
+      const triggersThis =
+        (existingEvent.triggerTaskSlugs || []).includes(slug) ||
+        (existingEvent.taskEffects || []).some((effect) => effect.taskSlug === slug);
+      if (!triggersThis) {
+        return NextResponse.json(
+          {
+            error: "保存前校验未通过",
+            issues: [`事件 ${event.slug} 已触发其他任务，不能覆盖`],
+          },
+          { status: 400 },
+        );
+      }
     }
   }
 

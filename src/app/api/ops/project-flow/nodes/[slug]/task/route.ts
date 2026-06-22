@@ -9,7 +9,7 @@ import {
   validateProjectFlowReferences,
   validationErrorResponse,
 } from "@/game/projectFlowNodeMutations";
-import { resolveMainlineNode } from "../route";
+import { resolveMainlineNode } from "@/game/projectFlowNodeResolver";
 import { requireOpsAccess } from "@/lib/opsDebugAccess";
 
 const schema = z.object({
@@ -58,7 +58,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
   const input = parsed.data;
   const resolved = await resolveMainlineNode(slug);
-  if (!resolved.ok) return resolved.response;
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+  }
   const { studio, detail, existingTask } = resolved;
 
   const primaryStory = detail.node.stories[0];
