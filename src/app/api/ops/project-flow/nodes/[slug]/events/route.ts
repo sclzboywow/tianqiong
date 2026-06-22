@@ -9,9 +9,12 @@ import { resolveMainlineNode } from "@/game/projectFlowNodeResolver";
 import { requireOpsAccess } from "@/lib/opsDebugAccess";
 
 const eventSchema = z.object({
-  slug: z.string().trim(),
+  slug: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9_]+$/, "事件标识只能包含小写字母、数字和下划线"),
   enabled: z.boolean(),
-  title: z.string().trim(),
+  title: z.string().trim().min(2, "请填写事件名称"),
   description: z.string().trim(),
   eventType: z.string().trim(),
   riskTags: z.array(z.string().trim()).default([]),
