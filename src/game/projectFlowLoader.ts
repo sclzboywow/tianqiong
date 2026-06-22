@@ -327,3 +327,24 @@ export async function loadProjectFlowData(): Promise<ProjectFlowData> {
     },
   };
 }
+
+export async function loadProjectFlowNode(slug: string): Promise<{
+  node: ProjectFlowTask;
+  options: ProjectFlowData["options"];
+  stageName: string;
+  stageId: string;
+} | null> {
+  const data = await loadProjectFlowData();
+  for (const stage of data.stages) {
+    const node = stage.tasks.find((task) => task.slug === slug);
+    if (node) {
+      return {
+        node,
+        options: data.options,
+        stageName: stage.name,
+        stageId: stage.id,
+      };
+    }
+  }
+  return null;
+}

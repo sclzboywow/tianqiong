@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   AlertTriangle,
@@ -20,28 +21,22 @@ import type {
 } from "@/game/projectFlowLoader";
 import { cn } from "@/lib/utils";
 
-function AdminLink({
-  collection,
-  id,
+function EditNodeLink({
+  slug,
+  tab,
   children,
 }: {
-  collection: string;
-  id?: string | number;
-  children: React.ReactNode;
+  slug: string;
+  tab: "task" | "action" | "story" | "events" | "basic";
+  children: ReactNode;
 }) {
   return (
-    <a
-      href={
-        id
-          ? `/admin/collections/${collection}/${id}`
-          : `/admin/collections/${collection}`
-      }
-      target="_blank"
-      rel="noreferrer"
+    <Link
+      href={`/ops/project-flow/node/${slug}?tab=${tab}`}
       className="inline-flex items-center gap-1 text-xs text-sky-300 hover:text-sky-200"
     >
       {children} <ArrowRight className="size-3" />
-    </a>
+    </Link>
   );
 }
 
@@ -72,9 +67,11 @@ function NamedList({
 function EventCard({
   event,
   compact = false,
+  taskSlug,
 }: {
   event: ProjectFlowEventCard;
   compact?: boolean;
+  taskSlug?: string;
 }) {
   return (
     <div className="rounded-lg border border-amber-900/50 bg-amber-950/10 p-3">
@@ -126,11 +123,13 @@ function EventCard({
           <p>无任务结果：{event.noTaskText || "使用默认文案"}</p>
         </div>
       ) : null}
-      <div className="mt-3">
-        <AdminLink collection="event-templates" id={event.payloadDocId}>
-          编辑补正/风险事件
-        </AdminLink>
-      </div>
+      {taskSlug ? (
+        <div className="mt-3">
+          <EditNodeLink slug={taskSlug} tab="events">
+            调整事件规则
+          </EditNodeLink>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -285,7 +284,11 @@ function TaskDetail({
           <div className="space-y-3">
             {task.events.length ? (
               task.events.map((event) => (
-                <EventCard key={event.slug} event={event} />
+                <EventCard
+                  key={event.slug}
+                  event={event}
+                  taskSlug={task.slug}
+                />
               ))
             ) : (
               <p className="text-sm text-zinc-600">当前节点未挂载事件。</p>
@@ -293,38 +296,17 @@ function TaskDetail({
           </div>
         </section>
         <section className="mt-5 border-t border-zinc-800 pt-5">
-          <h3 className="mb-3 text-xs font-medium text-zinc-500">高级编辑</h3>
-          <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <AdminLink collection="task-templates" id={task.payloadDocId}>
-              编辑流程任务
-            </AdminLink>
-            {task.actionSlugs.map((item) => (
-              <AdminLink
-                key={item.slug}
-                collection="location-actions"
-                id={item.payloadDocId}
-              >
-                编辑地点行动
-              </AdminLink>
-            ))}
-            {task.stories.map((story) => (
-              <AdminLink
-                key={story.slug}
-                collection="story-entries"
-                id={story.payloadDocId}
-              >
-                编辑剧情片段
-              </AdminLink>
-            ))}
-            {task.events.map((event) => (
-              <AdminLink
-                key={event.slug}
-                collection="event-templates"
-                id={event.payloadDocId}
-              >
-                编辑事件
-              </AdminLink>
-            ))}
+          <div className="rounded-lg border border-sky-900/60 bg-sky-950/15 p-4">
+            <h3 className="font-medium text-zinc-100">调整流程节点</h3>
+            <p className="mt-1 text-xs leading-5 text-zinc-400">
+              在同一个节点工作台中调整任务、办理地点、成果物、剧情和事件，不再分别进入数据表单。
+            </p>
+            <Link
+              href={`/ops/project-flow/node/${task.slug}`}
+              className={cn(buttonVariants({ size: "sm" }), "mt-3 gap-1")}
+            >
+              进入节点编排 <ArrowRight className="size-3" />
+            </Link>
           </div>
         </section>
       </aside>
@@ -375,7 +357,7 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
             rel="noreferrer"
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
-            Payload 高级编辑
+            系统维护
           </a>
         </div>
       </header>
