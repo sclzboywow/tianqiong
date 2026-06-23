@@ -78,6 +78,17 @@ npx tsx --env-file=.env scripts/fix-payload-locked-documents-schema.ts
 - 不要长期保持 `PAYLOAD_DB_PUSH=true`（默认 `payload.config.ts` 已关闭 push，避免重复 CREATE INDEX）
 - 生产环境应使用 Payload 正式 migration，而非 dev push
 
+## 内测服部署
+
+内测服部署说明见 [docs/internal-test-deploy.md](docs/internal-test-deploy.md)。
+
+部署前建议执行：
+
+```bash
+npm run check:internal-test
+npm run build
+```
+
 ## 后台 API 权限
 
 - `POST /api/admin/seed`：需登录；仅 `GAME_ADMIN_USER_IDS` 中的用户（或开发环境首个注册用户）可执行；`overwrite=true` 同样需管理员

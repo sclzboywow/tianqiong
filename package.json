@@ -26,6 +26,7 @@
     "test:content-workflow": "tsx --env-file=.env scripts/content-workflow-smoke-test.ts",
     "test:career": "tsx scripts/career-rank-smoke-test.ts",
     "content:check": "tsx --env-file=.env scripts/content-check.ts",
+    "check:internal-test": "npm run typecheck && npm run content:check && npm run test:content-workflow && npm run test:locations",
     "sync:sandtable": "tsx --env-file=.env scripts/sync-sandtable-payload.ts",
     "sync:npcs": "tsx --env-file=.env scripts/sync-npc-profiles-payload.ts",
     "verify:npcs": "tsx scripts/verify-npc-profiles.ts",
