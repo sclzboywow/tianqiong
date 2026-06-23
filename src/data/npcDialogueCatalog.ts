@@ -18,4 +18,25 @@ export const NPC_DIALOGUE_STATIC_CATALOG: NpcDialogueCatalogEntry[] = [
     npcIds: ["owner_general_manager"],
     npcNames: ["许承岳", "业主总经理"],
   },
+  {
+    slug: "npc_dialogue_owner_project_coordinator_demo",
+    title: "与赵清寒暄（占位）",
+    inkFile: NPC_DIALOGUE_PLACEHOLDER_INK,
+    npcIds: ["owner_project_coordinator"],
+    npcNames: ["赵清", "项目管理专员"],
+  },
+  {
+    slug: "npc_dialogue_contractor_project_manager_demo",
+    title: "与陈建峰寒暄（占位）",
+    inkFile: NPC_DIALOGUE_PLACEHOLDER_INK,
+    npcIds: ["contractor_project_manager"],
+    npcNames: ["陈建峰", "总包项目经理"],
+  },
+  {
+    slug: "npc_dialogue_government_window_officer_demo",
+    title: "与杜青寒暄（占位）",
+    inkFile: NPC_DIALOGUE_PLACEHOLDER_INK,
+    npcIds: ["government_window_officer"],
+    npcNames: ["杜青", "综合窗口受理员"],
+  },
 ];

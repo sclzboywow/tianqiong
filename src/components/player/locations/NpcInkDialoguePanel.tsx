@@ -36,8 +36,17 @@ function segmentSpeakText(segment: StorySegment): string {
   return `${segment.speaker}：${segment.text}`;
 }
 
+function isSpeechSynthesisSupported(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    window.speechSynthesis != null &&
+    typeof SpeechSynthesisUtterance !== "undefined"
+  );
+}
+
 function speakText(text: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  if (!isSpeechSynthesisSupported()) return;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-CN";
@@ -59,6 +68,7 @@ export function NpcInkDialoguePanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [choosing, setChoosing] = useState(false);
+  const [ttsSupported, setTtsSupported] = useState(false);
 
   const loadDialogue = useCallback(
     async (path: number[]) => {
@@ -139,9 +149,10 @@ export function NpcInkDialoguePanel({
   }, [story?.lines.length, story?.choices.length, status]);
 
   useEffect(() => {
+    setTtsSupported(isSpeechSynthesisSupported());
     return () => {
-      if (typeof window !== "undefined") {
-        window.speechSynthesis?.cancel();
+      if (isSpeechSynthesisSupported()) {
+        window.speechSynthesis.cancel();
       }
     };
   }, []);
@@ -247,15 +258,17 @@ export function NpcInkDialoguePanel({
                   <p className="mb-0.5 text-xs text-slate-500">旁白</p>
                 )}
                 <p>{segment.type === "dialogue" ? segment.text : segment.text}</p>
-                <button
-                  type="button"
-                  title="朗读（浏览器原生 TTS）"
-                  aria-label="朗读"
-                  onClick={() => speakText(text)}
-                  className="absolute right-1 top-1 border border-transparent p-0.5 text-slate-500 opacity-0 transition hover:border-cyan-400/30 hover:text-cyan-300 group-hover:opacity-100"
-                >
-                  <Volume2 className="size-3.5" />
-                </button>
+                {segment.type === "dialogue" && ttsSupported ? (
+                  <button
+                    type="button"
+                    title="朗读（浏览器原生 TTS）"
+                    aria-label="朗读"
+                    onClick={() => speakText(text)}
+                    className="absolute right-1 top-1 border border-transparent p-0.5 text-slate-500 opacity-0 transition hover:border-cyan-400/30 hover:text-cyan-300 group-hover:opacity-100"
+                  >
+                    <Volume2 className="size-3.5" />
+                  </button>
+                ) : null}
               </div>
             );
           })}

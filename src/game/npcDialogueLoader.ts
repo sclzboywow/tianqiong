@@ -1,6 +1,7 @@
 import { getNpcProfileById } from "@/data/npcProfiles";
 import { NPC_DIALOGUE_STATIC_CATALOG } from "@/data/npcDialogueCatalog";
 import { getStoryEntries } from "@/game/storyEntryLoader";
+import type { StoryEntryStatus } from "@/game/types";
 
 export type NpcDialogueEntryRef = {
   slug: string;
@@ -34,6 +35,21 @@ function entryMatchesNpc(
   return relatedNpcNames.some((name) => aliases.has(name.trim()));
 }
 
+function isNpcDialogueStatusAllowed(status: StoryEntryStatus): boolean {
+  if (process.env.NODE_ENV === "development") {
+    return status === "published" || status === "draft";
+  }
+  return status === "published";
+}
+
+function entryMatchesLocation(relatedLocationSlugs: string[] | undefined, locationId?: string): boolean {
+  const locations = relatedLocationSlugs?.map((slug) => slug.trim()).filter(Boolean) ?? [];
+  if (locations.length === 0) return true;
+  const current = locationId?.trim();
+  if (!current) return false;
+  return locations.includes(current);
+}
+
 export async function resolveNpcDialogueEntry(params: {
   npcId: string;
   npcName: string;
@@ -47,9 +63,11 @@ export async function resolveNpcDialogueEntry(params: {
     return (
       entry.storyType === "npc_dialogue" &&
       entry.enabled !== false &&
+      isNpcDialogueStatusAllowed(entry.status) &&
       entry.inkFile.trim().length > 0 &&
       relatedNpcNames.length > 0 &&
-      entryMatchesNpc(relatedNpcNames, undefined, params.npcId, aliases)
+      entryMatchesNpc(relatedNpcNames, undefined, params.npcId, aliases) &&
+      entryMatchesLocation(entry.relatedLocationSlugs, params.locationId)
     );
   });
 
