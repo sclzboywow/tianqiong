@@ -13,7 +13,12 @@ import type {
   ProjectFlowData,
   ProjectFlowTask,
 } from "@/game/projectFlowLoader";
-import { suggestRiskEventSlug } from "@/game/projectFlowNodeUtils";
+import {
+  buildPrerequisiteTaskMap,
+  findPrerequisiteCyclePath,
+  formatPrerequisiteCycleIssue,
+  suggestRiskEventSlug,
+} from "@/game/projectFlowNodeUtils";
 import { cn } from "@/lib/utils";
 
 type EditorTab = "basic" | "flow" | "task" | "action" | "story" | "events";
@@ -100,11 +105,15 @@ const TABS: { id: EditorTab; label: string }[] = [
 ];
 
 function getSuccessorTasks(tasks: TaskOption[], currentSlug: string) {
-  return tasks.filter(
+  const dependents = tasks.filter(
     (task) =>
       task.slug !== currentSlug &&
       (task.prerequisiteTaskSlugs || []).includes(currentSlug),
   );
+  return {
+    mainline: dependents.filter((task) => task.category === "mainline"),
+    other: dependents.filter((task) => task.category !== "mainline"),
+  };
 }
 
 function getFlowRelationWarnings(
@@ -113,9 +122,6 @@ function getFlowRelationWarnings(
   tasks: TaskOption[],
 ): string[] {
   const warnings: string[] = [];
-  const taskMap = new Map(
-    tasks.map((task) => [task.slug, task.prerequisiteTaskSlugs || []]),
-  );
   const knownSlugs = new Set(tasks.map((task) => task.slug));
 
   if (selectedPrerequisites.includes(currentSlug)) {
@@ -126,24 +132,149 @@ function getFlowRelationWarnings(
     if (!knownSlugs.has(prereqSlug)) {
       warnings.push(`前置任务不存在：${prereqSlug}`);
     }
-    const visited = new Set<string>();
-    const stack = [prereqSlug];
-    while (stack.length > 0) {
-      const cursor = stack.pop()!;
-      if (cursor === currentSlug) {
-        const title = tasks.find((task) => task.slug === prereqSlug)?.title || prereqSlug;
-        warnings.push(`与「${title}」存在循环依赖`);
-        break;
-      }
-      if (visited.has(cursor)) continue;
-      visited.add(cursor);
-      for (const next of taskMap.get(cursor) || []) {
-        stack.push(next);
-      }
-    }
+  }
+
+  const prerequisiteMap = buildPrerequisiteTaskMap(
+    tasks,
+    currentSlug,
+    selectedPrerequisites,
+  );
+  const cyclePath = findPrerequisiteCyclePath(currentSlug, prerequisiteMap);
+  if (cyclePath) {
+    warnings.push(formatPrerequisiteCycleIssue(cyclePath));
   }
 
   return [...new Set(warnings)];
+}
+
+function renderSuccessorTaskList(
+  tasks: TaskOption[],
+  stageNameById: Map<string, string>,
+  link = false,
+) {
+  if (!tasks.length) return null;
+  return (
+    <ul className="space-y-2">
+      {tasks.map((task) => (
+        <li
+          key={task.slug}
+          className="rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2"
+        >
+          {link ? (
+            <Link
+              href={`/ops/project-flow/node/${task.slug}?tab=flow`}
+              className="text-sm text-sky-300 hover:text-sky-200"
+            >
+              {task.title}
+            </Link>
+          ) : (
+            <p className="text-sm text-zinc-100">{task.title}</p>
+          )}
+          <p className="font-mono text-[10px] text-zinc-600">{task.slug}</p>
+          <p className="text-xs text-zinc-500">
+            {stageNameById.get(task.stage) || task.stage || "未分阶段"}
+            {task.category !== "mainline" ? " · 补正/其他" : ""}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function MainlinePrerequisiteSelector({
+  tasks,
+  currentSlug,
+  stageNameById,
+  selected,
+  onToggle,
+}: {
+  tasks: TaskOption[];
+  currentSlug: string;
+  stageNameById: Map<string, string>;
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  const mainlineByStage = useMemo(() => {
+    const groups = new Map<string, TaskOption[]>();
+    for (const task of tasks) {
+      if (task.slug === currentSlug || task.category !== "mainline") continue;
+      const stageId = task.stage || "UNKNOWN";
+      const list = groups.get(stageId) || [];
+      list.push(task);
+      groups.set(stageId, list);
+    }
+    return groups;
+  }, [tasks, currentSlug]);
+
+  const otherTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) => task.slug !== currentSlug && task.category !== "mainline",
+      ),
+    [tasks, currentSlug],
+  );
+
+  function renderTaskOption(task: TaskOption) {
+    const stageLabel = stageNameById.get(task.stage) || task.stage || "未分阶段";
+    return (
+      <label
+        key={task.slug}
+        className={cn(
+          "flex cursor-pointer items-start gap-3 rounded-lg border p-3",
+          selected.includes(task.slug)
+            ? "border-sky-700 bg-sky-950/20"
+            : "border-zinc-800 bg-zinc-950/40",
+        )}
+      >
+        <input
+          type="checkbox"
+          checked={selected.includes(task.slug)}
+          onChange={() => onToggle(task.slug)}
+          className="mt-1"
+        />
+        <span>
+          <span className="block text-sm text-zinc-200">{task.title}</span>
+          <span className="mt-1 block font-mono text-[10px] text-zinc-600">
+            {task.slug}
+          </span>
+          <span className="mt-1 block text-xs text-zinc-500">{stageLabel}</span>
+          {!task.enabled ? (
+            <span className="mt-1 block text-xs text-zinc-600">已禁用</span>
+          ) : null}
+        </span>
+      </label>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {PROJECT_STAGES.filter((stage) => stage.id !== "OPENING").map((stage) => {
+        const stageTasks = mainlineByStage.get(stage.id);
+        if (!stageTasks?.length) return null;
+        return (
+          <div key={stage.id}>
+            <p className="text-xs font-medium text-zinc-400">{stage.name}</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {stageTasks.map(renderTaskOption)}
+            </div>
+          </div>
+        );
+      })}
+      {otherTasks.length ? (
+        <details className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
+          <summary className="cursor-pointer text-sm text-zinc-400">
+            补正/其他任务（{otherTasks.length}）
+          </summary>
+          <p className="mt-2 text-xs text-zinc-600">
+            默认折叠，避免干扰主线流程关系配置。
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {otherTasks.map(renderTaskOption)}
+          </div>
+        </details>
+      ) : null}
+    </div>
+  );
 }
 
 function parseTab(value: string | null): EditorTab {
@@ -279,10 +410,25 @@ export function ProjectFlowNodeEditor({
     [options.tasks],
   );
 
-  const successorTasks = useMemo(
+  const stageNameById = useMemo(
+    () =>
+      new Map<string, string>(
+        PROJECT_STAGES.map((stage) => [stage.id, stage.name]),
+      ),
+    [],
+  );
+
+  const taskBySlug = useMemo(
+    () => new Map(options.tasks.map((task) => [task.slug, task])),
+    [options.tasks],
+  );
+
+  const successorGroups = useMemo(
     () => getSuccessorTasks(options.tasks, slug),
     [options.tasks, slug],
   );
+  const successorCount =
+    successorGroups.mainline.length + successorGroups.other.length;
 
   const flowWarnings = useMemo(
     () =>
@@ -294,17 +440,25 @@ export function ProjectFlowNodeEditor({
     [slug, taskForm.prerequisiteTaskSlugs, options.tasks],
   );
 
-  const prerequisiteChoices = useMemo(
-    () =>
-      options.tasks
-        .filter((task) => task.slug !== slug)
-        .map((task) => ({
-          value: task.slug,
-          label: task.title,
-          hint: task.slug,
-        })),
-    [options.tasks, slug],
-  );
+  function renderConfiguredPrerequisite(taskSlug: string) {
+    const task = taskBySlug.get(taskSlug);
+    return (
+      <li
+        key={taskSlug}
+        className="rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2"
+      >
+        <p className="text-sm text-zinc-100">
+          {task?.title || taskTitleMap.get(taskSlug) || taskSlug}
+        </p>
+        <p className="font-mono text-[10px] text-zinc-600">{taskSlug}</p>
+        {task ? (
+          <p className="text-xs text-zinc-500">
+            {stageNameById.get(task.stage) || task.stage || "未分阶段"}
+          </p>
+        ) : null}
+      </li>
+    );
+  }
 
   function setTab(next: EditorTab) {
     router.replace(`/ops/project-flow/node/${slug}?tab=${next}`);
@@ -549,8 +703,9 @@ export function ProjectFlowNodeEditor({
             <div>
               <p className="text-xs text-zinc-500">流程关系</p>
               <p className="mt-1">
-                前置 {(node.prerequisiteTaskSlugs || []).length} · 后续{" "}
-                {successorTasks.length}
+                前置 {(node.prerequisiteTaskSlugs || []).length} · 后续主线{" "}
+                {successorGroups.mainline.length} · 后续其他{" "}
+                {successorGroups.other.length}
               </p>
             </div>
           </div>
@@ -576,16 +731,36 @@ export function ProjectFlowNodeEditor({
               </div>
             </div>
           ) : null}
-          {successorTasks.length ? (
-            <div>
-              <p className="text-xs text-zinc-500">后续任务（依赖当前节点）</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {successorTasks.map((task) => (
-                  <Badge key={task.slug} variant="outline" className="font-normal">
-                    {task.title}
-                  </Badge>
-                ))}
-              </div>
+          {successorCount ? (
+            <div className="space-y-3">
+              {successorGroups.mainline.length ? (
+                <div>
+                  <p className="text-xs text-zinc-500">主线后续任务</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {successorGroups.mainline.map((task) => (
+                      <Badge key={task.slug} variant="outline" className="font-normal">
+                        {task.title}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {successorGroups.other.length ? (
+                <div>
+                  <p className="text-xs text-zinc-500">补正/其他后续任务</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {successorGroups.other.map((task) => (
+                      <Badge
+                        key={task.slug}
+                        variant="outline"
+                        className="border-zinc-700 font-normal text-zinc-400"
+                      >
+                        {task.title}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
           {node.configurationIssues.length ? (
@@ -657,17 +832,7 @@ export function ProjectFlowNodeEditor({
               <p className="text-sm font-medium text-zinc-200">已配置的前置任务</p>
               {(taskForm.prerequisiteTaskSlugs || []).length ? (
                 <ul className="space-y-2">
-                  {taskForm.prerequisiteTaskSlugs.map((taskSlug) => (
-                    <li
-                      key={taskSlug}
-                      className="rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2"
-                    >
-                      <p className="text-sm text-zinc-100">
-                        {taskTitleMap.get(taskSlug) || taskSlug}
-                      </p>
-                      <p className="font-mono text-[10px] text-zinc-600">{taskSlug}</p>
-                    </li>
-                  ))}
+                  {taskForm.prerequisiteTaskSlugs.map(renderConfiguredPrerequisite)}
                 </ul>
               ) : (
                 <p className="text-sm text-zinc-500">尚未配置前置任务，当前节点可并行办理。</p>
@@ -676,36 +841,37 @@ export function ProjectFlowNodeEditor({
 
             <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
               <p className="text-sm font-medium text-zinc-200">后续任务（反向推断）</p>
-              {successorTasks.length ? (
-                <ul className="space-y-2">
-                  {successorTasks.map((task) => (
-                    <li
-                      key={task.slug}
-                      className="rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2"
-                    >
-                      <Link
-                        href={`/ops/project-flow/node/${task.slug}?tab=flow`}
-                        className="text-sm text-sky-300 hover:text-sky-200"
-                      >
-                        {task.title}
-                      </Link>
-                      <p className="font-mono text-[10px] text-zinc-600">{task.slug}</p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
+              {successorGroups.mainline.length ? (
+                <div>
+                  <p className="text-xs text-zinc-500">主线后续</p>
+                  {renderSuccessorTaskList(
+                    successorGroups.mainline,
+                    stageNameById,
+                    true,
+                  )}
+                </div>
+              ) : null}
+              {successorGroups.other.length ? (
+                <div>
+                  <p className="text-xs text-zinc-500">补正/其他后续</p>
+                  {renderSuccessorTaskList(successorGroups.other, stageNameById, true)}
+                </div>
+              ) : null}
+              {!successorCount ? (
                 <p className="text-sm text-zinc-500">暂无其他任务将当前节点设为前置。</p>
-              )}
+              ) : null}
             </div>
           </div>
 
           <div>
             <Label className="mb-2 block">选择前置任务</Label>
             <p className="mb-3 text-xs text-zinc-500">
-              多选配置本节点必须先完成的流程任务。当前节点自身不可选。
+              默认按阶段展示主线任务；补正/其他任务折叠在下方，避免干扰主线配置。
             </p>
-            <ChoiceGrid
-              choices={prerequisiteChoices}
+            <MainlinePrerequisiteSelector
+              tasks={options.tasks}
+              currentSlug={slug}
+              stageNameById={stageNameById}
               selected={taskForm.prerequisiteTaskSlugs}
               onToggle={(value) =>
                 setTaskForm((prev) => ({

@@ -1,23 +1,9 @@
 import { NextResponse } from "next/server";
+import { replayInkStory } from "@/game/inkStoryReplay";
 import { getStoryEntryBySlug } from "@/game/storyEntryLoader";
-import { createStory, getStoryState, makeChoice } from "@/ink/inkRunner";
 import { getCurrentUserId } from "@/lib/session";
 
 type RouteContext = { params: Promise<{ slug: string }> };
-
-function replayStory(inkFile: string, choicePath: number[]) {
-  const story = createStory(inkFile);
-  let state = getStoryState(story);
-  for (const index of choicePath) {
-    if (state.ended || state.choices.length === 0) break;
-    if (index < 0 || index >= state.choices.length) {
-      throw new Error(`无效选项索引: ${index}`);
-    }
-    const next = makeChoice(story, index);
-    state = { ...next, ended: next.ended };
-  }
-  return state;
-}
 
 async function requirePreviewAuth() {
   const userId = await getCurrentUserId();
@@ -38,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   try {
-    const story = replayStory(entry.inkFile, []);
+    const story = replayInkStory(entry.inkFile, []);
     return NextResponse.json({ ok: true, entry: { slug: entry.slug, title: entry.title }, story });
   } catch (error) {
     return NextResponse.json(
@@ -71,7 +57,7 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   try {
-    const story = replayStory(entry.inkFile, choicePath);
+    const story = replayInkStory(entry.inkFile, choicePath);
     return NextResponse.json({ ok: true, entry: { slug: entry.slug, title: entry.title }, story });
   } catch (error) {
     return NextResponse.json(

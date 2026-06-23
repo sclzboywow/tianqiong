@@ -124,6 +124,7 @@ export interface TaskTemplateData {
   requiredMilestones?: string[];
   blockPolicy?: TaskBlockPolicy;
   category?: string;
+  enabled?: boolean;
 }
 
 export interface EventTemplateData {

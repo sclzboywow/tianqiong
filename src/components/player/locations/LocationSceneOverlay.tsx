@@ -21,12 +21,15 @@ import type { LocationActionDisplayItem } from "@/game/locationPresentationEngin
 import type { ActionDependencyPreview } from "@/game/locationActionPreviewEngine";
 import { ActionDependencyPreviewPanel } from "./ActionDependencyPreview";
 import type { DialogueEntry, NpcInteractionType } from "@/game/npcInteractionEngine";
+import { getAvailableNpcInteractions } from "@/game/npcInteractionEngine";
 import { LocationNpcMainCard } from "./LocationNpcMainCard";
 import { SandtableNpcList } from "./SandtableNpcList";
 import { NpcTaskRequirementList } from "./NpcTaskRequirementList";
 import { NpcTaskActionList } from "./NpcTaskActionList";
 import { LocationActionExecutePanel } from "./LocationActionExecutePanel";
 import { LocationNpcDialoguePanel } from "./LocationNpcDialoguePanel";
+import { NpcInkDialoguePanel } from "./NpcInkDialoguePanel";
+import type { SandtableNpcRef } from "@/game/sandtableNpcResolver";
 import {
   SandtableTokenList,
   SANDTABLE_STATUS_LABELS,
@@ -115,6 +118,7 @@ export function LocationSceneOverlay({
   );
   const [dialogueEntries, setDialogueEntries] = useState<DialogueEntry[]>([]);
   const [pendingInteraction, setPendingInteraction] = useState<NpcInteractionType | null>(null);
+  const [inkDialogueNpc, setInkDialogueNpc] = useState<SandtableNpcRef | null>(null);
 
   const selectedNpc = useMemo(
     () => node.relatedNpcs.find((npc) => npc.npcId === selectedNpcId) ?? node.relatedNpcs[0],
@@ -206,6 +210,7 @@ export function LocationSceneOverlay({
   const handleNpcInteract = useCallback(
     async (interaction: NpcInteractionType) => {
       if (!locationId || !selectedNpc) return;
+      if (interaction === "talk") return;
 
       setPendingInteraction(interaction);
 
@@ -269,6 +274,19 @@ export function LocationSceneOverlay({
     },
     [locationId, selectedNpc],
   );
+
+  const openInkDialogue = useCallback((npc: SandtableNpcRef) => {
+    setSelectedNpcId(npc.npcId);
+    setInkDialogueNpc(npc);
+  }, []);
+
+  const closeInkDialogue = useCallback(() => {
+    setInkDialogueNpc(null);
+  }, []);
+
+  const selectedNpcTalkEnabled = selectedNpc
+    ? getAvailableNpcInteractions(selectedNpc).includes("talk")
+    : false;
 
   const riskItems = node.impactLabels?.length ? node.impactLabels : node.riskTags;
   const taskItems = node.relatedTaskTitles?.length ? node.relatedTaskTitles : node.relatedTaskSlugs;
@@ -371,7 +389,13 @@ export function LocationSceneOverlay({
               scrollBody={false}
               bodyClassName="flex flex-col gap-3 overflow-hidden p-3"
             >
-              {selectedNpc ? <LocationNpcMainCard npc={selectedNpc} /> : null}
+              {selectedNpc ? (
+                <LocationNpcMainCard
+                  npc={selectedNpc}
+                  onTalk={() => openInkDialogue(selectedNpc)}
+                  talkEnabled={selectedNpcTalkEnabled}
+                />
+              ) : null}
 
               <LocationNpcDialoguePanel
                 className="min-h-0 flex-1"
@@ -379,6 +403,7 @@ export function LocationSceneOverlay({
                 entries={visibleDialogueEntries}
                 pendingInteraction={pendingInteraction}
                 onInteract={(interaction) => void handleNpcInteract(interaction)}
+                onInkTalk={selectedNpc ? () => openInkDialogue(selectedNpc) : undefined}
               />
 
               {otherNpcCount > 0 ? (
@@ -393,6 +418,7 @@ export function LocationSceneOverlay({
                     excludeNpcId={selectedNpcId ?? undefined}
                     selectedNpcId={selectedNpcId ?? undefined}
                     onSelectNpc={(npc) => setSelectedNpcId(npc.npcId)}
+                    onTalk={openInkDialogue}
                     empty="暂无其他 NPC"
                   />
                 </div>
@@ -553,6 +579,15 @@ export function LocationSceneOverlay({
             <ExternalLink className="size-3" />
           </Link>
         </footer>
+
+        {inkDialogueNpc && locationId ? (
+          <NpcInkDialoguePanel
+            open
+            locationId={locationId}
+            npc={inkDialogueNpc}
+            onClose={closeInkDialogue}
+          />
+        ) : null}
       </div>
     </div>
   );

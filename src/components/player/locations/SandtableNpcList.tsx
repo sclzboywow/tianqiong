@@ -38,6 +38,7 @@ type SandtableNpcListProps = {
   selectedNpcId?: string;
   excludeNpcId?: string;
   onSelectNpc?: (npc: SandtableNpcRef) => void;
+  onTalk?: (npc: SandtableNpcRef) => void;
   variant?: "default" | "compact";
 };
 
@@ -54,11 +55,13 @@ function NpcPickerCard({
   npc,
   selected,
   onSelect,
+  onTalk,
   variant,
 }: {
   npc: SandtableNpcRef;
   selected?: boolean;
   onSelect?: (npc: SandtableNpcRef) => void;
+  onTalk?: (npc: SandtableNpcRef) => void;
   variant: "default" | "compact";
 }) {
   const display = resolveNpcDisplay(npc);
@@ -68,18 +71,37 @@ function NpcPickerCard({
     return (
       <li
         className={cn(
-          "cursor-pointer border px-2 py-1.5 transition",
+          "border px-2 py-1.5 transition",
           selected ? "border-cyan-400/45 bg-cyan-950/25" : "border-cyan-400/10 bg-slate-950/40 hover:border-cyan-400/30",
         )}
-        onClick={() => onSelect?.(npc)}
       >
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-[13px] text-cyan-50">{display.name}</p>
-          {presence ? (
-            <span className={cn("shrink-0 border px-1 py-0.5 text-[11px]", PRESENCE_STYLES[presence])}>
-              {PRESENCE_LABELS[presence]}
-            </span>
-          ) : null}
+          <button
+            type="button"
+            className="min-w-0 flex-1 truncate text-left text-[13px] text-cyan-50"
+            onClick={() => onSelect?.(npc)}
+          >
+            {display.name}
+          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            {onTalk ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onTalk(npc);
+                }}
+                className="border border-emerald-400/30 px-1.5 py-0.5 text-[11px] text-emerald-100 hover:border-emerald-400/50"
+              >
+                交谈
+              </button>
+            ) : null}
+            {presence ? (
+              <span className={cn("border px-1 py-0.5 text-[11px]", PRESENCE_STYLES[presence])}>
+                {PRESENCE_LABELS[presence]}
+              </span>
+            ) : null}
+          </div>
         </div>
       </li>
     );
@@ -88,27 +110,37 @@ function NpcPickerCard({
   return (
     <li
       className={cn(
-        "cursor-pointer border bg-slate-950/50 p-2.5 transition",
+        "border bg-slate-950/50 p-2.5 transition",
         selected ? "border-cyan-400/45 bg-cyan-950/20" : "border-cyan-400/10 hover:border-cyan-400/30",
       )}
-      onClick={() => onSelect?.(npc)}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-cyan-50">{display.name}</p>
-          <p className="truncate text-xs text-slate-400">{display.title}</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <span className={cn("border px-1.5 py-0.5 text-xs font-medium", LEVEL_STYLES[display.level])}>
-            {display.level}·{formatNpcRole(npc.role)}
-          </span>
-          {presence ? (
-            <span className={cn("border px-1.5 py-0.5 text-[10px]", PRESENCE_STYLES[presence])}>
-              {PRESENCE_LABELS[presence]}
+      <button type="button" className="w-full text-left" onClick={() => onSelect?.(npc)}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-cyan-50">{display.name}</p>
+            <p className="truncate text-xs text-slate-400">{display.title}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className={cn("border px-1.5 py-0.5 text-xs font-medium", LEVEL_STYLES[display.level])}>
+              {display.level}·{formatNpcRole(npc.role)}
             </span>
-          ) : null}
+            {presence ? (
+              <span className={cn("border px-1.5 py-0.5 text-[10px]", PRESENCE_STYLES[presence])}>
+                {PRESENCE_LABELS[presence]}
+              </span>
+            ) : null}
+          </div>
         </div>
-      </div>
+      </button>
+      {onTalk ? (
+        <button
+          type="button"
+          onClick={() => onTalk(npc)}
+          className="mt-2 w-full border border-emerald-400/30 px-2 py-1 text-xs text-emerald-100 hover:border-emerald-400/50 hover:bg-emerald-950/20"
+        >
+          交谈
+        </button>
+      ) : null}
     </li>
   );
 }
@@ -152,6 +184,7 @@ export function SandtableNpcList({
   selectedNpcId,
   excludeNpcId,
   onSelectNpc,
+  onTalk,
   variant = "default",
 }: SandtableNpcListProps) {
   const visibleNpcs = npcs.filter((npc) => npc.npcId !== excludeNpcId);
@@ -192,6 +225,7 @@ export function SandtableNpcList({
                 variant={variant}
                 selected={selectedNpcId === npc.npcId}
                 onSelect={onSelectNpc}
+                onTalk={onTalk}
               />
             ))}
           </ul>

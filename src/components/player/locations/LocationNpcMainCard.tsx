@@ -35,9 +35,11 @@ function resolveLocationLabel(npc: SandtableNpcRef, preferCurrent = false): stri
 
 type LocationNpcMainCardProps = {
   npc: SandtableNpcRef;
+  onTalk?: () => void;
+  talkEnabled?: boolean;
 };
 
-export function LocationNpcMainCard({ npc }: LocationNpcMainCardProps) {
+export function LocationNpcMainCard({ npc, onTalk, talkEnabled = true }: LocationNpcMainCardProps) {
   const profile = getNpcProfileById(npc.npcId);
   const name = profile?.name ?? npc.name;
   const title = profile?.title ?? npc.title;
@@ -85,6 +87,22 @@ export function LocationNpcMainCard({ npc }: LocationNpcMainCardProps) {
       ) : null}
       {presence === "locked" && npc.presenceHint ? (
         <p className="mt-2 text-[13px] leading-5 text-slate-500">{npc.presenceHint}</p>
+      ) : null}
+
+      {onTalk ? (
+        <button
+          type="button"
+          disabled={!talkEnabled}
+          onClick={onTalk}
+          className={cn(
+            "mt-3 w-full border px-2 py-1.5 text-xs transition",
+            talkEnabled
+              ? "border-emerald-400/35 text-emerald-100 hover:border-emerald-400/55 hover:bg-emerald-950/25"
+              : "cursor-not-allowed border-slate-700/40 text-slate-600",
+          )}
+        >
+          交谈
+        </button>
       ) : null}
     </article>
   );

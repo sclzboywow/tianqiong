@@ -83,6 +83,7 @@ function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
         ?.map((item) => item.milestone)
         .filter(Boolean) || [],
     blockPolicy: (doc.blockPolicy as TaskBlockPolicy | undefined) ?? "hard_block",
+    enabled: doc.enabled !== false,
   };
 }
 

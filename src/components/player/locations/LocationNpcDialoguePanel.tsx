@@ -18,6 +18,7 @@ type LocationNpcDialoguePanelProps = {
   entries: DialogueEntry[];
   pendingInteraction?: NpcInteractionType | null;
   onInteract: (interaction: NpcInteractionType) => void;
+  onInkTalk?: () => void;
   className?: string;
 };
 
@@ -33,6 +34,7 @@ export function LocationNpcDialoguePanel({
   entries,
   pendingInteraction,
   onInteract,
+  onInkTalk,
   className,
 }: LocationNpcDialoguePanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -104,18 +106,20 @@ export function LocationNpcDialoguePanel({
             {NPC_INTERACTION_ORDER.map((type) => {
               const enabled = available.includes(type);
               const isPending = pendingInteraction === type;
+              const isInkTalk = type === "talk" && onInkTalk;
               return (
                 <button
                   key={type}
                   type="button"
                   disabled={!enabled || Boolean(pendingInteraction)}
-                  onClick={() => onInteract(type)}
+                  onClick={() => (isInkTalk ? onInkTalk() : onInteract(type))}
                   className={cn(
                     "border px-2 py-1 text-xs transition",
                     enabled
                       ? "border-cyan-400/25 text-cyan-100 hover:border-cyan-400/50 hover:bg-cyan-950/30"
                       : "cursor-not-allowed border-slate-700/40 text-slate-600",
                     isPending && "opacity-60",
+                    isInkTalk && enabled && "border-emerald-400/30 text-emerald-100",
                   )}
                 >
                   {NPC_INTERACTION_LABELS[type]}

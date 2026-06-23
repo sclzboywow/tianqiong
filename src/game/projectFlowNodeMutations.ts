@@ -5,6 +5,11 @@ import { clearStoryEntryCache } from "./storyEntryLoader";
 import { bustContentOrchestrationCache } from "@/lib/contentOrchestrationCache";
 import { bustOpsDataCache } from "@/lib/opsDataCache";
 import { LEGACY_NPC_NAME_ALIASES } from "@/data/npcProfiles";
+import {
+  buildPrerequisiteTaskMap,
+  findPrerequisiteCyclePath,
+  formatPrerequisiteCycleIssue,
+} from "./projectFlowNodeUtils";
 import type { Payload, PayloadRequest } from "payload";
 
 export type ArtifactInput = { artifactSlug: string; minStatus: string };
@@ -113,6 +118,16 @@ export function validateProjectFlowReferences(
     } else if (!taskSlugs.has(prereqSlug)) {
       issues.push(`前置任务不存在：${prereqSlug}`);
     }
+  }
+
+  const prerequisiteMap = buildPrerequisiteTaskMap(
+    studio.taskTemplates,
+    input.slug,
+    input.prerequisiteTaskSlugs || [],
+  );
+  const cyclePath = findPrerequisiteCyclePath(input.slug, prerequisiteMap);
+  if (cyclePath) {
+    issues.push(formatPrerequisiteCycleIssue(cyclePath));
   }
 
   if (existingTask && existingTask.category !== "mainline" && !input.allowExistingNonMainline) {

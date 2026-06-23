@@ -62,7 +62,7 @@ export type ProjectFlowData = {
       allowedStatuses: string[];
     }[];
     milestones: { key: string; label: string }[];
-    tasks: { slug: string; title: string; prerequisiteTaskSlugs: string[] }[];
+    tasks: { slug: string; title: string; prerequisiteTaskSlugs: string[]; stage: string; category: string; enabled: boolean }[];
   };
   summary: {
     tasks: number;
@@ -312,6 +312,9 @@ export async function loadProjectFlowData(): Promise<ProjectFlowData> {
         slug: task.slug,
         title: task.title,
         prerequisiteTaskSlugs: task.prerequisiteTaskSlugs || [],
+        stage: task.stage || "",
+        category: task.category || "mainline",
+        enabled: task.enabled !== false,
       })),
     },
     summary: {
