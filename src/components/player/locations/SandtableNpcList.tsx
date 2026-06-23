@@ -38,7 +38,6 @@ type SandtableNpcListProps = {
   selectedNpcId?: string;
   excludeNpcId?: string;
   onSelectNpc?: (npc: SandtableNpcRef) => void;
-  onTalk?: (npc: SandtableNpcRef) => void;
   variant?: "default" | "compact";
 };
 
@@ -55,17 +54,16 @@ function NpcPickerCard({
   npc,
   selected,
   onSelect,
-  onTalk,
   variant,
 }: {
   npc: SandtableNpcRef;
   selected?: boolean;
   onSelect?: (npc: SandtableNpcRef) => void;
-  onTalk?: (npc: SandtableNpcRef) => void;
   variant: "default" | "compact";
 }) {
   const display = resolveNpcDisplay(npc);
   const presence = npc.presenceStatus;
+  const showSwitch = Boolean(onSelect && !selected);
 
   if (variant === "compact") {
     return (
@@ -84,16 +82,13 @@ function NpcPickerCard({
             {display.name}
           </button>
           <div className="flex shrink-0 items-center gap-1">
-            {onTalk ? (
+            {showSwitch ? (
               <button
                 type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onTalk(npc);
-                }}
-                className="border border-emerald-400/30 px-1.5 py-0.5 text-[11px] text-emerald-100 hover:border-emerald-400/50"
+                onClick={() => onSelect?.(npc)}
+                className="border border-cyan-400/25 px-1.5 py-0.5 text-[11px] text-cyan-100 hover:border-cyan-400/45"
               >
-                交谈
+                切换
               </button>
             ) : null}
             {presence ? (
@@ -132,13 +127,13 @@ function NpcPickerCard({
           </div>
         </div>
       </button>
-      {onTalk ? (
+      {showSwitch ? (
         <button
           type="button"
-          onClick={() => onTalk(npc)}
-          className="mt-2 w-full border border-emerald-400/30 px-2 py-1 text-xs text-emerald-100 hover:border-emerald-400/50 hover:bg-emerald-950/20"
+          onClick={() => onSelect?.(npc)}
+          className="mt-2 w-full border border-cyan-400/25 px-2 py-1 text-xs text-cyan-100 hover:border-cyan-400/45 hover:bg-cyan-950/20"
         >
-          交谈
+          切换
         </button>
       ) : null}
     </li>
@@ -184,7 +179,6 @@ export function SandtableNpcList({
   selectedNpcId,
   excludeNpcId,
   onSelectNpc,
-  onTalk,
   variant = "default",
 }: SandtableNpcListProps) {
   const visibleNpcs = npcs.filter((npc) => npc.npcId !== excludeNpcId);
@@ -225,7 +219,6 @@ export function SandtableNpcList({
                 variant={variant}
                 selected={selectedNpcId === npc.npcId}
                 onSelect={onSelectNpc}
-                onTalk={onTalk}
               />
             ))}
           </ul>

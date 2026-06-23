@@ -101,7 +101,7 @@ export function LocationNpcMainCard({ npc, onTalk, talkEnabled = true }: Locatio
               : "cursor-not-allowed border-slate-700/40 text-slate-600",
           )}
         >
-          交谈
+          剧情对话
         </button>
       ) : null}
     </article>

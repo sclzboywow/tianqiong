@@ -403,7 +403,6 @@ export function LocationSceneOverlay({
                 entries={visibleDialogueEntries}
                 pendingInteraction={pendingInteraction}
                 onInteract={(interaction) => void handleNpcInteract(interaction)}
-                onInkTalk={selectedNpc ? () => openInkDialogue(selectedNpc) : undefined}
               />
 
               {otherNpcCount > 0 ? (
@@ -418,7 +417,6 @@ export function LocationSceneOverlay({
                     excludeNpcId={selectedNpcId ?? undefined}
                     selectedNpcId={selectedNpcId ?? undefined}
                     onSelectNpc={(npc) => setSelectedNpcId(npc.npcId)}
-                    onTalk={openInkDialogue}
                     empty="暂无其他 NPC"
                   />
                 </div>

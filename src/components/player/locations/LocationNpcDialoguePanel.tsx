@@ -13,12 +13,13 @@ import {
 import type { SandtableNpcRef } from "@/game/sandtableNpcResolver";
 import { getNpcProfileById } from "@/data/npcProfiles";
 
+const QUICK_ACTION_ORDER = NPC_INTERACTION_ORDER.filter((type) => type !== "talk");
+
 type LocationNpcDialoguePanelProps = {
   selectedNpc?: SandtableNpcRef;
   entries: DialogueEntry[];
   pendingInteraction?: NpcInteractionType | null;
   onInteract: (interaction: NpcInteractionType) => void;
-  onInkTalk?: () => void;
   className?: string;
 };
 
@@ -34,7 +35,6 @@ export function LocationNpcDialoguePanel({
   entries,
   pendingInteraction,
   onInteract,
-  onInkTalk,
   className,
 }: LocationNpcDialoguePanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -58,13 +58,13 @@ export function LocationNpcDialoguePanel({
       <header className="shrink-0 border-b border-cyan-400/10 px-3 py-2">
         <div className="flex items-center gap-2 text-sm font-medium text-cyan-100">
           <MessageSquare className="size-3.5 text-cyan-400" />
-          对话
+          互动记录
           {npcName ? <span className="font-normal text-slate-400">· {npcName}</span> : null}
         </div>
         {!selectedNpc ? (
           <p className="mt-1 text-xs text-slate-500">请从下方选择 NPC 开始互动</p>
         ) : (
-          <p className="mt-1 text-xs text-slate-500">点击下方动作发起互动，回复会即时显示在这里</p>
+          <p className="mt-1 text-xs text-slate-500">请示、协调、催办等操作会记录在这里</p>
         )}
       </header>
 
@@ -75,8 +75,8 @@ export function LocationNpcDialoguePanel({
         {entries.length === 0 ? (
           <p className="text-[13px] leading-5 text-slate-500">
             {selectedNpc
-              ? "当前尚无对话记录。你可以先交谈了解情况，或发起请示、协调、催办。"
-              : "选择 NPC 后，可使用底部动作开始对话。"}
+              ? "当前尚无互动记录。你可以发起请示、协调、催办或提交材料。"
+              : "选择 NPC 后，可发起请示、协调等快捷操作。"}
           </p>
         ) : (
           entries.map((entry) => (
@@ -103,23 +103,21 @@ export function LocationNpcDialoguePanel({
       {selectedNpc ? (
         <footer className="shrink-0 border-t border-cyan-400/10 bg-slate-950/70 p-2">
           <div className="flex flex-wrap gap-1">
-            {NPC_INTERACTION_ORDER.map((type) => {
+            {QUICK_ACTION_ORDER.map((type) => {
               const enabled = available.includes(type);
               const isPending = pendingInteraction === type;
-              const isInkTalk = type === "talk" && onInkTalk;
               return (
                 <button
                   key={type}
                   type="button"
                   disabled={!enabled || Boolean(pendingInteraction)}
-                  onClick={() => (isInkTalk ? onInkTalk() : onInteract(type))}
+                  onClick={() => onInteract(type)}
                   className={cn(
                     "border px-2 py-1 text-xs transition",
                     enabled
                       ? "border-cyan-400/25 text-cyan-100 hover:border-cyan-400/50 hover:bg-cyan-950/30"
                       : "cursor-not-allowed border-slate-700/40 text-slate-600",
                     isPending && "opacity-60",
-                    isInkTalk && enabled && "border-emerald-400/30 text-emerald-100",
                   )}
                 >
                   {NPC_INTERACTION_LABELS[type]}
