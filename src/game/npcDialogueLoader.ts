@@ -1,5 +1,4 @@
 import { getNpcProfileById } from "@/data/npcProfiles";
-import { NPC_DIALOGUE_STATIC_CATALOG } from "@/data/npcDialogueCatalog";
 import { getStoryEntries } from "@/game/storyEntryLoader";
 import type { StoryEntryStatus } from "@/game/types";
 
@@ -7,7 +6,6 @@ export type NpcDialogueEntryRef = {
   slug: string;
   title: string;
   inkFile: string;
-  source: "payload" | "static";
 };
 
 function collectNpcNameAliases(npcId: string, npcName: string): Set<string> {
@@ -25,13 +23,7 @@ function collectNpcNameAliases(npcId: string, npcName: string): Set<string> {
   return names;
 }
 
-function entryMatchesNpc(
-  relatedNpcNames: string[],
-  npcIds: string[] | undefined,
-  npcId: string,
-  aliases: Set<string>,
-): boolean {
-  if (npcIds?.includes(npcId)) return true;
+function entryMatchesNpc(relatedNpcNames: string[], aliases: Set<string>): boolean {
   return relatedNpcNames.some((name) => aliases.has(name.trim()));
 }
 
@@ -66,34 +58,18 @@ export async function resolveNpcDialogueEntry(params: {
       isNpcDialogueStatusAllowed(entry.status) &&
       entry.inkFile.trim().length > 0 &&
       relatedNpcNames.length > 0 &&
-      entryMatchesNpc(relatedNpcNames, undefined, params.npcId, aliases) &&
+      entryMatchesNpc(relatedNpcNames, aliases) &&
       entryMatchesLocation(entry.relatedLocationSlugs, params.locationId)
     );
   });
 
-  if (payloadMatch) {
-    return {
-      slug: payloadMatch.slug,
-      title: payloadMatch.title,
-      inkFile: payloadMatch.inkFile,
-      source: "payload",
-    };
-  }
+  if (!payloadMatch) return null;
 
-  const staticMatch = NPC_DIALOGUE_STATIC_CATALOG.find((entry) =>
-    entryMatchesNpc(entry.npcNames, entry.npcIds, params.npcId, aliases),
-  );
-
-  if (staticMatch) {
-    return {
-      slug: staticMatch.slug,
-      title: staticMatch.title,
-      inkFile: staticMatch.inkFile,
-      source: "static",
-    };
-  }
-
-  return null;
+  return {
+    slug: payloadMatch.slug,
+    title: payloadMatch.title,
+    inkFile: payloadMatch.inkFile,
+  };
 }
 
 export const NPC_DIALOGUE_EMPTY_MESSAGE =
