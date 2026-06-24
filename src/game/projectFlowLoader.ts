@@ -46,6 +46,13 @@ export type ProjectFlowTask = TaskTemplateData & {
     title: string;
     description?: string;
     inkFile: string;
+    storyType?: string;
+    status?: string;
+    relatedTaskSlugs?: string[];
+    relatedEventSlugs?: string[];
+    relatedNpcNames?: string[];
+    tags?: string[];
+    estimatedMinutes?: number;
     payloadDocId?: string | number;
   }[];
   events: ProjectFlowEventCard[];
@@ -77,6 +84,21 @@ export type ProjectFlowData = {
     }[];
     milestones: { key: string; label: string }[];
     tasks: { slug: string; title: string; prerequisiteTaskSlugs: string[]; stage: string; category: string; enabled: boolean }[];
+    storyEntries: {
+      slug: string;
+      title: string;
+      description?: string;
+      inkFile: string;
+      storyType: string;
+      status: string;
+      relatedTaskSlugs: string[];
+      relatedEventSlugs: string[];
+      relatedNpcNames: string[];
+      tags: string[];
+      estimatedMinutes?: number;
+      enabled: boolean;
+    }[];
+    events: { slug: string; title: string }[];
   };
   summary: {
     tasks: number;
@@ -298,6 +320,13 @@ export async function loadProjectFlowData(options?: {
             title: story.title,
             description: story.description,
             inkFile: story.inkFile,
+            storyType: story.storyType,
+            status: story.status,
+            relatedTaskSlugs: story.relatedTaskSlugs || [],
+            relatedEventSlugs: story.relatedEventSlugs || [],
+            relatedNpcNames: story.relatedNpcNames || [],
+            tags: story.tags || [],
+            estimatedMinutes: story.estimatedMinutes,
             payloadDocId: studio.storyEntryDocIds[story.slug],
           })),
           events,
@@ -364,6 +393,24 @@ export async function loadProjectFlowData(options?: {
         stage: task.stage || "",
         category: task.category || "mainline",
         enabled: task.enabled !== false,
+      })),
+      storyEntries: studio.storyEntries.map((story) => ({
+        slug: story.slug,
+        title: story.title,
+        description: story.description,
+        inkFile: story.inkFile,
+        storyType: story.storyType,
+        status: story.status,
+        relatedTaskSlugs: story.relatedTaskSlugs || [],
+        relatedEventSlugs: story.relatedEventSlugs || [],
+        relatedNpcNames: story.relatedNpcNames || [],
+        tags: story.tags || [],
+        estimatedMinutes: story.estimatedMinutes,
+        enabled: story.enabled !== false,
+      })),
+      events: studio.eventTemplates.map((event) => ({
+        slug: event.slug,
+        title: event.title,
       })),
     },
     summary: {

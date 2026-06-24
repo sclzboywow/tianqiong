@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 } from "@/game/contentDisplayLabels";
 import { ArtifactStatusSelect } from "@/components/ops/OpsDisplayHelpers";
 import { ProjectFlowNodeLifecyclePanel } from "@/components/ops/ProjectFlowNodeLifecyclePanel";
+import { ProjectFlowStoryWorkbench } from "@/components/ops/ProjectFlowStoryWorkbench";
 import { cn } from "@/lib/utils";
 
 type EditorTab = "basic" | "flow" | "task" | "action" | "story" | "events";
@@ -77,16 +78,6 @@ function buildActionForm(node: ProjectFlowTask) {
   };
 }
 
-function buildStoryForm(node: ProjectFlowTask, slug: string) {
-  const primaryStory = node.stories[0];
-  return {
-    storySlug: primaryStory?.slug || `story_${slug}`,
-    title: primaryStory?.title || node.title,
-    description: primaryStory?.description || node.description || "",
-    inkFile: primaryStory?.inkFile || "",
-  };
-}
-
 function buildEventForms(node: ProjectFlowTask): EventFormState[] {
   return node.events.map((event) => ({
     slug: event.slug,
@@ -106,7 +97,7 @@ const TABS: { id: EditorTab; label: string }[] = [
   { id: "flow", label: "流程关系" },
   { id: "task", label: "任务与成果" },
   { id: "action", label: "办理入口" },
-  { id: "story", label: "任务剧情" },
+  { id: "story", label: "剧情调用" },
   { id: "events", label: "风险事件" },
 ];
 
@@ -115,13 +106,9 @@ const TAB_SAVE_LABELS: Record<EditorTab, string> = {
   flow: "保存流程关系",
   task: "保存任务与成果",
   action: "保存办理入口",
-  story: "保存任务剧情",
+  story: "保存剧情调用",
   events: "保存风险事件",
 };
-
-function FieldHint({ children }: { children: ReactNode }) {
-  return <p className="text-xs leading-5 text-zinc-500">{children}</p>;
-}
 
 function getSuccessorTasks(tasks: TaskOption[], currentSlug: string) {
   const dependents = tasks.filter(
@@ -402,7 +389,6 @@ export function ProjectFlowNodeEditor({
 
   const [taskForm, setTaskForm] = useState(() => buildTaskForm(initialNode, slug));
   const [actionForm, setActionForm] = useState(() => buildActionForm(initialNode));
-  const [storyForm, setStoryForm] = useState(() => buildStoryForm(initialNode, slug));
   const [eventForms, setEventForms] = useState<EventFormState[]>(() =>
     buildEventForms(initialNode),
   );
@@ -411,7 +397,6 @@ export function ProjectFlowNodeEditor({
     setNode(nextNode);
     setTaskForm(buildTaskForm(nextNode, slug));
     setActionForm(buildActionForm(nextNode));
-    setStoryForm(buildStoryForm(nextNode, slug));
     setEventForms(buildEventForms(nextNode));
   }
 
@@ -431,6 +416,11 @@ export function ProjectFlowNodeEditor({
   const taskTitleMap = useMemo(
     () => new Map(options.tasks.map((task) => [task.slug, task.title])),
     [options.tasks],
+  );
+
+  const eventTitles = useMemo(
+    () => new Map(options.events.map((event) => [event.slug, event.title])),
+    [options.events],
   );
 
   const stageNameById = useMemo(
@@ -1169,150 +1159,37 @@ export function ProjectFlowNodeEditor({
       ) : null}
 
       {tab === "story" ? (
-        <section className="space-y-5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-5">
-          <div className="rounded-lg border border-sky-900/50 bg-sky-950/15 p-4">
-            <h3 className="text-sm font-medium text-sky-200">任务剧情说明</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-300">
-              这里用于配置当前流程任务在游戏中的剧情表达。
-              任务本身负责流程推进，任务剧情负责告诉玩家：为什么要做这件事、谁提出了要求、完成后对项目推进有什么意义。
-            </p>
-            <ul className="mt-3 space-y-1 text-xs leading-5 text-zinc-500">
-              <li>· 「剧情标题」和「剧情说明」主要给玩家或内容配置人员查看。</li>
-              <li>· 「剧情入口标识」和「互动剧情脚本名」属于高级关联字段，一般不需要修改。</li>
-              <li>· 普通资料类任务可以共用通用 Ink 脚本；重要主线任务可以单独配置专属 Ink 脚本。</li>
-            </ul>
-          </div>
-
-          {node.stories.length > 1 ? (
-            <label className="block space-y-2">
-              <Label>选择剧情片段</Label>
-              <select
-                className="w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-sm"
-                value={storyForm.storySlug}
-                onChange={(event) => {
-                  const picked = node.stories.find(
-                    (item) => item.slug === event.target.value,
-                  );
-                  if (!picked) return;
-                  setStoryForm({
-                    storySlug: picked.slug,
-                    title: picked.title,
-                    description: picked.description || "",
-                    inkFile: picked.inkFile,
-                  });
-                }}
-              >
-                {node.stories.map((item) => (
-                  <option key={item.slug} value={item.slug}>
-                    {item.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-          <label className="block space-y-2">
-            <Label>剧情标题</Label>
-            <FieldHint>
-              显示给玩家看的剧情入口标题。通常可以和任务名称一致，也可以写得更有场景感。
-            </FieldHint>
-            <Input
-              placeholder="例如：总控计划的第一版"
-              value={storyForm.title}
-              onChange={(event) =>
-                setStoryForm((prev) => ({ ...prev, title: event.target.value }))
-              }
-            />
-          </label>
-          <label className="block space-y-2">
-            <Label>剧情说明</Label>
-            <FieldHint>
-              用于说明当前任务的剧情背景和办理意义。建议写清楚「为什么要做、做完有什么作用」。
-            </FieldHint>
-            <textarea
-              className="min-h-20 w-full rounded-md border border-zinc-700 bg-zinc-950 p-3 text-sm"
-              placeholder="例如：项目启动后，需要先建立总控计划，把建设节点、资料台账和风险台账统一纳入管理，为后续推进提供依据。"
-              value={storyForm.description}
-              onChange={(event) =>
-                setStoryForm((prev) => ({
-                  ...prev,
-                  description: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <details className="rounded-lg border border-zinc-800 p-4">
-            <summary className="cursor-pointer text-sm text-zinc-400">
-              高级关联字段
-            </summary>
-            <p className="mt-3 text-xs leading-5 text-zinc-500">
-              以下字段用于系统关联剧情脚本，一般不需要手动修改。只有在需要更换剧情入口或绑定新的
-              Ink 脚本时才调整。
-            </p>
-            <div className="mt-4 space-y-4">
-              <label className="block space-y-2">
-                <Label>剧情入口标识（storySlug）</Label>
-                <FieldHint>
-                  系统内部使用的剧情入口编号，用于把任务、事件和剧情片段关联起来。一般不要修改；如果修改，必须确保没有其它任务或事件正在引用旧标识。
-                </FieldHint>
-                <Input
-                  className="font-mono text-sm"
-                  placeholder="story_prepare_master_control_plan"
-                  value={storyForm.storySlug}
-                  onChange={(event) =>
-                    setStoryForm((prev) => ({
-                      ...prev,
-                      storySlug: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="block space-y-2">
-                <Label>互动剧情脚本名（inkFile）</Label>
-                <FieldHint>
-                  对应 Ink 剧情脚本文件名，不需要填写 .ink 后缀。系统会根据该名称寻找对应的互动剧情脚本。普通资料类任务可以共用
-                  project_document_task；重要主线任务建议使用独立脚本名。
-                </FieldHint>
-                <Input
-                  className="font-mono text-sm"
-                  placeholder="project_document_task"
-                  value={storyForm.inkFile}
-                  onChange={(event) =>
-                    setStoryForm((prev) => ({
-                      ...prev,
-                      inkFile: event.target.value,
-                    }))
-                  }
-                />
-                <div className="rounded-md border border-zinc-800 bg-zinc-950/60 p-3 text-xs leading-5 text-zinc-500">
-                  <p className="font-medium text-zinc-400">使用提示</p>
-                  <p className="mt-1">
-                    <span className="text-zinc-400">普通资料类任务：</span>
-                    可使用通用脚本 project_document_task
-                  </p>
-                  <p className="mt-1">
-                    <span className="text-zinc-400">重要主线任务：</span>
-                    建议使用独立脚本名，例如 prepare_master_control_plan
-                  </p>
-                  <p className="mt-2">
-                    一个 Ink 脚本可以被多个任务共用；如果需要给某个关键任务写专属剧情，再配置独立互动剧情脚本名。
-                  </p>
-                </div>
-              </label>
-            </div>
-          </details>
-          <SaveBar
-            saving={saving}
-            error={error}
-            issues={issues}
-            saveLabel={TAB_SAVE_LABELS.story}
-            onSave={() =>
-              void patchJson(
-                `/api/ops/project-flow/nodes/${slug}/story`,
-                storyForm,
-              )
-            }
-          />
-        </section>
+        <ProjectFlowStoryWorkbench
+          key={`${node.stories[0]?.slug || slug}-${node.stories[0]?.inkFile || ""}`}
+          slug={slug}
+          taskTitle={node.title}
+          node={node}
+          storyEntries={options.storyEntries}
+          eventTitles={eventTitles}
+          saveLabel={TAB_SAVE_LABELS.story}
+          saving={saving}
+          error={error}
+          issues={issues}
+          onSave={({ mode, form, updateStoryEntryOnBind, cloneFromStorySlug }) => {
+            void patchJson(`/api/ops/project-flow/nodes/${slug}/story`, {
+              mode,
+              storySlug: form.storySlug,
+              title: form.title,
+              description: form.description,
+              inkFile: form.inkFile || undefined,
+              status: form.status,
+              estimatedMinutes: form.estimatedMinutes
+                ? Number(form.estimatedMinutes)
+                : undefined,
+              tags: form.tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter(Boolean),
+              updateStoryEntryOnBind,
+              cloneFromStorySlug,
+            });
+          }}
+        />
       ) : null}
 
       {tab === "events" ? (

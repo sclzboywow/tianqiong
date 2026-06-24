@@ -7,21 +7,107 @@ import {
   validateProjectFlowReferences,
   validationErrorResponse,
 } from "@/game/projectFlowNodeMutations";
-import { resolveMainlineNode } from "@/game/projectFlowNodeResolver";
+import { resolveMainlineNode, type ResolveMainlineNodeSuccess } from "@/game/projectFlowNodeResolver";
+import { loadOpsStudioSnapshot } from "@/game/opsStudioLoader";
 import { requireOpsAccess } from "@/lib/opsDebugAccess";
+import type { StoryEntryData } from "@/game/types";
 
 const schema = z.object({
+  mode: z.enum(["bind", "update", "clone"]).optional().default("update"),
   storySlug: z.string().trim().optional(),
-  title: z.string().trim().min(2, "请填写剧情标题"),
-  description: z.string().trim(),
+  title: z.string().trim().min(2, "请填写剧情标题").optional(),
+  description: z.string().trim().optional(),
   inkFile: z
     .string()
     .trim()
     .regex(/^[a-z0-9_]+$/, "Ink 文件名只能包含小写字母、数字和下划线")
     .optional(),
+  status: z.enum(["draft", "published"]).optional(),
+  estimatedMinutes: z.number().int().min(0).optional(),
+  tags: z.array(z.string().trim()).optional(),
+  relatedNpcNames: z.array(z.string().trim()).optional(),
+  updateStoryEntryOnBind: z.boolean().optional().default(false),
+  cloneFromStorySlug: z.string().trim().optional(),
 });
 
 type RouteParams = { params: Promise<{ slug: string }> };
+
+function toSlugPayload(slugs: string[]) {
+  return slugs.map((slug) => ({ slug }));
+}
+
+function toNamePayload(names: string[]) {
+  return names.map((name) => ({ name }));
+}
+
+function toTagPayload(tags: string[]) {
+  return tags.map((tag) => ({ tag }));
+}
+
+function buildStoryRelations(
+  detail: ResolveMainlineNodeSuccess["detail"],
+  studio: ResolveMainlineNodeSuccess["studio"],
+  slug: string,
+  npcNames: string[],
+) {
+  const primaryAction = detail.node.actionSlugs[0];
+  const locationSlug = primaryAction
+    ? studio.locationActions.find((action) => action.id === primaryAction.slug)
+        ?.locationId
+    : undefined;
+  const eventSlugs = detail.node.events
+    .filter((event) => event.enabled !== false)
+    .map((event) => event.slug);
+
+  return {
+    locationSlug,
+    eventSlugs,
+    npcNames: npcNames.length ? npcNames : detail.node.npcNames,
+    stage: detail.node.stage || detail.stageId,
+  };
+}
+
+function storyPayloadFromSource(
+  source: StoryEntryData,
+  storySlug: string,
+  relations: ReturnType<typeof buildStoryRelations>,
+  slug: string,
+  overrides: {
+    title?: string;
+    description?: string;
+    inkFile?: string;
+    status?: StoryEntryData["status"];
+    estimatedMinutes?: number;
+    tags?: string[];
+    relatedNpcNames?: string[];
+  },
+) {
+  return {
+    slug: storySlug,
+    title: overrides.title ?? source.title,
+    description: overrides.description ?? source.description ?? "",
+    storyType: source.storyType || "task_story",
+    status: overrides.status ?? source.status ?? "draft",
+    inkFile: overrides.inkFile ?? source.inkFile,
+    stage: relations.stage,
+    relatedLocationSlugs: relations.locationSlug
+      ? [{ slug: relations.locationSlug }]
+      : (source.relatedLocationSlugs || []).map((item) => ({ slug: item })),
+    relatedTaskSlugs: [{ slug }],
+    relatedEventSlugs: relations.eventSlugs.map((eventSlug) => ({ slug: eventSlug })),
+    relatedNpcNames: toNamePayload(
+      overrides.relatedNpcNames ?? relations.npcNames,
+    ),
+    tags: toTagPayload(overrides.tags ?? source.tags ?? []),
+    estimatedMinutes: overrides.estimatedMinutes ?? source.estimatedMinutes,
+    previewText: overrides.description ?? source.description ?? detailPreview(source),
+    enabled: source.enabled !== false,
+  };
+}
+
+function detailPreview(source: StoryEntryData) {
+  return source.previewText || source.description || "";
+}
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   const access = await requireOpsAccess();
@@ -45,70 +131,161 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
   const { studio, detail } = resolved;
+  const opsStudio = await loadOpsStudioSnapshot();
 
   const primaryStory = detail.node.stories[0];
-  const storySlug = input.storySlug || primaryStory?.slug || `story_${slug}`;
-  const existingStory = studio.storyEntries.find((story) => story.slug === storySlug);
-  const primaryAction = detail.node.actionSlugs[0];
-  const locationSlug = primaryAction
-    ? studio.locationActions.find((action) => action.id === primaryAction.slug)?.locationId
-    : undefined;
-  const eventSlugs = detail.node.events
-    .filter((event) => event.enabled !== false)
-    .map((event) => event.slug);
+  const mode = input.mode;
+  const storySlug =
+    input.storySlug || primaryStory?.slug || `story_${slug}`;
+  const relations = buildStoryRelations(detail, studio, slug, input.relatedNpcNames || []);
 
   const issues = validateProjectFlowReferences(studio, {
     slug,
-    stage: detail.node.stage || detail.stageId,
-    locationSlug: locationSlug || undefined,
-    npcNames: detail.node.npcNames,
+    stage: relations.stage,
+    locationSlug: relations.locationSlug,
+    npcNames: relations.npcNames,
     inputArtifacts: [],
     outputArtifacts: [],
     milestoneKeys: [],
     storySlug,
+    storyBindingMode: mode,
   });
   if (issues.length) {
     return NextResponse.json(validationErrorResponse(issues), { status: 400 });
   }
 
-  const inkFile = input.inkFile || existingStory?.inkFile || primaryStory?.inkFile || slug;
   const ctx = await getOpsPayloadContext();
-  try {
-    const storyResult = await upsertPayloadDoc(
-      ctx.payload,
-      ctx.req,
-      "story-entries",
-      storySlug,
-      {
-        slug: storySlug,
-        title: input.title,
-        description: input.description,
-        storyType: existingStory?.storyType || "task_story",
-        status: existingStory?.status || "draft",
-        inkFile,
-        stage: detail.node.stage || detail.stageId,
-        relatedLocationSlugs: locationSlug ? [{ slug: locationSlug }] : [],
-        relatedTaskSlugs: [{ slug }],
-        relatedEventSlugs: eventSlugs.map((eventSlug) => ({ slug: eventSlug })),
-        relatedNpcNames: detail.node.npcNames.map((name) => ({ name })),
-        previewText: input.description || detail.node.description,
-        enabled: true,
-      },
-    );
 
-    await upsertPayloadDoc(ctx.payload, ctx.req, "task-templates", slug, {
-      storySlug,
-      inkFile,
-    });
+  try {
+    if (mode === "bind") {
+      const targetStory = opsStudio.storyEntries.find((story) => story.slug === storySlug);
+      if (!targetStory) {
+        return NextResponse.json({ error: "剧情入口不存在" }, { status: 400 });
+      }
+
+      const relatedTaskSlugs = [
+        ...new Set([...(targetStory.relatedTaskSlugs || []), slug]),
+      ];
+
+      if (input.updateStoryEntryOnBind) {
+        if (!input.title?.trim()) {
+          return NextResponse.json({ error: "绑定并更新时需要填写剧情标题" }, { status: 400 });
+        }
+        await upsertPayloadDoc(ctx.payload, ctx.req, "story-entries", storySlug, {
+          ...storyPayloadFromSource(targetStory, storySlug, relations, slug, {
+            title: input.title,
+            description: input.description,
+            inkFile: input.inkFile,
+            status: input.status,
+            estimatedMinutes: input.estimatedMinutes,
+            tags: input.tags,
+            relatedNpcNames: input.relatedNpcNames,
+          }),
+          relatedTaskSlugs: toSlugPayload(relatedTaskSlugs),
+        });
+      } else {
+        await upsertPayloadDoc(ctx.payload, ctx.req, "story-entries", storySlug, {
+          relatedTaskSlugs: toSlugPayload(relatedTaskSlugs),
+        });
+      }
+
+      await upsertPayloadDoc(ctx.payload, ctx.req, "task-templates", slug, {
+        storySlug,
+        inkFile: input.inkFile || targetStory.inkFile,
+      });
+    } else if (mode === "clone") {
+      const sourceSlug =
+        input.cloneFromStorySlug || primaryStory?.slug || storySlug;
+      const source =
+        opsStudio.storyEntries.find((story) => story.slug === sourceSlug) ||
+        opsStudio.storyEntries.find((story) => story.slug === storySlug);
+      if (!source) {
+        return NextResponse.json({ error: "找不到要复制的剧情入口" }, { status: 400 });
+      }
+      if (!input.title?.trim()) {
+        return NextResponse.json({ error: "请填写剧情标题" }, { status: 400 });
+      }
+      const newSlug = storySlug;
+      if (
+        opsStudio.storyEntries.some(
+          (story) => story.slug === newSlug && story.slug !== source.slug,
+        )
+      ) {
+        return NextResponse.json(
+          { error: `剧情入口 ${newSlug} 已存在，请修改剧情入口标识` },
+          { status: 400 },
+        );
+      }
+
+      const inkFile = input.inkFile || source.inkFile;
+      await upsertPayloadDoc(
+        ctx.payload,
+        ctx.req,
+        "story-entries",
+        newSlug,
+        storyPayloadFromSource(source, newSlug, relations, slug, {
+          title: input.title,
+          description: input.description,
+          inkFile,
+          status: input.status,
+          estimatedMinutes: input.estimatedMinutes,
+          tags: input.tags,
+          relatedNpcNames: input.relatedNpcNames,
+        }),
+      );
+
+      await upsertPayloadDoc(ctx.payload, ctx.req, "task-templates", slug, {
+        storySlug: newSlug,
+        inkFile,
+      });
+    } else {
+      const existingStory = opsStudio.storyEntries.find((story) => story.slug === storySlug);
+      if (!input.title?.trim()) {
+        return NextResponse.json({ error: "请填写剧情标题" }, { status: 400 });
+      }
+      const inkFile =
+        input.inkFile || existingStory?.inkFile || primaryStory?.inkFile || slug;
+
+      await upsertPayloadDoc(
+        ctx.payload,
+        ctx.req,
+        "story-entries",
+        storySlug,
+        {
+          slug: storySlug,
+          title: input.title,
+          description: input.description ?? "",
+          storyType: existingStory?.storyType || "task_story",
+          status: input.status || existingStory?.status || "draft",
+          inkFile,
+          stage: relations.stage,
+          relatedLocationSlugs: relations.locationSlug
+            ? [{ slug: relations.locationSlug }]
+            : [],
+          relatedTaskSlugs: toSlugPayload([slug]),
+          relatedEventSlugs: relations.eventSlugs.map((eventSlug) => ({ slug: eventSlug })),
+          relatedNpcNames: toNamePayload(relations.npcNames),
+          tags: toTagPayload(input.tags || existingStory?.tags || []),
+          estimatedMinutes: input.estimatedMinutes ?? existingStory?.estimatedMinutes,
+          previewText: input.description || detail.node.description,
+          enabled: true,
+        },
+      );
+
+      await upsertPayloadDoc(ctx.payload, ctx.req, "task-templates", slug, {
+        storySlug,
+        inkFile,
+      });
+    }
 
     if (ctx.transactionStarted) await ctx.commitTransaction(ctx.req);
     refreshProjectFlowCaches(slug);
-    return NextResponse.json({ ok: true, story: storyResult, inkFile });
+    return NextResponse.json({ ok: true, storySlug, mode });
   } catch (error) {
     if (ctx.transactionStarted) await ctx.killTransaction(ctx.req);
     console.error(error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "保存剧情片段失败" },
+      { error: error instanceof Error ? error.message : "保存剧情调用失败" },
       { status: 500 },
     );
   }

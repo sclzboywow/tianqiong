@@ -27,6 +27,7 @@ export function validateProjectFlowReferences(
     milestoneKeys: string[];
     prerequisiteTaskSlugs?: string[];
     storySlug?: string;
+    storyBindingMode?: "bind" | "update" | "clone";
     actionSlug?: string;
     eventSlug?: string;
     allowExistingNonMainline?: boolean;
@@ -134,12 +135,13 @@ export function validateProjectFlowReferences(
     issues.push(`任务标识 ${input.slug} 已被非主线任务使用，不能通过流程编排覆盖`);
   }
 
-  if (input.storySlug) {
+  if (input.storySlug && input.storyBindingMode !== "bind") {
     const existingStory = studio.storyEntries.find((story) => story.slug === input.storySlug);
     if (
       existingStory &&
       !(existingStory.relatedTaskSlugs || []).includes(input.slug) &&
-      existingStory.slug !== existingTask?.storySlug
+      existingStory.slug !== existingTask?.storySlug &&
+      input.storyBindingMode !== "clone"
     ) {
       issues.push(`剧情标识 ${input.storySlug} 已关联其他任务，请使用新的剧情标识`);
     }
