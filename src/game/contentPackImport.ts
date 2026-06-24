@@ -558,6 +558,9 @@ export async function validateContentPack(raw: unknown): Promise<ContentPackRepo
     if (!slug) errors.push("任务模板缺少 slug");
     if (!String(item.title || "").trim()) errors.push(`任务 ${slug || "?"} 缺少 title`);
     if (!String(item.area || "").trim()) errors.push(`任务 ${slug || "?"} 缺少 area`);
+    else if (!areaNames.has(String(item.area).trim())) {
+      errors.push(`任务 ${slug} 的区域不存在：${String(item.area).trim()}（需匹配沙盘区域 name）`);
+    }
     if (!String(item.inkFile || "").trim()) errors.push(`任务 ${slug || "?"} 缺少 inkFile`);
 
     for (const npc of toNpcList(item.npcList)) {

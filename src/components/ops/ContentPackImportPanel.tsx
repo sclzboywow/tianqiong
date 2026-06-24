@@ -209,6 +209,10 @@ function FieldGuide() {
             <span className="text-zinc-300">stage</span>：项目阶段（如 INITIATION、APPROVAL）。
           </p>
           <p>
+            <span className="text-zinc-300">area</span>：任务所属沙盘区域名称，须与 areas /
+            Payload 沙盘区域 <code className="text-sky-300/90">name</code> 一致（如「项目管理部」）。
+          </p>
+          <p>
             <span className="text-zinc-300">npcList</span>：可写{" "}
             <code className="text-sky-300/90">[&quot;项目分管领导&quot;]</code> 或{" "}
             <code className="text-sky-300/90">[{`{ "npc": "项目分管领导" }`}]</code>
