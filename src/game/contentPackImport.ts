@@ -11,6 +11,17 @@ import { clearArtifactDefinitionCache } from "./artifactLoader";
 import { clearStoryEntryCache } from "./storyEntryLoader";
 import { bustContentOrchestrationCache } from "@/lib/contentOrchestrationCache";
 import { bustOpsDataCache } from "@/lib/opsDataCache";
+import {
+  AREA_CATEGORIES,
+  EVENT_CATEGORIES,
+  inferAreaCategory,
+  inferMapLocationCategory,
+  inferNpcCategory,
+  inferTaskCategory,
+  MAP_LOCATION_CATEGORIES,
+  NPC_CATEGORIES,
+  type CategoryOption,
+} from "@/payload/contentCategories";
 import type { Payload, PayloadRequest } from "payload";
 
 export type ContentPackCollectionSummary = { created: number; updated: number };
@@ -499,12 +510,17 @@ export async function validateContentPack(raw: unknown): Promise<ContentPackRepo
   for (const item of pack.areas) {
     if (!readSlug(item)) errors.push("沙盘区域缺少 slug");
     if (!String(item.name || "").trim()) errors.push(`沙盘区域 ${readSlug(item) || "?"} 缺少 name`);
+    const areaSlug = readSlug(item);
+    const categoryError = categoryValidationError("沙盘区域", areaSlug || "?", item.category, AREA_CATEGORIES);
+    if (categoryError) errors.push(categoryError);
   }
 
   for (const item of pack.mapLocations) {
     const slug = readSlug(item);
     if (!slug) errors.push("地图地点缺少 slug");
     if (!String(item.name || "").trim()) errors.push(`地图地点 ${slug || "?"} 缺少 name`);
+    const categoryError = categoryValidationError("地图地点", slug || "?", item.category, MAP_LOCATION_CATEGORIES);
+    if (categoryError) errors.push(categoryError);
     for (const areaName of toNameArray(item.relatedAreaNames)) {
       if (!areaNames.has(areaName)) {
         errors.push(`地图地点 ${slug} 关联区域不存在：${areaName}`);
@@ -515,6 +531,9 @@ export async function validateContentPack(raw: unknown): Promise<ContentPackRepo
   for (const item of pack.npcs) {
     if (!String(item.name || "").trim()) errors.push("NPC 缺少 name");
     if (!String(item.type || "").trim()) errors.push(`NPC ${String(item.name || "?")} 缺少 type`);
+    const npcSlug = readSlug(item) || String(item.name || "").trim();
+    const categoryError = categoryValidationError("NPC", npcSlug, item.category, NPC_CATEGORIES);
+    if (categoryError) errors.push(categoryError);
   }
 
   for (const item of pack.storyEntries) {
@@ -562,6 +581,8 @@ export async function validateContentPack(raw: unknown): Promise<ContentPackRepo
     if (storySlug && !storySlugs.has(storySlug)) {
       errors.push(`任务 ${slug} 剧情入口不存在：${storySlug}`);
     }
+    const categoryError = categoryValidationError("任务", slug || "?", item.category, EVENT_CATEGORIES);
+    if (categoryError) errors.push(categoryError);
   }
 
   errors.push(
@@ -594,6 +615,8 @@ export async function validateContentPack(raw: unknown): Promise<ContentPackRepo
     if (storySlug && !storySlugs.has(storySlug)) {
       errors.push(`事件 ${slug} 剧情入口不存在：${storySlug}`);
     }
+    const categoryError = categoryValidationError("事件", slug || "?", item.category, EVENT_CATEGORIES);
+    if (categoryError) errors.push(categoryError);
   }
 
   for (const item of pack.locationActions) {
@@ -677,6 +700,29 @@ async function upsertNpc(
   return "created";
 }
 
+function resolveCategory(
+  value: unknown,
+  options: CategoryOption[],
+  fallback: string,
+): string {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (raw && options.some((option) => option.value === raw)) return raw;
+  return fallback;
+}
+
+function categoryValidationError(
+  label: string,
+  slug: string,
+  value: unknown,
+  options: CategoryOption[],
+): string | null {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return null;
+  if (options.some((option) => option.value === raw)) return null;
+  const allowed = options.map((option) => option.value).join("、");
+  return `${label} ${slug} 的内容分类无效：${raw}（允许值：${allowed}）`;
+}
+
 function toPayloadArtifact(item: Record<string, unknown>) {
   return {
     slug: readSlug(item),
@@ -697,15 +743,20 @@ function toPayloadArtifact(item: Record<string, unknown>) {
 }
 
 function toPayloadArea(item: Record<string, unknown>) {
+  const name = String(item.name || "").trim();
   return {
     slug: readSlug(item),
-    name: String(item.name || "").trim(),
+    name,
     shortName: item.shortName,
-    sandtableRegionId: item.sandtableRegionId || "owner_side",
-    sandtableZoneId: item.sandtableZoneId || "management",
+    sandtableRegionId: item.sandtableRegionId || "owner_hub",
+    sandtableZoneId: item.sandtableZoneId || "owner_control",
     description: item.description || "",
     stage: item.stage,
-    category: item.category || "management",
+    category: resolveCategory(
+      item.category,
+      AREA_CATEGORIES,
+      inferAreaCategory(name, String(item.stage || "")),
+    ),
     riskTags: toTagArray(item.riskTags).map((tag) => ({ tag })),
     unlockStage: item.unlockStage || "INITIATION",
     unlockMilestones: toMilestoneArray(item.unlockMilestones),
@@ -717,15 +768,20 @@ function toPayloadArea(item: Record<string, unknown>) {
 }
 
 function toPayloadMapLocation(item: Record<string, unknown>) {
+  const group = String(item.group || "建设主体");
   return {
     slug: readSlug(item),
     name: String(item.name || "").trim(),
-    sandtableRegionId: item.sandtableRegionId || "owner_side",
-    sandtableZoneId: item.sandtableZoneId || "management",
+    sandtableRegionId: item.sandtableRegionId || "owner_hub",
+    sandtableZoneId: item.sandtableZoneId || "owner_control",
     type: item.type || "owner_office",
-    group: item.group || "建设主体",
+    group,
     description: item.description || String(item.name || "").trim(),
-    category: item.category || "management",
+    category: resolveCategory(
+      item.category,
+      MAP_LOCATION_CATEGORIES,
+      inferMapLocationCategory(group),
+    ),
     unlockStage: item.unlockStage || "INITIATION",
     unlockMilestones: toMilestoneArray(item.unlockMilestones),
     relatedTaskSlugs: toSlugArray(item.relatedTaskSlugs).map((slug) => ({ slug })),
@@ -739,6 +795,7 @@ function toPayloadMapLocation(item: Record<string, unknown>) {
 }
 
 function toPayloadNpc(item: Record<string, unknown>) {
+  const type = String(item.type || "consultant");
   return {
     slug: readSlug(item) || undefined,
     excelId: item.excelId,
@@ -749,7 +806,7 @@ function toPayloadNpc(item: Record<string, unknown>) {
     sandtableRegionId: item.sandtableRegionId,
     level: item.level,
     faction: item.faction,
-    type: item.type || "consultant",
+    type,
     description: item.description || item.taskFunction || "",
     taskFunction: item.taskFunction || item.description,
     personality: item.personality,
@@ -760,7 +817,11 @@ function toPayloadNpc(item: Record<string, unknown>) {
     defaultRelation: item.defaultRelation ?? 50,
     quotes: toQuoteArray(item.quotes),
     relatedMetrics: toMetricArray(item.relatedMetrics),
-    category: item.category || "management",
+    category: resolveCategory(
+      item.category,
+      NPC_CATEGORIES,
+      inferNpcCategory(type, typeof item.category === "string" ? item.category : undefined),
+    ),
     unlockStage: item.unlockStage || "INITIATION",
     unlockMilestones: toMilestoneArray(item.unlockMilestones),
     relatedLocationSlugs: toSlugArray(item.relatedLocationSlugs).map((slug) => ({ slug })),
@@ -794,12 +855,26 @@ function toPayloadStoryEntry(item: Record<string, unknown>) {
 
 function toPayloadTaskTemplate(item: Record<string, unknown>, pack: ParsedContentPack) {
   const slug = readSlug(item);
+  const rarity = String(item.rarity || "R");
   return {
-    category: item.category || "mainline",
+    category: resolveCategory(
+      item.category,
+      EVENT_CATEGORIES,
+      inferTaskCategory({
+        slug,
+        category: typeof item.category === "string" ? item.category : undefined,
+        milestoneEffects:
+          item.milestoneEffects && typeof item.milestoneEffects === "object"
+            ? (item.milestoneEffects as Record<string, boolean>)
+            : undefined,
+        requiredCount: item.requiredCount as number | undefined,
+        rarity,
+      }),
+    ),
     slug,
     title: String(item.title || "").trim(),
     description: item.description,
-    rarity: item.rarity || "R",
+    rarity,
     stage: item.stage,
     sourceType: item.sourceType || "content_pack",
     sourceName: item.sourceName || pack.name,
@@ -831,9 +906,18 @@ function toPayloadTaskTemplate(item: Record<string, unknown>, pack: ParsedConten
 }
 
 function toPayloadEventTemplate(item: Record<string, unknown>) {
+  const slug = readSlug(item);
   return {
-    category: item.category || "risk",
-    slug: readSlug(item),
+    category: resolveCategory(
+      item.category,
+      EVENT_CATEGORIES,
+      inferTaskCategory({
+        slug,
+        category: typeof item.category === "string" ? item.category : undefined,
+        rarity: String(item.rarity || "R"),
+      }),
+    ),
+    slug,
     title: String(item.title || "").trim(),
     description: item.description,
     rarity: item.rarity || "R",
