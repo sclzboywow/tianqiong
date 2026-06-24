@@ -140,7 +140,8 @@ export const CONSTRUCTION_PROJECT_MAINLINE_TASKS: TaskTemplateData[] = [
     {
       area: "项目管理部",
       sourceName: "林知远",
-      description: "编制总控计划、资料台账与风险台账。",
+      description:
+        "项目启动后，需要先建立总控计划，把建设节点、资料台账和风险台账统一纳入管理，为后续推进提供依据。",
       inputArtifacts: [
         req("kickoff_meeting_minutes", "confirmed"),
         req("responsibility_matrix", "confirmed"),

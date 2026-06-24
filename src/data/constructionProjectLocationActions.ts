@@ -34,7 +34,8 @@ export const CONSTRUCTION_PROJECT_LOCATION_ACTIONS: LocationAction[] = [
     id: "action_prepare_master_control_plan",
     locationId: "owner_project_management_dept",
     label: "编制项目总控计划",
-    description: "编制总控计划、资料台账与风险台账。",
+    description:
+      "项目启动后，需要先建立总控计划，把建设节点、资料台账和风险台账统一纳入管理，为后续推进提供依据。",
     unlockStage: "INITIATION",
     unlockMilestones: ["projectOrgDone"],
     triggerTaskSlugs: ["prepare_master_control_plan"],

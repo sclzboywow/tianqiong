@@ -413,7 +413,7 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
           </p>
           <h1 className="mt-1 text-2xl font-semibold">项目流程编排</h1>
           <p className="mt-2 max-w-3xl text-sm text-zinc-400">
-            围绕项目阶段查看流程任务、办理地点、成果物依赖、补正事件和剧情包装。
+            围绕项目阶段查看流程任务、办理地点、成果物依赖、补正事件和任务剧情。
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
