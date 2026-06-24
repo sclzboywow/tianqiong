@@ -1,4 +1,5 @@
 import { loadContentStudioDataCached } from "./contentStudioLoader";
+import { loadOpsStudioSnapshot } from "./opsStudioLoader";
 import { resolveAllowedStatuses } from "@/data/artifactDefinitions";
 import { getArtifactStatusLabel } from "./contentDisplayLabels";
 import { MILESTONE_LABELS, PROJECT_STAGES } from "./projectStages";
@@ -127,11 +128,26 @@ function eventBusinessType(event: EventTemplateData): string {
   return "流程事件";
 }
 
-export async function loadProjectFlowData(): Promise<ProjectFlowData> {
-  const [studio, project] = await Promise.all([
+export async function loadProjectFlowData(options?: {
+  includeDisabled?: boolean;
+}): Promise<ProjectFlowData> {
+  const includeDisabled = options?.includeDisabled ?? false;
+  const [studioBase, opsSnapshot, project] = await Promise.all([
     loadContentStudioDataCached(),
+    loadOpsStudioSnapshot(),
     getProjectState(),
   ]);
+  const studio = {
+    ...studioBase,
+    taskTemplates: opsSnapshot.taskTemplates,
+    locationActions: opsSnapshot.locationActions,
+    eventTemplates: opsSnapshot.eventTemplates,
+    storyEntries: opsSnapshot.storyEntries,
+    taskTemplateDocIds: opsSnapshot.taskTemplateDocIds,
+    locationActionDocIds: opsSnapshot.locationActionDocIds,
+    eventTemplateDocIds: opsSnapshot.eventTemplateDocIds,
+    storyEntryDocIds: opsSnapshot.storyEntryDocIds,
+  };
   const dependencyContext = await buildDependencyContext(
     project?.seasonId || process.env.SEASON_ID || "season-1",
   );
@@ -150,23 +166,28 @@ export async function loadProjectFlowData(): Promise<ProjectFlowData> {
   );
   const npcSet = new Set(studio.npcs.map((npc) => npc.name));
 
-  const eventCards: ProjectFlowEventCard[] = studio.eventTemplates.map(
-    (event) => ({
+  const eventCards: ProjectFlowEventCard[] = studio.eventTemplates
+    .filter((event) => event.enabled !== false)
+    .map((event) => ({
       ...event,
       businessType: eventBusinessType(event),
       payloadDocId: studio.eventTemplateDocIds[event.slug],
-    }),
-  );
+    }));
 
   const tasks = await Promise.all(
     studio.taskTemplates
-      .filter(
-        (task) =>
-          task.category === "mainline" || mainlineSlugSet.has(task.slug),
-      )
+      .filter((task) => {
+        const isMainline =
+          task.category === "mainline" || mainlineSlugSet.has(task.slug);
+        if (!isMainline) return false;
+        if (!includeDisabled && task.enabled === false) return false;
+        return true;
+      })
       .map(async (task): Promise<ProjectFlowTask> => {
-        const actions = studio.locationActions.filter((action) =>
-          (action.triggerTaskSlugs || []).includes(task.slug),
+        const actions = studio.locationActions.filter(
+          (action) =>
+            action.enabled !== false &&
+            (action.triggerTaskSlugs || []).includes(task.slug),
         );
         const locations = [
           ...new Set([
@@ -346,7 +367,7 @@ export async function loadProjectFlowData(): Promise<ProjectFlowData> {
       })),
     },
     summary: {
-      tasks: tasks.length,
+      tasks: tasks.filter((task) => task.enabled !== false).length,
       issues: tasks.reduce(
         (sum, task) => sum + task.configurationIssues.length,
         0,
@@ -366,7 +387,7 @@ export async function loadProjectFlowNode(slug: string): Promise<{
   stageName: string;
   stageId: string;
 } | null> {
-  const data = await loadProjectFlowData();
+  const data = await loadProjectFlowData({ includeDisabled: true });
   for (const stage of data.stages) {
     const node = stage.tasks.find((task) => task.slug === slug);
     if (node) {

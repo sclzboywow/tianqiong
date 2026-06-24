@@ -13,7 +13,7 @@ export default async function ProjectFlowPage() {
     redirect("/project");
   }
   console.time("[ops/project-flow] loadProjectFlowData");
-  const data = await loadProjectFlowData();
+  const data = await loadProjectFlowData({ includeDisabled: true });
   console.timeEnd("[ops/project-flow] loadProjectFlowData");
   return <div className="min-h-screen bg-zinc-950 text-zinc-100"><AppSiteHeader /><main className="mx-auto max-w-[1500px] px-4 py-6"><ProjectFlowPanel data={data} /></main></div>;
 }

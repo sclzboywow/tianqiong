@@ -24,6 +24,7 @@ import {
   locationToDisplayOption,
 } from "@/game/contentDisplayLabels";
 import { ArtifactStatusSelect } from "@/components/ops/OpsDisplayHelpers";
+import { ProjectFlowNodeLifecyclePanel } from "@/components/ops/ProjectFlowNodeLifecyclePanel";
 import { cn } from "@/lib/utils";
 
 type EditorTab = "basic" | "flow" | "task" | "action" | "story" | "events";
@@ -647,6 +648,11 @@ export function ProjectFlowNodeEditor({
           <p className="mt-1 font-mono text-xs text-zinc-600">{slug}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {node.enabled === false ? (
+            <Badge variant="outline" className="border-zinc-600 text-zinc-400">
+              已停用
+            </Badge>
+          ) : null}
           {node.configurationIssues.length ? (
             <Badge
               variant="outline"
@@ -1401,6 +1407,13 @@ export function ProjectFlowNodeEditor({
           ) : null}
         </section>
       ) : null}
+
+      <ProjectFlowNodeLifecyclePanel
+        slug={slug}
+        title={node.title}
+        enabled={node.enabled !== false}
+        variant="danger"
+      />
     </div>
   );
 }

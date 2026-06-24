@@ -36,7 +36,7 @@ function mapArtifactEffects(raw: unknown): ArtifactEffect[] {
   return results;
 }
 
-function mapPayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
+export function mapTaskTemplatePayloadDoc(doc: Record<string, unknown>): TaskTemplateData {
   const rarity = doc.rarity as string;
   const resolutionMode = (doc.resolutionMode as ResolutionMode | undefined) ?? inferResolutionMode(rarity);
   const requiredCount = doc.requiredCount as number | undefined;
@@ -100,7 +100,7 @@ export async function getTaskTemplates(): Promise<TaskTemplateData[]> {
 
     if (result.docs.length === 0) return TASK_TEMPLATES;
 
-    return result.docs.map((doc) => mapPayloadDoc(doc as Record<string, unknown>));
+    return result.docs.map((doc) => mapTaskTemplatePayloadDoc(doc as Record<string, unknown>));
   } catch {
     return TASK_TEMPLATES;
   }

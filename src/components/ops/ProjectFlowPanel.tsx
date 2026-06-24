@@ -28,6 +28,7 @@ import {
   getTaskDisplayName,
   localizeBlockingReasons,
 } from "@/game/contentDisplayLabels";
+import { ProjectFlowNodeLifecyclePanel } from "@/components/ops/ProjectFlowNodeLifecyclePanel";
 import { cn } from "@/lib/utils";
 
 function EditNodeLink({
@@ -360,6 +361,14 @@ function TaskDetail({
           </div>
         </section>
         <section className="mt-5 border-t border-zinc-800 pt-5">
+          <ProjectFlowNodeLifecyclePanel
+            slug={task.slug}
+            title={task.title}
+            enabled={task.enabled !== false}
+            variant="drawer"
+          />
+        </section>
+        <section className="mt-5 border-t border-zinc-800 pt-5">
           <div className="rounded-lg border border-sky-900/60 bg-sky-950/15 p-4">
             <h3 className="font-medium text-zinc-100">调整流程节点</h3>
             <p className="mt-1 text-xs leading-5 text-zinc-400">
@@ -383,6 +392,18 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
     task: ProjectFlowTask;
     stageName: string;
   } | null>(null);
+  const [showDisabled, setShowDisabled] = useState(false);
+
+  function visibleTasks(tasks: ProjectFlowTask[]) {
+    if (showDisabled) return tasks;
+    return tasks.filter((task) => task.enabled !== false);
+  }
+
+  const disabledCount = data.stages.reduce(
+    (sum, stage) =>
+      sum + stage.tasks.filter((task) => task.enabled === false).length,
+    0,
+  );
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-800 pb-5">
@@ -456,6 +477,16 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
           </Badge>
         </Link>
       </div>
+      {disabledCount > 0 ? (
+        <label className="flex items-center gap-2 text-sm text-zinc-400">
+          <input
+            type="checkbox"
+            checked={showDisabled}
+            onChange={(event) => setShowDisabled(event.target.checked)}
+          />
+          显示已停用节点（{disabledCount}）
+        </label>
+      ) : null}
       <nav
         className="sticky top-[57px] z-30 flex gap-2 overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950/95 p-2 backdrop-blur"
         aria-label="项目阶段导航"
@@ -515,14 +546,19 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
-            {stage.tasks.length ? (
+            {visibleTasks(stage.tasks).length ? (
               <div className="grid gap-3 lg:grid-cols-2">
-                {stage.tasks.map((task) => (
+                {visibleTasks(stage.tasks).map((task) => (
                   <button
                     key={task.slug}
                     type="button"
                     onClick={() => setSelected({ task, stageName: stage.name })}
-                    className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-left transition hover:border-sky-800 hover:bg-zinc-950"
+                    className={cn(
+                      "rounded-xl border bg-zinc-950/60 p-4 text-left transition",
+                      task.enabled === false
+                        ? "border-zinc-700 opacity-70 hover:border-zinc-600"
+                        : "border-zinc-800 hover:border-sky-800 hover:bg-zinc-950",
+                    )}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -534,7 +570,14 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        {task.runtime.available ? (
+                        {task.enabled === false ? (
+                          <Badge
+                            variant="outline"
+                            className="border-zinc-600 text-zinc-400"
+                          >
+                            已停用
+                          </Badge>
+                        ) : task.runtime.available ? (
                           <Badge
                             variant="outline"
                             className="border-emerald-800 text-emerald-300"
@@ -587,6 +630,10 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
                     </div>
                   </button>
                 ))}
+              </div>
+            ) : stage.tasks.length > 0 && !showDisabled ? (
+              <div className="rounded-lg border border-dashed border-zinc-800 py-6 text-center text-sm text-zinc-600">
+                本阶段节点均已停用，可勾选「显示已停用节点」查看
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-zinc-800 py-8 text-center text-sm text-zinc-600">
