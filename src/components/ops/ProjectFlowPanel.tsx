@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  FileJson,
   MapPin,
   Plus,
   X,
@@ -338,6 +339,13 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
           >
             <Plus className="size-4" />
             新增流程节点
+          </Link>
+          <Link
+            href="/ops/project-flow/import"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1")}
+          >
+            <FileJson className="size-4" />
+            导入内容包
           </Link>
           <Link
             href="/ops/content-studio"
