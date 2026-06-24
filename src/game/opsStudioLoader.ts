@@ -126,10 +126,19 @@ export type OpsStudioSnapshot = {
   locationActions: OpsLocationAction[];
   eventTemplates: EventTemplateData[];
   storyEntries: StoryEntryData[];
+  mapLocations: OpsMapLocation[];
   taskTemplateDocIds: Record<string, string | number>;
   locationActionDocIds: Record<string, string | number>;
   eventTemplateDocIds: Record<string, string | number>;
   storyEntryDocIds: Record<string, string | number>;
+  mapLocationDocIds: Record<string, string | number>;
+};
+
+export type OpsMapLocation = {
+  slug: string;
+  name: string;
+  relatedTaskSlugs: string[];
+  payloadDocId: string | number;
 };
 
 /** Ops 专用：从 Payload 拉取全部内容（含已停用），不走 enabled=true 过滤。 */
@@ -138,17 +147,19 @@ export async function loadOpsStudioSnapshot(): Promise<OpsStudioSnapshot> {
   const config = (await import("@payload-config")).default;
   const payload = await getPayload({ config });
 
-  const [tasks, actions, events, stories] = await Promise.all([
+  const [tasks, actions, events, stories, mapLocationsResult] = await Promise.all([
     payload.find({ collection: "task-templates", limit: PAYLOAD_LIMIT, depth: 0 }),
     payload.find({ collection: "location-actions", limit: PAYLOAD_LIMIT, depth: 0 }),
     payload.find({ collection: "event-templates", limit: PAYLOAD_LIMIT, depth: 0 }),
     payload.find({ collection: "story-entries", limit: PAYLOAD_LIMIT, depth: 0 }),
+    payload.find({ collection: "map-locations", limit: PAYLOAD_LIMIT, depth: 0 }),
   ]);
 
   const taskTemplateDocIds: Record<string, string | number> = {};
   const locationActionDocIds: Record<string, string | number> = {};
   const eventTemplateDocIds: Record<string, string | number> = {};
   const storyEntryDocIds: Record<string, string | number> = {};
+  const mapLocationDocIds: Record<string, string | number> = {};
 
   const taskTemplates = tasks.docs.map((doc) => {
     const row = doc as Record<string, unknown>;
@@ -175,14 +186,34 @@ export async function loadOpsStudioSnapshot(): Promise<OpsStudioSnapshot> {
     return mapStoryDoc(row);
   });
 
+  const mapLocations = mapLocationsResult.docs
+    .map((doc) => {
+      const row = doc as Record<string, unknown>;
+      const slug = String(row.slug || "");
+      if (!slug) return null;
+      mapLocationDocIds[slug] = row.id as string | number;
+      return {
+        slug,
+        name: String(row.name || slug),
+        relatedTaskSlugs:
+          (row.relatedTaskSlugs as { slug: string }[] | null)
+            ?.map((item) => item.slug)
+            .filter(Boolean) || [],
+        payloadDocId: row.id as string | number,
+      } satisfies OpsMapLocation;
+    })
+    .filter((item): item is OpsMapLocation => item != null);
+
   return {
     taskTemplates,
     locationActions,
     eventTemplates,
     storyEntries,
+    mapLocations,
     taskTemplateDocIds,
     locationActionDocIds,
     eventTemplateDocIds,
     storyEntryDocIds,
+    mapLocationDocIds,
   };
 }

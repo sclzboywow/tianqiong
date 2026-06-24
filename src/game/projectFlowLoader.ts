@@ -368,12 +368,13 @@ export async function loadProjectFlowData(options?: {
     },
     summary: {
       tasks: tasks.filter((task) => task.enabled !== false).length,
-      issues: tasks.reduce(
-        (sum, task) => sum + task.configurationIssues.length,
-        0,
-      ),
+      issues: tasks
+        .filter((task) => task.enabled !== false)
+        .reduce((sum, task) => sum + task.configurationIssues.length, 0),
       events: eventCards.length,
-      blockedTasks: tasks.filter((task) => !task.runtime.available).length,
+      blockedTasks: tasks.filter(
+        (task) => task.enabled !== false && !task.runtime.available,
+      ).length,
       healthFailures: healthReport.failCount,
       healthWarnings: healthReport.warnCount,
       currentStage: project?.currentStage,

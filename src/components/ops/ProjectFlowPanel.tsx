@@ -503,7 +503,9 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
             )}
           >
             {stage.name}
-            <span className="ml-1 text-zinc-600">{stage.tasks.length}</span>
+            <span className="ml-1 text-zinc-600">
+              {visibleTasks(stage.tasks).length}
+            </span>
           </a>
         ))}
       </nav>
@@ -526,7 +528,9 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
                   </p>
                 </div>
               </div>
-              <Badge variant="outline">{stage.tasks.length} 个流程节点</Badge>
+              <Badge variant="outline">
+                {visibleTasks(stage.tasks).length} 个流程节点
+              </Badge>
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
               <span className="mr-1 text-xs text-zinc-500">阶段完成条件</span>
