@@ -4,6 +4,23 @@ import { isStatusAtLeast, getArtifactStatusLabel } from "./artifactEngine";
 import { parseMilestones } from "./projectEngine";
 import { prisma } from "@/prisma/client";
 import { MILESTONE_LABELS } from "./projectStages";
+import { getTaskTemplates } from "./contentLoader";
+
+let taskTitleCache: Map<string, string> | null = null;
+
+async function getTaskTitle(slug: string): Promise<string> {
+  if (!taskTitleCache) {
+    const templates = await getTaskTemplates();
+    taskTitleCache = new Map(
+      templates.map((template) => [template.slug, template.title?.trim() || template.slug]),
+    );
+  }
+  return taskTitleCache.get(slug) || slug;
+}
+
+export function clearDependencyTaskTitleCache() {
+  taskTitleCache = null;
+}
 
 export async function buildDependencyContext(seasonId: string): Promise<DependencyContext> {
   const project = await prisma.projectState.findUnique({ where: { seasonId } });
@@ -65,7 +82,8 @@ export async function evaluateTaskTemplateDependencies(
     if (!slug) continue;
     if (!context.completedTaskSlugs.includes(slug)) {
       missingTasks.push(slug);
-      blockingReasons.push(`前置任务「${slug}」尚未完成`);
+      const title = await getTaskTitle(slug);
+      blockingReasons.push(`前置任务「${title}」尚未完成`);
     }
   }
 

@@ -19,6 +19,11 @@ import {
   formatPrerequisiteCycleIssue,
   suggestRiskEventSlug,
 } from "@/game/projectFlowNodeUtils";
+import {
+  getTaskDisplayName,
+  locationToDisplayOption,
+} from "@/game/contentDisplayLabels";
+import { ArtifactStatusSelect } from "@/components/ops/OpsDisplayHelpers";
 import { cn } from "@/lib/utils";
 
 type EditorTab = "basic" | "flow" | "task" | "action" | "story" | "events";
@@ -130,7 +135,9 @@ function getFlowRelationWarnings(
 
   for (const prereqSlug of selectedPrerequisites) {
     if (!knownSlugs.has(prereqSlug)) {
-      warnings.push(`前置任务不存在：${prereqSlug}`);
+      warnings.push(
+        `前置任务不存在：${getTaskDisplayName(prereqSlug, tasks)}（${prereqSlug}）`,
+      );
     }
   }
 
@@ -393,13 +400,13 @@ export function ProjectFlowNodeEditor({
   }
 
   const artifactStatusMap = useMemo(() => {
-    const map = new Map<string, string[]>();
+    const map = new Map<string, { status: string; label: string }[]>();
     for (const artifact of options.artifacts) {
       map.set(
         artifact.slug,
-        artifact.allowedStatuses.length
-          ? artifact.allowedStatuses
-          : [artifact.defaultStatus],
+        artifact.allowedStatusOptions.length
+          ? artifact.allowedStatusOptions
+          : [{ status: artifact.defaultStatus, label: artifact.defaultStatus }],
       );
     }
     return map;
@@ -550,8 +557,8 @@ export function ProjectFlowNodeEditor({
           const current = selected.find(
             (item) => item.artifactSlug === artifact.slug,
           );
-          const statuses = artifactStatusMap.get(artifact.slug) || [
-            artifact.defaultStatus,
+          const statusOptions = artifactStatusMap.get(artifact.slug) || [
+            { status: artifact.defaultStatus, label: artifact.defaultStatus },
           ];
           return (
             <div
@@ -589,34 +596,34 @@ export function ProjectFlowNodeEditor({
                   }}
                   className="mt-1"
                 />
-                <span className="text-sm text-zinc-200">{artifact.name}</span>
+                <span>
+                  <span className="text-sm text-zinc-200">{artifact.name}</span>
+                  <span className="mt-0.5 block font-mono text-[10px] text-zinc-600">
+                    {artifact.slug}
+                  </span>
+                </span>
               </label>
               {checked ? (
-                <select
-                  className="mt-3 w-full rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs"
+                <ArtifactStatusSelect
+                  className="mt-3 w-full p-2 text-xs"
                   value={
                     mode === "input"
                       ? current?.minStatus || artifact.defaultStatus
                       : current?.status || artifact.defaultStatus
                   }
-                  onChange={(event) => {
+                  statusOptions={statusOptions}
+                  onChange={(nextStatus) => {
                     onChange(
                       selected.map((item) =>
                         item.artifactSlug === artifact.slug
                           ? mode === "input"
-                            ? { ...item, minStatus: event.target.value }
-                            : { ...item, status: event.target.value }
+                            ? { ...item, minStatus: nextStatus }
+                            : { ...item, status: nextStatus }
                           : item,
                       ),
                     );
                   }}
-                >
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
+                />
               ) : null}
             </div>
           );
@@ -1098,7 +1105,8 @@ export function ProjectFlowNodeEditor({
             >
               {options.locations.map((location) => (
                 <option key={location.slug} value={location.slug}>
-                  {location.name}
+                  {locationToDisplayOption(location).label}
+                  {location.name !== location.slug ? `（${location.slug}）` : ""}
                 </option>
               ))}
             </select>

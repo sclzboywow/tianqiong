@@ -6,7 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ContentStudioData } from "@/game/contentStudioLoader";
 import { payloadAdminUrl } from "@/lib/payloadAdminUrl";
-import { PROJECT_STAGES } from "@/game/projectStages";
+import {
+  getArtifactStatusLabel,
+  getStageDisplayName,
+  getMilestoneDisplayName,
+  getTaskDisplayName,
+  getArtifactDisplayName,
+  taskToDisplayOption,
+} from "@/game/contentDisplayLabels";
+import { DisplayNativeSelect, SlugHint } from "@/components/ops/OpsDisplayHelpers";
 import { resolveAllowedStatuses } from "@/data/artifactDefinitions";
 
 type ContentStudioArtifactPanelProps = {
@@ -14,8 +22,7 @@ type ContentStudioArtifactPanelProps = {
 };
 
 function stageLabel(stageId?: string) {
-  if (!stageId) return "—";
-  return PROJECT_STAGES.find((stage) => stage.id === stageId)?.name || stageId;
+  return getStageDisplayName(stageId);
 }
 
 function formatRefs(refs?: { slug: string; title: string }[]) {
@@ -102,11 +109,15 @@ export function ContentStudioArtifactPanel({ data }: ContentStudioArtifactPanelP
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-zinc-500">{artifact.slug}</td>
                   <td className="px-3 py-2">{stageLabel(artifact.stage)}</td>
-                  <td className="px-3 py-2">{artifact.defaultStatus || "draft"}</td>
+                  <td className="px-3 py-2">
+                    {getArtifactStatusLabel(artifact.defaultStatus, artifact)}
+                  </td>
                   <td className="px-3 py-2 text-xs text-zinc-400">{statusFlow || "—"}</td>
                   <td className="px-3 py-2 text-xs">
                     {runtimeStatus[artifact.slug] ? (
-                      <span className="text-emerald-400">{runtimeStatus[artifact.slug]}</span>
+                      <span className="text-emerald-400">
+                        {getArtifactStatusLabel(runtimeStatus[artifact.slug], artifact)}
+                      </span>
                     ) : (
                       <span className="text-zinc-500">未产出</span>
                     )}
@@ -157,9 +168,25 @@ type DependencyDebugResult = {
 
 export function ContentStudioDependencyDebugPanel({
   taskSlugs,
+  tasks,
+  artifacts,
 }: {
   taskSlugs: string[];
+  tasks?: { slug: string; title: string }[];
+  artifacts?: { slug: string; name: string; allowedStatuses?: { status: string; label?: string }[]; defaultStatus?: string }[];
 }) {
+  const taskOptions = useMemo(() => {
+    const titleMap = new Map((tasks || []).map((task) => [task.slug, task.title]));
+    return taskSlugs.map((slug) =>
+      taskToDisplayOption({ slug, title: titleMap.get(slug) || slug }),
+    );
+  }, [taskSlugs, tasks]);
+
+  const artifactLookup = useMemo(
+    () => new Map((artifacts || []).map((artifact) => [artifact.slug, artifact])),
+    [artifacts],
+  );
+
   const [seasonId, setSeasonId] = useState("season-1");
   const [taskSlug, setTaskSlug] = useState(taskSlugs[0] || "");
   const [loading, setLoading] = useState(false);
@@ -203,18 +230,13 @@ export function ContentStudioDependencyDebugPanel({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-zinc-400">任务 slug</span>
-          <select
-            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+          <span className="text-zinc-400">选择任务</span>
+          <DisplayNativeSelect
+            className="w-full px-3 py-2"
             value={taskSlug}
-            onChange={(event) => setTaskSlug(event.target.value)}
-          >
-            {taskSlugs.map((slug) => (
-              <option key={slug} value={slug}>
-                {slug}
-              </option>
-            ))}
-          </select>
+            onChange={setTaskSlug}
+            options={taskOptions}
+          />
         </label>
         <div className="flex items-end">
           <Button onClick={runDebug} disabled={loading}>
@@ -229,7 +251,10 @@ export function ContentStudioDependencyDebugPanel({
         <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-zinc-400">任务：</span>
-            <span className="text-sm text-zinc-200">{result.templateTitle || result.taskSlug}</span>
+            <span className="text-sm text-zinc-200">
+              {result.templateTitle || getTaskDisplayName(result.taskSlug, tasks)}
+            </span>
+            {result.taskSlug ? <SlugHint slug={result.taskSlug} /> : null}
             <span className="text-sm text-zinc-400">可生成：</span>
             <Badge variant={result.available ? "default" : "destructive"}>
               {result.available ? "是" : "否"}
@@ -241,11 +266,13 @@ export function ContentStudioDependencyDebugPanel({
 
           {result.invalidArtifactSlugs && result.invalidArtifactSlugs.length > 0 ? (
             <div className="rounded border border-rose-900/50 bg-rose-950/20 p-3">
-              <p className="text-sm font-medium text-rose-300 mb-2">未定义的成果物 slug</p>
+              <p className="text-sm font-medium text-rose-300 mb-2">未定义的成果物</p>
               <ul className="space-y-1 text-sm text-rose-300">
                 {result.invalidArtifactSlugs.map((item) => (
                   <li key={`${item.role}-${item.slug}`}>
-                    [{item.role === "input" ? "输入" : "产出"}] {item.slug} — 在 artifact-definitions 中不存在
+                    [{item.role === "input" ? "输入" : "产出"}]{" "}
+                    {getArtifactDisplayName(item.slug, artifacts)} — 在成果物定义中不存在
+                    <SlugHint slug={item.slug} className="ml-1" />
                   </li>
                 ))}
               </ul>
@@ -269,11 +296,17 @@ export function ContentStudioDependencyDebugPanel({
             <div>
               <p className="text-sm font-medium text-zinc-300 mb-2">缺失成果物</p>
               <ul className="space-y-1 text-sm text-zinc-400">
-                {result.missingArtifacts.map((item) => (
-                  <li key={item.slug}>
-                    {item.name}（需要 {item.required}，当前 {item.actual}）
-                  </li>
-                ))}
+                {result.missingArtifacts.map((item) => {
+                  const artifact = artifactLookup.get(item.slug);
+                  return (
+                    <li key={item.slug}>
+                      {item.name}
+                      <SlugHint slug={item.slug} className="ml-1" />（需要{" "}
+                      {getArtifactStatusLabel(item.required, artifact)}，当前{" "}
+                      {getArtifactStatusLabel(item.actual, artifact)}）
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ) : null}
@@ -281,14 +314,28 @@ export function ContentStudioDependencyDebugPanel({
           {result.missingTasks.length > 0 ? (
             <div>
               <p className="text-sm font-medium text-zinc-300 mb-2">未完成前置任务</p>
-              <p className="text-sm text-zinc-400 font-mono">{result.missingTasks.join(", ")}</p>
+              <ul className="space-y-1 text-sm text-zinc-400">
+                {result.missingTasks.map((slug) => (
+                  <li key={slug}>
+                    {getTaskDisplayName(slug, tasks)}
+                    <SlugHint slug={slug} className="ml-1" />
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : null}
 
           {result.missingMilestones.length > 0 ? (
             <div>
               <p className="text-sm font-medium text-zinc-300 mb-2">未达成关键节点</p>
-              <p className="text-sm text-zinc-400 font-mono">{result.missingMilestones.join(", ")}</p>
+              <ul className="space-y-1 text-sm text-zinc-400">
+                {result.missingMilestones.map((key) => (
+                  <li key={key}>
+                    {getMilestoneDisplayName(key)}
+                    <SlugHint slug={key} className="ml-1" />
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : null}
         </div>

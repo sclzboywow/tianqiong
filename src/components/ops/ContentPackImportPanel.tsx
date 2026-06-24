@@ -19,6 +19,11 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContentPackReport } from "@/game/contentPackImport";
 import { CRDMO_SAMPLE_PACK_JSON } from "@/game/contentPackSamples";
+import {
+  getArtifactDisplayName,
+  getStageDisplayName,
+} from "@/game/contentDisplayLabels";
+import { SlugHint } from "@/components/ops/OpsDisplayHelpers";
 import { cn } from "@/lib/utils";
 
 const COLLECTION_LABELS: Record<string, string> = {
@@ -75,58 +80,104 @@ function parsePackJson(jsonText: string): LooseRecord | null {
   }
 }
 
-function extractSlugLists(pack: LooseRecord): Record<CollectionKey, string[]> {
-  const result = {} as Record<CollectionKey, string[]>;
+function extractSlugLists(pack: LooseRecord): Record<CollectionKey, { slug: string; label: string }[]> {
+  const result = {} as Record<CollectionKey, { slug: string; label: string }[]>;
   for (const key of COLLECTION_KEYS) {
     const items = Array.isArray(pack[key]) ? (pack[key] as LooseRecord[]) : [];
-    result[key] = items.map((item) => readItemLabel(item, key)).filter(Boolean);
+    result[key] = items
+      .map((item) => ({
+        slug: readItemSlug(item),
+        label: readItemLabel(item, key),
+      }))
+      .filter((item) => item.slug || item.label);
   }
   return result;
 }
 
-function SlugListPreview({ label, slugs }: { label: string; slugs: string[] }) {
-  if (slugs.length === 0) return null;
-  const shown = slugs.slice(0, 10);
-  const rest = slugs.length - shown.length;
+function SlugListPreview({
+  label,
+  items,
+}: {
+  label: string;
+  items: { slug: string; label: string }[];
+}) {
+  if (items.length === 0) return null;
+  const shown = items.slice(0, 10);
+  const rest = items.length - shown.length;
   return (
     <div className="text-xs">
       <p className="mb-1 text-zinc-500">{label}</p>
-      <p className="font-mono leading-relaxed text-zinc-300">
-        {shown.join(" · ")}
-        {rest > 0 ? ` · 等 ${slugs.length} 个` : ""}
-      </p>
+      <ul className="space-y-1">
+        {shown.map((item) => (
+          <li key={item.slug || item.label}>
+            <span className="text-zinc-200">{item.label || item.slug}</span>
+            {item.slug && item.label !== item.slug ? (
+              <SlugHint slug={item.slug} className="ml-1" />
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      {rest > 0 ? <p className="mt-1 text-zinc-500">等 {items.length} 个</p> : null}
     </div>
   );
 }
 
-function TaskSummaryTable({ tasks }: { tasks: LooseRecord[] }) {
+function TaskSummaryTable({
+  tasks,
+  pack,
+}: {
+  tasks: LooseRecord[];
+  pack: LooseRecord;
+}) {
+  const artifactItems = Array.isArray(pack.artifactDefinitions)
+    ? (pack.artifactDefinitions as LooseRecord[])
+    : [];
+  const artifactOptions = artifactItems.map((item) => ({
+    slug: readItemSlug(item),
+    name: String(item.name || ""),
+  }));
+
+  function formatArtifactList(value: unknown): string {
+    if (!Array.isArray(value) || value.length === 0) return "—";
+    return value
+      .map((entry) => {
+        const record = entry as LooseRecord;
+        const slug = String(record.artifactSlug || record.slug || "").trim();
+        if (!slug) return "—";
+        return getArtifactDisplayName(slug, artifactOptions);
+      })
+      .join("、");
+  }
+
   if (tasks.length === 0) return null;
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-800">
       <table className="w-full min-w-[640px] text-left text-xs">
         <thead className="bg-zinc-900/80 text-zinc-500">
           <tr>
-            <th className="px-3 py-2 font-medium">slug</th>
-            <th className="px-3 py-2 font-medium">title</th>
-            <th className="px-3 py-2 font-medium">stage</th>
+            <th className="px-3 py-2 font-medium">任务名称</th>
+            <th className="px-3 py-2 font-medium">阶段</th>
             <th className="px-3 py-2 font-medium">NPC</th>
             <th className="px-3 py-2 font-medium">前置</th>
-            <th className="px-3 py-2 font-medium">输入</th>
-            <th className="px-3 py-2 font-medium">产出</th>
+            <th className="px-3 py-2 font-medium">输入成果物</th>
+            <th className="px-3 py-2 font-medium">产出成果物</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-800 text-zinc-200">
           {tasks.map((task) => {
             const slug = readItemSlug(task);
+            const title = String(task.title || slug || "—");
             return (
               <tr key={slug} className="bg-zinc-950/40">
-                <td className="px-3 py-2 font-mono text-sky-300/90">{slug}</td>
-                <td className="px-3 py-2">{String(task.title || "—")}</td>
-                <td className="px-3 py-2 font-mono">{String(task.stage || "—")}</td>
+                <td className="px-3 py-2">
+                  <p>{title}</p>
+                  {slug ? <SlugHint slug={slug} /> : null}
+                </td>
+                <td className="px-3 py-2">{getStageDisplayName(String(task.stage || ""))}</td>
                 <td className="px-3 py-2">{countArrayField(task.npcList)}</td>
                 <td className="px-3 py-2">{countArrayField(task.prerequisiteTaskSlugs)}</td>
-                <td className="px-3 py-2">{countArrayField(task.inputArtifacts)}</td>
-                <td className="px-3 py-2">{countArrayField(task.outputArtifacts)}</td>
+                <td className="px-3 py-2">{formatArtifactList(task.inputArtifacts)}</td>
+                <td className="px-3 py-2">{formatArtifactList(task.outputArtifacts)}</td>
               </tr>
             );
           })}
@@ -292,12 +343,12 @@ function ReportPanel({
 
       {slugLists && report.ok && (
         <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-          <p className="text-xs uppercase tracking-wider text-zinc-500">slug 摘要</p>
+          <p className="text-xs uppercase tracking-wider text-zinc-500">内容摘要</p>
           {COLLECTION_KEYS.map((key) => (
             <SlugListPreview
               key={key}
               label={COLLECTION_LABELS[key]}
-              slugs={slugLists[key]}
+              items={slugLists[key]}
             />
           ))}
         </div>
@@ -306,7 +357,7 @@ function ReportPanel({
       {tasks.length > 0 && report.ok && (
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-wider text-zinc-500">任务摘要</p>
-          <TaskSummaryTable tasks={tasks} />
+          <TaskSummaryTable tasks={tasks} pack={packPreview || {}} />
         </div>
       )}
 

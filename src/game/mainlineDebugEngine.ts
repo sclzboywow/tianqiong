@@ -21,6 +21,8 @@ import {
 } from "@/game/artifactEngine";
 import { getProjectOverview } from "@/game/projectOverview";
 import { loadArtifactDefinitions } from "@/game/artifactLoader";
+import { resolveAllowedStatuses } from "@/data/artifactDefinitions";
+import { getMetricDisplayName } from "@/game/contentDisplayLabels";
 import type { ProjectStageId } from "@/game/projectStages";
 import type { TaskTemplateData } from "@/game/types";
 
@@ -124,11 +126,15 @@ export async function getMainlineDebugStatus() {
       available: dep.available,
       blockingReasons: dep.blockingReasons,
       missingArtifacts: dep.missingArtifacts,
-      inputArtifacts: (permitTemplate.inputArtifacts || []).map((item) => ({
-        slug: item.artifactSlug,
-        minStatus: item.minStatus,
-        currentStatus: artifactMap[item.artifactSlug] ?? null,
-      })),
+      inputArtifacts: (permitTemplate.inputArtifacts || []).map((item) => {
+        const definition = definitions.find((def) => def.slug === item.artifactSlug);
+        return {
+          slug: item.artifactSlug,
+          name: definition?.name || item.artifactSlug,
+          minStatus: item.minStatus,
+          currentStatus: artifactMap[item.artifactSlug] ?? null,
+        };
+      }),
     };
   }
 
@@ -137,7 +143,7 @@ export async function getMainlineDebugStatus() {
   const gateBlockingReasons = gate
     ? [
         ...gate.missingMilestones.map((k) => `关键节点「${MILESTONE_LABELS[k] || k}」未达成`),
-        ...gate.failedMetrics.map((m) => `指标未达标: ${m}`),
+        ...gate.failedMetrics.map((m) => `指标未达标：${getMetricDisplayName(m)}`),
       ]
     : [];
 
@@ -161,6 +167,10 @@ export async function getMainlineDebugStatus() {
       stage: def.stage,
       defaultStatus: def.defaultStatus,
       currentStatus: artifactMap[def.slug] ?? null,
+      allowedStatusOptions: resolveAllowedStatuses(def).map((status) => ({
+        status: status.status,
+        label: status.label || status.status,
+      })),
     })),
     mainlineByStage,
     permitDebug,

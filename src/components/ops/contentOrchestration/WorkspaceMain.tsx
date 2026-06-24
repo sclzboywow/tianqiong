@@ -14,6 +14,7 @@ import type {
   OrchestrationStoryEntry,
   OrchestrationTask,
 } from "@/game/contentOrchestrationLoader";
+import { getStageDisplayName } from "@/game/contentDisplayLabels";
 import type {
   ActionsTabData,
   ArtifactsTabData,
@@ -195,7 +196,7 @@ function OverviewView({
                   {stage.stageProgressSum}%
                 </Badge>
               </div>
-              <p className="mt-1 font-mono text-xs text-zinc-500">{stage.stageId}</p>
+              <p className="mt-1 text-xs text-zinc-500">{getStageDisplayName(stage.stageId)}</p>
               <p className="mt-2 text-xs text-zinc-400">
                 主线 {stage.mainlineCount} · 补正 {stage.correctionCount}
               </p>
@@ -333,16 +334,20 @@ function ArtifactsView({
             <button
               type="button"
               onClick={() => onSelect({ kind: "task", item: data.terminalTask! })}
-              className="font-mono text-xs text-sky-400 hover:underline"
+              className="text-left text-sky-400 hover:underline"
             >
-              {data.terminalTask.slug}
+              {data.terminalTask.title}
             </button>
-            <ul className="space-y-1 font-mono text-xs text-zinc-400">
+            <p className="font-mono text-[10px] text-zinc-600">{data.terminalTask.slug}</p>
+            <ul className="space-y-1 text-xs text-zinc-400">
               {TERMINAL_ARTIFACT_SLUGS.map((slug) => {
                 const art = data.artifacts.find((a) => a.slug === slug);
                 return (
                   <li key={slug}>
-                    {slug} ← {(art?.producedBy || []).join(" → ") || "无产出任务"}
+                    {art?.name || slug}
+                    <span className="ml-1 font-mono text-[10px] text-zinc-600">{slug}</span>
+                    {" ← "}
+                    {(art?.producedBy || []).join(" → ") || "无产出任务"}
                   </li>
                 );
               })}

@@ -20,6 +20,14 @@ import type {
   ProjectFlowEventCard,
   ProjectFlowTask,
 } from "@/game/projectFlowLoader";
+import {
+  getArtifactDisplayName,
+  getLocationDisplayName,
+  getMetricDisplayName,
+  getStageDisplayName,
+  getTaskDisplayName,
+  localizeBlockingReasons,
+} from "@/game/contentDisplayLabels";
 import { cn } from "@/lib/utils";
 
 function EditNodeLink({
@@ -46,7 +54,12 @@ function NamedList({
   items,
 }: {
   empty?: string;
-  items: { slug: string; name: string; status?: string }[];
+  items: {
+    slug: string;
+    name: string;
+    status?: string;
+    statusLabel?: string;
+  }[];
 }) {
   if (items.length === 0) return <span className="text-zinc-600">{empty}</span>;
   return (
@@ -57,7 +70,9 @@ function NamedList({
           className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200"
         >
           {item.name}
-          {item.status ? ` · ${item.status}` : ""}
+          {item.statusLabel || item.status
+            ? ` · ${item.statusLabel || item.status}`
+            : ""}
           <span className="ml-1 text-[10px] text-zinc-500">{item.slug}</span>
         </span>
       ))}
@@ -69,10 +84,16 @@ function EventCard({
   event,
   compact = false,
   taskSlug,
+  artifactOptions,
+  locationOptions,
+  taskOptions,
 }: {
   event: ProjectFlowEventCard;
   compact?: boolean;
   taskSlug?: string;
+  artifactOptions?: ProjectFlowData["options"]["artifacts"];
+  locationOptions?: ProjectFlowData["options"]["locations"];
+  taskOptions?: ProjectFlowData["options"]["tasks"];
 }) {
   return (
     <div className="rounded-lg border border-amber-900/50 bg-amber-950/10 p-3">
@@ -92,9 +113,16 @@ function EventCard({
       ) : null}
       {!compact ? (
         <div className="mt-3 grid gap-2 text-xs text-zinc-400 sm:grid-cols-2">
-          <p>触发阶段：{event.triggerStage || "不限"}</p>
+          <p>触发阶段：{getStageDisplayName(event.triggerStage) || "不限"}</p>
           <p>触发权重：{event.weight ?? 10}</p>
-          <p>触发地点：{event.triggerLocationSlugs?.join("、") || "不限"}</p>
+          <p>
+            触发地点：
+            {event.triggerLocationSlugs?.length
+              ? event.triggerLocationSlugs
+                  .map((slug) => getLocationDisplayName(slug, locationOptions))
+                  .join("、")
+              : "不限"}
+          </p>
           <p>触发对象：{event.triggerNpcNames?.join("、") || "不限"}</p>
           <p>
             触发频率：
@@ -104,7 +132,18 @@ function EventCard({
           <p>
             成果物影响：
             {event.artifactEffects
-              ?.map((item) => `${item.artifactSlug}→${item.status}`)
+              ?.map((item) => {
+                const artifact = artifactOptions?.find((a) => a.slug === item.artifactSlug);
+                const statusLabel =
+                  artifact?.allowedStatusOptions.find((s) => s.status === item.status)
+                    ?.label || item.status;
+                return `${getArtifactDisplayName(item.artifactSlug, artifactOptions?.map((a) => ({
+                  slug: a.slug,
+                  name: a.name,
+                  allowedStatusOptions: a.allowedStatusOptions,
+                  defaultStatus: a.defaultStatus,
+                })))}→${statusLabel}`;
+              })
               .join("、") || "—"}
           </p>
           <p>
@@ -112,13 +151,15 @@ function EventCard({
             {Object.entries(event.metricEffects || {})
               .map(
                 ([key, value]) =>
-                  `${key} ${Number(value) > 0 ? "+" : ""}${value}`,
+                  `${getMetricDisplayName(key)} ${Number(value) > 0 ? "+" : ""}${value}`,
               )
               .join("、") || "—"}
           </p>
           <p>
             生成补正任务：
-            {event.taskEffects?.map((item) => item.taskSlug).join("、") || "—"}
+            {event.taskEffects
+              ?.map((item) => getTaskDisplayName(item.taskSlug, taskOptions))
+              .join("、") || "—"}
           </p>
           <p>触发结果：{event.resultText || "使用默认文案"}</p>
           <p>无任务结果：{event.noTaskText || "使用默认文案"}</p>
@@ -153,12 +194,29 @@ function DetailSection({
 function TaskDetail({
   task,
   stageName,
+  flowOptions,
   onClose,
 }: {
   task: ProjectFlowTask;
   stageName: string;
+  flowOptions: ProjectFlowData["options"];
   onClose: () => void;
 }) {
+  const displayContext = {
+    taskTitles: new Map(flowOptions.tasks.map((item) => [item.slug, item.title])),
+    artifactNames: new Map(flowOptions.artifacts.map((item) => [item.slug, item.name])),
+    artifactLookup: new Map(
+      flowOptions.artifacts.map((item) => [
+        item.slug,
+        {
+          slug: item.slug,
+          name: item.name,
+          defaultStatus: item.defaultStatus,
+          allowedStatusOptions: item.allowedStatusOptions,
+        },
+      ]),
+    ),
+  };
   return (
     <div
       className="fixed inset-0 z-50 flex justify-end bg-black/70"
@@ -269,9 +327,11 @@ function TaskDetail({
           <DetailSection title="运行时阻塞原因">
             {task.runtime.blockingReasons.length ? (
               <ul className="space-y-1 text-amber-300">
-                {task.runtime.blockingReasons.map((reason) => (
-                  <li key={reason}>· {reason}</li>
-                ))}
+                {localizeBlockingReasons(task.runtime.blockingReasons, displayContext).map(
+                  (reason) => (
+                    <li key={reason}>· {reason}</li>
+                  ),
+                )}
               </ul>
             ) : (
               <p className="text-emerald-300">
@@ -289,6 +349,9 @@ function TaskDetail({
                   key={event.slug}
                   event={event}
                   taskSlug={task.slug}
+                  artifactOptions={flowOptions.artifacts}
+                  locationOptions={flowOptions.locations}
+                  taskOptions={flowOptions.tasks}
                 />
               ))
             ) : (
@@ -537,7 +600,14 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
                 </summary>
                 <div className="mt-3 grid gap-3 lg:grid-cols-2">
                   {stage.events.map((event) => (
-                    <EventCard key={event.slug} event={event} compact />
+                    <EventCard
+                      key={event.slug}
+                      event={event}
+                      compact
+                      artifactOptions={data.options.artifacts}
+                      locationOptions={data.options.locations}
+                      taskOptions={data.options.tasks}
+                    />
                   ))}
                 </div>
               </details>
@@ -549,6 +619,7 @@ export function ProjectFlowPanel({ data }: { data: ProjectFlowData }) {
         <TaskDetail
           task={selected.task}
           stageName={selected.stageName}
+          flowOptions={data.options}
           onClose={() => setSelected(null)}
         />
       ) : null}

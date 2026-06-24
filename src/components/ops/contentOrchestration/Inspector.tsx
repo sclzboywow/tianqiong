@@ -12,6 +12,8 @@ import type {
   OrchestrationStoryEntry,
   OrchestrationTask,
 } from "@/game/contentOrchestrationLoader";
+import { getMilestoneDisplayName, getStageDisplayName } from "@/game/contentDisplayLabels";
+import { SlugHint } from "@/components/ops/OpsDisplayHelpers";
 import type { InspectorSelection } from "./types";
 import {
   DebugTaskLink,
@@ -26,12 +28,23 @@ type InspectorProps = {
   onClose: () => void;
 };
 
-function ListField({ label, items }: { label: string; items: string[] }) {
+function ListField({
+  label,
+  items,
+  resolve,
+}: {
+  label: string;
+  items: string[];
+  resolve?: (item: string) => string;
+}) {
   return (
     <InspectorField
       label={label}
-      value={items.length > 0 ? items.join(", ") : "—"}
-      mono
+      value={
+        items.length > 0
+          ? items.map((item) => (resolve ? resolve(item) : item)).join("、")
+          : "—"
+      }
     />
   );
 }
@@ -95,16 +108,31 @@ function TaskInspector({ task }: { task: OrchestrationTask }) {
           ))}
         </div>
       </div>
-      <InspectorField label="阶段" value={task.stage} />
-      <InspectorField label="类别" value={task.category} />
-      <InspectorField label="stageProgress" value={task.stageProgress} />
-      <InspectorField label="enabled" value={task.enabled ?? true} />
-      <ListField label="前置任务" items={task.prerequisiteTaskSlugs} />
-      <ListField label="requiredMilestones" items={task.requiredMilestones} />
-      <ListField label="输入成果物" items={task.inputArtifacts} />
-      <ListField label="输出成果物" items={task.outputArtifacts} />
-      <ListField label="milestoneEffects" items={task.milestoneEffects} />
-      <ListField label="地点行动" items={task.relatedActionSlugs} />
+      <InspectorField label="阶段" value={getStageDisplayName(task.stage)} />
+      <InspectorField
+        label="类别"
+        value={task.category === "correction" ? "补正任务" : "主线任务"}
+      />
+      <InspectorField label="阶段进度" value={task.stageProgress} />
+      <InspectorField label="启用" value={task.enabled ?? true} />
+      <ListField
+        label="前置任务"
+        items={task.prerequisiteTaskSlugs}
+        resolve={(slug) => slug}
+      />
+      <ListField
+        label="所需关键节点"
+        items={task.requiredMilestones}
+        resolve={getMilestoneDisplayName}
+      />
+      <ListField label="输入成果物 slug" items={task.inputArtifacts} />
+      <ListField label="输出成果物 slug" items={task.outputArtifacts} />
+      <ListField
+        label="解锁关键节点"
+        items={task.milestoneEffects}
+        resolve={getMilestoneDisplayName}
+      />
+      <ListField label="地点行动 slug" items={task.relatedActionSlugs} />
       <InspectorField label="StoryEntry" value={task.relatedStorySlug} mono />
       <ListField label="关联事件" items={task.relatedEventSlugs} />
       <InspectorField label="payloadDocId" value={task.payloadDocId} mono />
@@ -146,8 +174,8 @@ function ArtifactInspector({ artifact }: { artifact: OrchestrationArtifact }) {
           ))}
         </div>
       </div>
-      <InspectorField label="阶段" value={artifact.stage} />
-      <InspectorField label="defaultStatus" value={artifact.defaultStatus} />
+      <InspectorField label="阶段" value={getStageDisplayName(artifact.stage)} />
+      <InspectorField label="默认状态" value={artifact.defaultStatus} />
       <ListField label="allowedStatuses" items={artifact.allowedStatuses} />
       <InspectorField label="主线使用" value={artifact.usedByMainline ? "是" : "否"} />
       <ListField label="产出任务" items={artifact.producedBy} />
@@ -293,7 +321,8 @@ function StageInspector({
     <div className="space-y-4">
       <div>
         <h3 className="text-base font-medium text-zinc-100">{stageName}</h3>
-        <p className="mt-1 font-mono text-xs text-zinc-500">{stageId}</p>
+        <p className="mt-1 text-sm text-zinc-300">{stageName}</p>
+        <SlugHint slug={stageId} className="mt-0.5 block" />
       </div>
       <InspectorField label="摘要" value={summary} />
       <Link

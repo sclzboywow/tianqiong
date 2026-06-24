@@ -33,14 +33,17 @@ function layoutNodes(graph: DependencyGraphData, knownArtifactSlugs?: Set<string
         ? 40 + taskIndex * 88
         : 40 + artifactIndex * 72;
 
-    const artifactSlug = node.id.replace("artifact:", "");
+    const artifactSlug = node.id.replace(/^(task|artifact):/, "");
     const isMissing = node.type === "artifact" && knownArtifactSlugs && !knownArtifactSlugs.has(artifactSlug);
+    const displayLabel = isMissing
+      ? `${node.label}\n${artifactSlug} (未定义)`
+      : `${node.label}\n${artifactSlug}`;
 
     return {
       id: node.id,
       position: { x, y },
       data: {
-        label: isMissing ? `${node.label} (未定义)` : node.label,
+        label: displayLabel,
         nodeType: node.type,
         stage: node.stage,
         isMissing,
@@ -62,6 +65,8 @@ function layoutNodes(graph: DependencyGraphData, knownArtifactSlugs?: Set<string
         fontSize: 12,
         padding: "8px 12px",
         minWidth: 140,
+        whiteSpace: "pre-line",
+        lineHeight: 1.35,
       },
     };
   });

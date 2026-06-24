@@ -1,4 +1,6 @@
 import { loadContentStudioDataCached } from "./contentStudioLoader";
+import { resolveAllowedStatuses } from "@/data/artifactDefinitions";
+import { getArtifactStatusLabel } from "./contentDisplayLabels";
 import { MILESTONE_LABELS, PROJECT_STAGES } from "./projectStages";
 import type { EventTemplateData, TaskTemplateData } from "./types";
 import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
@@ -25,8 +27,18 @@ export type ProjectFlowTask = TaskTemplateData & {
     payloadDocId?: string | number;
   }[];
   npcNames: string[];
-  inputArtifactLabels: { slug: string; name: string; status?: string }[];
-  outputArtifactLabels: { slug: string; name: string; status?: string }[];
+  inputArtifactLabels: {
+    slug: string;
+    name: string;
+    status?: string;
+    statusLabel?: string;
+  }[];
+  outputArtifactLabels: {
+    slug: string;
+    name: string;
+    status?: string;
+    statusLabel?: string;
+  }[];
   milestoneLabels: { key: string; label: string }[];
   stories: {
     slug: string;
@@ -60,6 +72,7 @@ export type ProjectFlowData = {
       name: string;
       defaultStatus: string;
       allowedStatuses: string[];
+      allowedStatusOptions: { status: string; label: string }[];
     }[];
     milestones: { key: string; label: string }[];
     tasks: { slug: string; title: string; prerequisiteTaskSlugs: string[]; stage: string; category: string; enabled: boolean }[];
@@ -177,18 +190,26 @@ export async function loadProjectFlowData(): Promise<ProjectFlowData> {
               (effect) => effect.taskSlug === task.slug,
             ),
         );
-        const inputArtifactLabels = (task.inputArtifacts || []).map((item) => ({
-          slug: item.artifactSlug,
-          name: artifactMap.get(item.artifactSlug)?.name || item.artifactSlug,
-          status: item.minStatus,
-        }));
-        const outputArtifactLabels = (task.outputArtifacts || []).map(
-          (item) => ({
+        const inputArtifactLabels = (task.inputArtifacts || []).map((item) => {
+          const definition = artifactMap.get(item.artifactSlug);
+          const minStatus = item.minStatus || definition?.defaultStatus || "draft";
+          return {
             slug: item.artifactSlug,
-            name: artifactMap.get(item.artifactSlug)?.name || item.artifactSlug,
-            status: item.status,
-          }),
-        );
+            name: definition?.name || item.artifactSlug,
+            status: minStatus,
+            statusLabel: getArtifactStatusLabel(minStatus, definition),
+          };
+        });
+        const outputArtifactLabels = (task.outputArtifacts || []).map((item) => {
+          const definition = artifactMap.get(item.artifactSlug);
+          const status = item.status || definition?.defaultStatus || "draft";
+          return {
+            slug: item.artifactSlug,
+            name: definition?.name || item.artifactSlug,
+            status,
+            statusLabel: getArtifactStatusLabel(status, definition),
+          };
+        });
         const milestoneLabels = Object.keys(task.milestoneEffects || {}).map(
           (key) => ({
             key,
@@ -296,14 +317,21 @@ export async function loadProjectFlowData(): Promise<ProjectFlowData> {
           .filter((name) => !studio.npcs.some((npc) => npc.name === name))
           .map((name) => ({ name, description: "兼容岗位 / 单位别名" })),
       ],
-      artifacts: studio.artifactDefinitions.map((artifact) => ({
-        slug: artifact.slug,
-        name: artifact.name,
-        defaultStatus: artifact.defaultStatus || "draft",
-        allowedStatuses: (artifact.allowedStatuses || []).map(
-          (status) => status.status,
-        ),
-      })),
+      artifacts: studio.artifactDefinitions.map((artifact) => {
+        const allowedStatusOptions = resolveAllowedStatuses(artifact).map(
+          (status) => ({
+            status: status.status,
+            label: status.label || status.status,
+          }),
+        );
+        return {
+          slug: artifact.slug,
+          name: artifact.name,
+          defaultStatus: artifact.defaultStatus || "draft",
+          allowedStatuses: allowedStatusOptions.map((item) => item.status),
+          allowedStatusOptions,
+        };
+      }),
       milestones: Object.entries(MILESTONE_LABELS).map(([key, label]) => ({
         key,
         label,

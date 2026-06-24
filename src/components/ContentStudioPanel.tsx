@@ -365,7 +365,19 @@ export function ContentStudioPanel({
 
       {activeTab === "debug" ? (
         <section>
-          <ContentStudioDependencyDebugPanel taskSlugs={taskSlugs} />
+          <ContentStudioDependencyDebugPanel
+            taskSlugs={taskSlugs}
+            tasks={data.taskTemplates.map((task) => ({
+              slug: task.slug,
+              title: task.title,
+            }))}
+            artifacts={data.artifactDefinitions.map((artifact) => ({
+              slug: artifact.slug,
+              name: artifact.name,
+              allowedStatuses: artifact.allowedStatuses,
+              defaultStatus: artifact.defaultStatus,
+            }))}
+          />
         </section>
       ) : null}
 

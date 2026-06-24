@@ -1,10 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PROJECT_STAGES } from "@/game/projectStages";
-import { CONSTRUCTION_MAINLINE_TASK_SLUGS } from "@/data/constructionProjectMainlineTasks";
+import {
+  DisplayNativeSelect,
+  DisplayTitle,
+  SlugHint,
+} from "@/components/ops/OpsDisplayHelpers";
+import { CONSTRUCTION_PROJECT_MAINLINE_TASKS } from "@/data/constructionProjectMainlineTasks";
+import {
+  artifactToDisplayOption,
+  getArtifactStatusLabel,
+  getRuntimeTaskStatusLabel,
+  getStageDisplayName,
+  getStageGateStatusLabel,
+  localizeBlockingReasons,
+  resolveArtifactStatusOptions,
+  taskToDisplayOption,
+} from "@/game/contentDisplayLabels";
 
 type MainlineTaskRow = {
   slug: string;
@@ -17,6 +31,15 @@ type MainlineTaskRow = {
   missingArtifacts: { slug: string; name: string; required: string; actual: string }[];
 };
 
+type ArtifactOption = {
+  slug: string;
+  name: string;
+  stage?: string;
+  defaultStatus: string;
+  currentStatus: string | null;
+  allowedStatusOptions: { status: string; label: string }[];
+};
+
 type DebugStatus = {
   project?: { currentStage?: string; stageProgress?: number; overallProgress?: number };
   milestones?: Record<string, boolean>;
@@ -25,7 +48,7 @@ type DebugStatus = {
     stageGateStatus?: string;
     blockingReasons: string[];
   };
-  artifacts?: { slug: string; name: string; stage?: string; currentStatus: string | null }[];
+  artifacts?: ArtifactOption[];
   mainlineByStage?: Record<string, MainlineTaskRow[]>;
   permitDebug?: {
     slug: string;
@@ -33,7 +56,12 @@ type DebugStatus = {
     available: boolean;
     blockingReasons: string[];
     missingArtifacts: { slug: string; name: string; required: string; actual: string }[];
-    inputArtifacts: { slug: string; minStatus: string; currentStatus: string | null }[];
+    inputArtifacts: {
+      slug: string;
+      name: string;
+      minStatus: string;
+      currentStatus: string | null;
+    }[];
   };
 };
 
@@ -46,15 +74,16 @@ async function fetchStatus(): Promise<DebugStatus> {
 
 const STAGE_ORDER = ["INITIATION", "APPROVAL", "DESIGN", "PROCUREMENT", "CONSTRUCTION"] as const;
 
-function stageLabel(stageId: string) {
-  return PROJECT_STAGES.find((s) => s.id === stageId)?.name || stageId;
-}
+const MAINLINE_TASK_OPTIONS = CONSTRUCTION_PROJECT_MAINLINE_TASKS.filter(
+  (task) => task.category === "mainline",
+).map((task) => taskToDisplayOption(task));
 
-function statusBadge(status: string | null) {
-  if (!status) return <Badge variant="outline">未生成</Badge>;
-  if (status === "COMPLETED") return <Badge className="bg-emerald-700">已完成</Badge>;
-  if (status === "IN_PROGRESS") return <Badge className="bg-sky-700">进行中</Badge>;
-  return <Badge variant="outline">{status}</Badge>;
+function runtimeStatusBadge(status: string | null) {
+  const label = getRuntimeTaskStatusLabel(status);
+  if (!status) return <Badge variant="outline">{label}</Badge>;
+  if (status === "COMPLETED") return <Badge className="bg-emerald-700">{label}</Badge>;
+  if (status === "IN_PROGRESS") return <Badge className="bg-sky-700">{label}</Badge>;
+  return <Badge variant="outline">{label}</Badge>;
 }
 
 export function ContentStudioMainlineDebugPanel() {
@@ -64,6 +93,59 @@ export function ContentStudioMainlineDebugPanel() {
   const [grantSlug, setGrantSlug] = useState("approval_reply");
   const [grantStatus, setGrantStatus] = useState("approved");
   const [selectedSlug, setSelectedSlug] = useState("submit_construction_permit_application");
+
+  const artifactLookup = useMemo(() => {
+    const map = new Map<string, ArtifactOption>();
+    for (const artifact of status?.artifacts || []) {
+      map.set(artifact.slug, artifact);
+    }
+    return map;
+  }, [status?.artifacts]);
+
+  const displayContext = useMemo(
+    () => ({
+      taskTitles: new Map(
+        CONSTRUCTION_PROJECT_MAINLINE_TASKS.map((task) => [
+          task.slug,
+          task.title?.trim() || task.slug,
+        ]),
+      ),
+      artifactNames: new Map(
+        (status?.artifacts || []).map((artifact) => [
+          artifact.slug,
+          artifact.name?.trim() || artifact.slug,
+        ]),
+      ),
+      artifactLookup: artifactLookup,
+    }),
+    [status?.artifacts, artifactLookup],
+  );
+
+  function handleGrantSlugChange(nextSlug: string) {
+    setGrantSlug(nextSlug);
+    const artifact = artifactLookup.get(nextSlug);
+    const options = artifact
+      ? artifact.allowedStatusOptions.length > 0
+        ? artifact.allowedStatusOptions
+        : resolveArtifactStatusOptions(artifact)
+      : resolveArtifactStatusOptions(null);
+    setGrantStatus(artifact?.defaultStatus || options[0]?.status || "draft");
+  }
+  const grantArtifact = artifactLookup.get(grantSlug);
+  const grantStatusOptions = useMemo(
+    () =>
+      grantArtifact
+        ? grantArtifact.allowedStatusOptions.length > 0
+          ? grantArtifact.allowedStatusOptions
+          : resolveArtifactStatusOptions(grantArtifact)
+        : resolveArtifactStatusOptions(null),
+    [grantArtifact],
+  );
+
+  const artifactSelectOptions = useMemo(
+    () => (status?.artifacts || []).map((artifact) => artifactToDisplayOption(artifact)),
+    [status?.artifacts],
+  );
 
   const loadStatus = useCallback(async () => {
     setLoading(true);
@@ -166,13 +248,13 @@ export function ContentStudioMainlineDebugPanel() {
         <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
           <p className="text-xs text-zinc-500">当前阶段</p>
           <p className="mt-1 text-lg font-medium text-zinc-100">
-            {stageLabel(project?.currentStage || "INITIATION")}
+            {getStageDisplayName(project?.currentStage || "INITIATION")}
           </p>
           <p className="mt-2 text-sm text-zinc-400">
             阶段进度 {project?.stageProgress ?? 0}% · 总体 {project?.overallProgress ?? 0}%
           </p>
           <p className="mt-1 text-xs text-zinc-500">
-            阶段门：{status?.stageGate?.stageGateStatus || "—"}
+            阶段门：{getStageGateStatusLabel(status?.stageGate?.stageGateStatus)}
             {status?.stageGate?.canAdvance ? " · 可推进" : ""}
           </p>
         </div>
@@ -180,9 +262,11 @@ export function ContentStudioMainlineDebugPanel() {
           <p className="text-xs text-zinc-500">阶段门阻塞</p>
           {status?.stageGate?.blockingReasons?.length ? (
             <ul className="mt-2 space-y-1 text-sm text-amber-300/90">
-              {status.stageGate.blockingReasons.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
+              {localizeBlockingReasons(status.stageGate.blockingReasons, displayContext).map(
+                (line) => (
+                  <li key={line}>{line}</li>
+                ),
+              )}
             </ul>
           ) : (
             <p className="mt-2 text-sm text-emerald-400/90">无阶段门阻塞</p>
@@ -193,30 +277,44 @@ export function ContentStudioMainlineDebugPanel() {
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium text-zinc-100">施工许可终局任务</p>
-          <Badge variant="outline">{permit?.slug}</Badge>
+          {permit ? (
+            <Badge variant="outline">{permit.title}</Badge>
+          ) : null}
         </div>
         {permit ? (
           <>
-            <p className="text-sm text-zinc-400">
-              {permit.title} · {permit.available ? "依赖已满足" : "仍有阻塞"}
-            </p>
+            <div>
+              <p className="text-sm text-zinc-300">{permit.title}</p>
+              <SlugHint slug={permit.slug} className="mt-0.5 block" />
+              <p className="mt-1 text-sm text-zinc-400">
+                {permit.available ? "依赖已满足" : "仍有阻塞"}
+              </p>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="text-zinc-500">
                   <tr>
                     <th className="px-2 py-1 text-left">成果物</th>
-                    <th className="px-2 py-1 text-left">需要</th>
-                    <th className="px-2 py-1 text-left">当前</th>
+                    <th className="px-2 py-1 text-left">需要状态</th>
+                    <th className="px-2 py-1 text-left">当前状态</th>
                   </tr>
                 </thead>
                 <tbody>
                   {permit.inputArtifacts.map((item) => {
                     const missing = permit.missingArtifacts.some((m) => m.slug === item.slug);
+                    const artifact = artifactLookup.get(item.slug);
                     return (
                       <tr key={item.slug} className={missing ? "text-rose-300" : "text-zinc-300"}>
-                        <td className="px-2 py-1 font-mono text-xs">{item.slug}</td>
-                        <td className="px-2 py-1">{item.minStatus}</td>
-                        <td className="px-2 py-1">{item.currentStatus || "未产出"}</td>
+                        <td className="px-2 py-1">
+                          <p>{item.name}</p>
+                          <SlugHint slug={item.slug} />
+                        </td>
+                        <td className="px-2 py-1">
+                          {getArtifactStatusLabel(item.minStatus, artifact)}
+                        </td>
+                        <td className="px-2 py-1">
+                          {getArtifactStatusLabel(item.currentStatus, artifact)}
+                        </td>
                       </tr>
                     );
                   })}
@@ -225,7 +323,7 @@ export function ContentStudioMainlineDebugPanel() {
             </div>
             {permit.blockingReasons.length > 0 ? (
               <ul className="space-y-1 text-sm text-rose-300/90">
-                {permit.blockingReasons.map((line) => (
+                {localizeBlockingReasons(permit.blockingReasons, displayContext).map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>
@@ -234,20 +332,15 @@ export function ContentStudioMainlineDebugPanel() {
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-end gap-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
-        <label className="text-sm text-zinc-400">
-          完成任务
-          <select
-            className="mt-1 block rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
+        <label className="space-y-1 text-sm text-zinc-400">
+          <span>完成任务</span>
+          <DisplayNativeSelect
+            className="mt-1 min-w-[280px]"
             value={selectedSlug}
-            onChange={(e) => setSelectedSlug(e.target.value)}
-          >
-            {CONSTRUCTION_MAINLINE_TASK_SLUGS.map((slug) => (
-              <option key={slug} value={slug}>
-                {slug}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedSlug}
+            options={MAINLINE_TASK_OPTIONS}
+          />
         </label>
         <Button
           size="sm"
@@ -259,21 +352,29 @@ export function ContentStudioMainlineDebugPanel() {
         >
           完成选中任务
         </Button>
-        <label className="text-sm text-zinc-400">
-          授予成果物 slug
-          <input
-            className="mt-1 block rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
+        <label className="space-y-1 text-sm text-zinc-400">
+          <span>授予成果物</span>
+          <DisplayNativeSelect
+            className="mt-1 min-w-[240px]"
             value={grantSlug}
-            onChange={(e) => setGrantSlug(e.target.value)}
+            onChange={handleGrantSlugChange}
+            options={artifactSelectOptions}
           />
         </label>
-        <label className="text-sm text-zinc-400">
-          状态
-          <input
-            className="mt-1 block w-28 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
+        <label className="space-y-1 text-sm text-zinc-400">
+          <span>状态</span>
+          <select
+            className="mt-1 block min-w-[160px] rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
             value={grantStatus}
             onChange={(e) => setGrantStatus(e.target.value)}
-          />
+          >
+            {grantStatusOptions.map((option) => (
+              <option key={option.status} value={option.status}>
+                {option.label}
+                {option.label !== option.status ? `（${option.status}）` : ""}
+              </option>
+            ))}
+          </select>
         </label>
         <Button
           size="sm"
@@ -294,7 +395,7 @@ export function ContentStudioMainlineDebugPanel() {
         if (rows.length === 0) return null;
         return (
           <div key={stageId} className="space-y-2">
-            <h3 className="text-sm font-medium text-zinc-300">{stageLabel(stageId)}</h3>
+            <h3 className="text-sm font-medium text-zinc-300">{getStageDisplayName(stageId)}</h3>
             <div className="overflow-x-auto rounded-lg border border-zinc-800">
               <table className="min-w-full text-sm">
                 <thead className="bg-zinc-900/80 text-zinc-400">
@@ -309,10 +410,9 @@ export function ContentStudioMainlineDebugPanel() {
                   {rows.map((row) => (
                     <tr key={row.slug} className="bg-zinc-950/40">
                       <td className="px-3 py-2">
-                        <p className="text-zinc-100">{row.title}</p>
-                        <p className="font-mono text-xs text-zinc-500">{row.slug}</p>
+                        <DisplayTitle title={row.title} slug={row.slug} />
                       </td>
-                      <td className="px-3 py-2">{statusBadge(row.runtimeStatus)}</td>
+                      <td className="px-3 py-2">{runtimeStatusBadge(row.runtimeStatus)}</td>
                       <td className="px-3 py-2">
                         {row.available ? (
                           <span className="text-emerald-400">是</span>
@@ -322,7 +422,7 @@ export function ContentStudioMainlineDebugPanel() {
                       </td>
                       <td className="px-3 py-2 text-xs text-zinc-400">
                         {row.blockingReasons.length
-                          ? row.blockingReasons.join("；")
+                          ? localizeBlockingReasons(row.blockingReasons, displayContext).join("；")
                           : "—"}
                       </td>
                     </tr>
