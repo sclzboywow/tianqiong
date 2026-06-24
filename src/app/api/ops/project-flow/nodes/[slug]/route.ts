@@ -93,6 +93,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
         {
           error: "存在引用，无法删除",
           blockers: preview.validation.blockers,
+          warnings: preview.validation.warnings,
         },
         { status: 400 },
       );

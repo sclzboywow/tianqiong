@@ -38,6 +38,34 @@ export type ProjectFlowNodeDeleteBlocker = {
   refs: string[];
 };
 
+export type ProjectFlowNodeDeleteValidation = {
+  ok: boolean;
+  blockers: ProjectFlowNodeDeleteBlocker[];
+  warnings: string[];
+};
+
+async function collectDeleteWarnings(
+  studio: OpsStudioSnapshot,
+  slug: string,
+): Promise<string[]> {
+  const warnings: string[] = [];
+
+  for (const task of studio.taskTemplates) {
+    if (task.slug === slug) continue;
+    if (!(task.prerequisiteTaskSlugs || []).includes(slug)) continue;
+    warnings.push(
+      `将从任务「${getTaskDisplayName(task.slug, studio.taskTemplates)}」的前置任务中移除本节点`,
+    );
+  }
+
+  const runtimeCount = await prisma.task.count({ where: { templateId: slug } });
+  if (runtimeCount > 0) {
+    warnings.push(`将删除 ${runtimeCount} 条关联运行任务记录`);
+  }
+
+  return warnings;
+}
+
 function toSlugPayload(slugs: string[]) {
   return slugs.map((slug) => ({ slug }));
 }
@@ -191,7 +219,7 @@ export function findProjectFlowNodeReferences(
 
 export async function validateProjectFlowNodeDelete(
   slug: string,
-): Promise<{ ok: boolean; blockers: ProjectFlowNodeDeleteBlocker[] }> {
+): Promise<ProjectFlowNodeDeleteValidation> {
   const studio = await loadOpsStudioSnapshot();
   const bundle = findProjectFlowNodeReferences(studio, slug);
   const blockers: ProjectFlowNodeDeleteBlocker[] = [];
@@ -200,6 +228,7 @@ export async function validateProjectFlowNodeDelete(
     return {
       ok: false,
       blockers: [{ kind: "missing", message: "流程节点不存在", refs: [slug] }],
+      warnings: [],
     };
   }
 
@@ -213,30 +242,13 @@ export async function validateProjectFlowNodeDelete(
           refs: [slug],
         },
       ],
+      warnings: [],
     };
   }
 
-  for (const task of studio.taskTemplates) {
-    if (task.slug === slug || task.enabled === false) continue;
-    if ((task.prerequisiteTaskSlugs || []).includes(slug)) {
-      blockers.push({
-        kind: "prerequisite",
-        message: `任务「${getTaskDisplayName(task.slug, studio.taskTemplates)}」将其设为前置任务`,
-        refs: [task.slug],
-      });
-    }
-  }
+  const warnings = await collectDeleteWarnings(studio, slug);
 
-  const runtimeCount = await prisma.task.count({ where: { templateId: slug } });
-  if (runtimeCount > 0) {
-    blockers.push({
-      kind: "runtime",
-      message: "该任务可能已有运行记录，请先停用，不建议永久删除",
-      refs: [slug],
-    });
-  }
-
-  return { ok: blockers.length === 0, blockers };
+  return { ok: blockers.length === 0, blockers, warnings };
 }
 
 async function setEnabledForBundle(
@@ -493,6 +505,28 @@ export async function enableProjectFlowNode(slug: string) {
   };
 }
 
+async function cleanupPrerequisiteReferences(
+  payload: Awaited<ReturnType<typeof getOpsPayloadContext>>["payload"],
+  req: Awaited<ReturnType<typeof getOpsPayloadContext>>["req"],
+  studio: OpsStudioSnapshot,
+  slug: string,
+) {
+  for (const task of studio.taskTemplates) {
+    if (task.slug === slug) continue;
+    if (!(task.prerequisiteTaskSlugs || []).includes(slug)) continue;
+    const docId = studio.taskTemplateDocIds[task.slug];
+    if (docId == null) continue;
+
+    const nextSlugs = removeTaskFromTriggerSlugs(task.prerequisiteTaskSlugs, slug);
+    await payload.update({
+      collection: "task-templates",
+      id: docId,
+      data: { prerequisiteTaskSlugs: toSlugPayload(nextSlugs) },
+      req,
+    });
+  }
+}
+
 async function cleanupStoryReferences(
   payload: Awaited<ReturnType<typeof getOpsPayloadContext>>["payload"],
   req: Awaited<ReturnType<typeof getOpsPayloadContext>>["req"],
@@ -549,9 +583,10 @@ export async function deleteProjectFlowNode(
   const { payload, req, transactionStarted, commitTransaction, killTransaction } =
     await getOpsPayloadContext();
 
-  const deleted = { tasks: 0, actions: 0, events: 0, stories: 0 };
+  const deleted = { tasks: 0, actions: 0, events: 0, stories: 0, runtimeTasks: 0 };
   const deletedEventSlugs = new Set<string>();
   const deletedStorySlugs = new Set<string>();
+  const warnings = validation.warnings;
 
   try {
     for (const action of bundle.actions) {
@@ -613,6 +648,8 @@ export async function deleteProjectFlowNode(
       });
     }
 
+    await cleanupPrerequisiteReferences(payload, req, studio, slug);
+
     if (options.deleteStories) {
       for (const story of bundle.stories) {
         if (!storyOnlyServesTask(story, slug)) continue;
@@ -635,6 +672,11 @@ export async function deleteProjectFlowNode(
       deletedStorySlugs,
     );
 
+    const runtimeResult = await prisma.task.deleteMany({
+      where: { templateId: slug },
+    });
+    deleted.runtimeTasks = runtimeResult.count;
+
     await payload.delete({
       collection: "task-templates",
       id: bundle.taskDocId,
@@ -646,7 +688,7 @@ export async function deleteProjectFlowNode(
     clearDependencyTaskTitleCache();
     refreshProjectFlowCaches(slug);
 
-    return { ok: true as const, slug, deleted };
+    return { ok: true as const, slug, deleted, warnings };
   } catch (error) {
     if (transactionStarted) await killTransaction(req);
     throw error;

@@ -58,13 +58,14 @@ async function deleteNode(
   const data = await res.json();
   if (!res.ok) {
     const blockers = (data.blockers || []) as DeleteBlocker[];
+    const extraWarnings = (data.warnings || []) as string[];
     const detail =
       blockers.length > 0
         ? blockers.map((item) => item.message).join("；")
-        : data.error;
+        : [...extraWarnings, data.error].filter(Boolean).join("；");
     throw new Error(detail || "删除失败");
   }
-  return data;
+  return data as { warnings?: string[] };
 }
 
 export function ProjectFlowNodeLifecyclePanel({
@@ -109,8 +110,11 @@ export function ProjectFlowNodeLifecyclePanel({
     setLoading("delete");
     setMessage(null);
     try {
-      await deleteNode(slug, confirmSlug.trim(), deleteStories);
+      const result = await deleteNode(slug, confirmSlug.trim(), deleteStories);
       setConfirmOpen(false);
+      if (result.warnings?.length) {
+        setWarnings(result.warnings);
+      }
       router.push("/ops/project-flow");
       router.refresh();
     } catch (error) {
@@ -240,7 +244,7 @@ export function ProjectFlowNodeLifecyclePanel({
             {deleteStories ? " 关联剧情也会一并删除。" : " 剧情片段默认保留。"}
           </p>
           <p className="text-xs text-rose-300">
-            若其它任务、事件或地点行动仍引用该节点，删除会被阻止。
+            共享地点行动/事件会自动解除关联；其它任务的前置依赖与运行记录也会一并清理。
           </p>
           <label className="flex items-center gap-2 text-xs text-zinc-400">
             <input
