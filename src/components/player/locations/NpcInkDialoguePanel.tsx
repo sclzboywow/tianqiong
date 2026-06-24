@@ -68,7 +68,7 @@ export function NpcInkDialoguePanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [choosing, setChoosing] = useState(false);
-  const [ttsSupported, setTtsSupported] = useState(false);
+  const [ttsSupported] = useState(() => isSpeechSynthesisSupported());
 
   const loadDialogue = useCallback(
     async (path: number[]) => {
@@ -126,8 +126,15 @@ export function NpcInkDialoguePanel({
 
   useEffect(() => {
     if (!open) return;
-    setChoicePath([]);
-    void loadDialogue([]);
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setChoicePath([]);
+      void loadDialogue([]);
+    });
+    return () => {
+      active = false;
+    };
   }, [open, loadDialogue, npc.npcId]);
 
   useEffect(() => {
@@ -149,7 +156,6 @@ export function NpcInkDialoguePanel({
   }, [story?.lines.length, story?.choices.length, status]);
 
   useEffect(() => {
-    setTtsSupported(isSpeechSynthesisSupported());
     return () => {
       if (isSpeechSynthesisSupported()) {
         window.speechSynthesis.cancel();
@@ -159,7 +165,7 @@ export function NpcInkDialoguePanel({
 
   const segments = useMemo(
     () => (story?.lines ? buildStorySegments(story.lines) : []),
-    [story?.lines],
+    [story],
   );
 
   async function handleChoose(index: number) {

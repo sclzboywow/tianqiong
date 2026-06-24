@@ -63,6 +63,42 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 ## 部署流程（概要）
 
+### 方式 A：GitHub Actions 自动部署（推荐）
+
+`main` 分支 CI 通过后，会自动触发 **Deploy Internal Test** 工作流（也可在 Actions 页手动 `workflow_dispatch`）。
+
+内测服无法直连 GitHub 时，工作流使用 **git bundle** 同步代码（与本地 `scripts/sync-internal-test-bundle.sh` 相同）。
+
+**仓库 Secrets（Settings → Secrets and variables → Actions）：**
+
+| Secret | 必填 | 说明 |
+|--------|------|------|
+| `INTERNAL_TEST_SSH_HOST` | 是 | 内测服 IP，如 `111.231.22.77` |
+| `INTERNAL_TEST_SSH_KEY` | 是 | 部署用 SSH 私钥全文（对应服务器 `ubuntu` 用户） |
+| `INTERNAL_TEST_SSH_USER` | 否 | 默认 `ubuntu` |
+| `INTERNAL_TEST_SSH_PORT` | 否 | 默认 `22` |
+
+未配置上述 Secrets 时，部署工作流会 **跳过** 同步（CI 仍正常运行）。
+
+**CI 工作流（`.github/workflows/ci.yml`）** 在每次 push / PR 时执行：`npm ci` → `lint` → `typecheck` → `build`。
+
+### 方式 B：本机 bundle 手动同步
+
+```bash
+# 使用默认密钥 ~/.ssh/id_ed25519
+export INTERNAL_TEST_SSH_HOST=111.231.22.77
+export SSH_IDENTITY_FILE=$HOME/.ssh/id_ed25519
+bash scripts/sync-internal-test-bundle.sh
+```
+
+### 方式 C：服务器上直接拉取（需服务器能访问 GitHub）
+
+```bash
+bash scripts/deploy-internal-test.sh
+```
+
+---
+
 ### 1. 拉取代码
 
 ```bash

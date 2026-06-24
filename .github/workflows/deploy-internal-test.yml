@@ -1,0 +1,40 @@
+name: Deploy Internal Test
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-internal-test
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+
+      - name: Skip deploy (secrets not configured)
+        if: ${{ secrets.INTERNAL_TEST_SSH_HOST == '' || secrets.INTERNAL_TEST_SSH_KEY == '' }}
+        run: echo "跳过内测部署：请在仓库 Settings → Secrets 配置 INTERNAL_TEST_SSH_HOST 与 INTERNAL_TEST_SSH_KEY"
+
+      - name: Sync bundle and deploy
+        if: ${{ secrets.INTERNAL_TEST_SSH_HOST != '' && secrets.INTERNAL_TEST_SSH_KEY != '' }}
+        env:
+          INTERNAL_TEST_SSH_HOST: ${{ secrets.INTERNAL_TEST_SSH_HOST }}
+          INTERNAL_TEST_SSH_USER: ${{ secrets.INTERNAL_TEST_SSH_USER }}
+          INTERNAL_TEST_SSH_KEY: ${{ secrets.INTERNAL_TEST_SSH_KEY }}
+          INTERNAL_TEST_SSH_PORT: ${{ secrets.INTERNAL_TEST_SSH_PORT }}
+        run: |
+          chmod +x scripts/sync-internal-test-bundle.sh scripts/deploy-internal-test-remote.sh
+          bash scripts/sync-internal-test-bundle.sh
