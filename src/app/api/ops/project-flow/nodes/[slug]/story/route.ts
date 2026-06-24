@@ -159,7 +159,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     if (mode === "bind") {
       const targetStory = opsStudio.storyEntries.find((story) => story.slug === storySlug);
-      if (!targetStory) {
+      const storyDocId = opsStudio.storyEntryDocIds[storySlug];
+      if (!targetStory || storyDocId == null) {
         return NextResponse.json({ error: "剧情入口不存在" }, { status: 400 });
       }
 
@@ -171,21 +172,29 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         if (!input.title?.trim()) {
           return NextResponse.json({ error: "绑定并更新时需要填写剧情标题" }, { status: 400 });
         }
-        await upsertPayloadDoc(ctx.payload, ctx.req, "story-entries", storySlug, {
-          ...storyPayloadFromSource(targetStory, storySlug, relations, slug, {
-            title: input.title,
-            description: input.description,
-            inkFile: input.inkFile,
-            status: input.status,
-            estimatedMinutes: input.estimatedMinutes,
-            tags: input.tags,
-            relatedNpcNames: input.relatedNpcNames,
-          }),
-          relatedTaskSlugs: toSlugPayload(relatedTaskSlugs),
+        await ctx.payload.update({
+          collection: "story-entries",
+          id: storyDocId,
+          data: {
+            ...storyPayloadFromSource(targetStory, storySlug, relations, slug, {
+              title: input.title,
+              description: input.description,
+              inkFile: input.inkFile,
+              status: input.status,
+              estimatedMinutes: input.estimatedMinutes,
+              tags: input.tags,
+              relatedNpcNames: input.relatedNpcNames,
+            }),
+            relatedTaskSlugs: toSlugPayload(relatedTaskSlugs),
+          },
+          req: ctx.req,
         });
       } else {
-        await upsertPayloadDoc(ctx.payload, ctx.req, "story-entries", storySlug, {
-          relatedTaskSlugs: toSlugPayload(relatedTaskSlugs),
+        await ctx.payload.update({
+          collection: "story-entries",
+          id: storyDocId,
+          data: { relatedTaskSlugs: toSlugPayload(relatedTaskSlugs) },
+          req: ctx.req,
         });
       }
 

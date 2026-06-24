@@ -125,11 +125,112 @@ export function ProjectFlowStoryWorkbench({
   const [updateStoryEntryOnBind, setUpdateStoryEntryOnBind] = useState(false);
   const [cloneSourceSlug, setCloneSourceSlug] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [choicePath, setChoicePath] = useState<number[]>([]);
+  const [previewHistory, setPreviewHistory] = useState<string[]>([]);
   const [preview, setPreview] = useState<InkPreviewState>({
     loading: false,
     ok: false,
     inkFile: committedForm.inkFile,
   });
+
+  const fetchPreview = useCallback(async (inkFile: string, path: number[]) => {
+    if (!inkFile.trim()) {
+      setPreview({ loading: false, ok: false, inkFile, status: "missing" });
+      return;
+    }
+    setPreview((prev) => ({ ...prev, loading: true, inkFile }));
+    try {
+      const res = await fetch("/api/ops/ink/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inkFile, choicePath: path }),
+      });
+      const data = await res.json();
+      setPreview({
+        loading: false,
+        ok: Boolean(data.ok),
+        inkFile,
+        status: data.status || (data.ok ? "available" : "missing"),
+        lines: data.lines,
+        choices: data.choices,
+        ended: data.ended,
+        error: data.error,
+        sourcePath: data.sourcePath,
+        compiledPath: data.compiledPath,
+      });
+    } catch {
+      setPreview({
+        loading: false,
+        ok: false,
+        inkFile,
+        status: "load_failed",
+        error: "预览请求失败",
+      });
+    }
+  }, []);
+
+  const resetPreview = useCallback(() => {
+    setChoicePath([]);
+    setPreviewHistory([]);
+    void fetchPreview(form.inkFile, []);
+  }, [fetchPreview, form.inkFile]);
+
+  const handlePreviewChoice = useCallback(
+    (choiceIndex: number) => {
+      setPreviewHistory((prev) => [...prev, ...(preview.lines || [])]);
+      const nextPath = [...choicePath, choiceIndex];
+      setChoicePath(nextPath);
+      void fetchPreview(form.inkFile, nextPath);
+    },
+    [choicePath, fetchPreview, form.inkFile, preview.lines],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const inkFile = form.inkFile;
+    if (!inkFile.trim()) return;
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/ops/ink/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inkFile, choicePath: [] }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        setChoicePath([]);
+        setPreviewHistory([]);
+        setPreview({
+          loading: false,
+          ok: Boolean(data.ok),
+          inkFile,
+          status: data.status || (data.ok ? "available" : "missing"),
+          lines: data.lines,
+          choices: data.choices,
+          ended: data.ended,
+          error: data.error,
+          sourcePath: data.sourcePath,
+          compiledPath: data.compiledPath,
+        });
+      } catch {
+        if (cancelled) return;
+        setChoicePath([]);
+        setPreviewHistory([]);
+        setPreview({
+          loading: false,
+          ok: false,
+          inkFile,
+          status: "load_failed",
+          error: "预览请求失败",
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.inkFile]);
 
   const activeEntry = useMemo(
     () => storyEntries.find((item) => item.slug === committedForm.storySlug),
@@ -158,81 +259,6 @@ export function ProjectFlowStoryWorkbench({
     const related = editingEntry?.relatedTaskSlugs || [];
     return related.filter((taskSlug) => taskSlug !== slug);
   }, [editingEntry, slug]);
-
-  const loadPreview = useCallback(async (inkFile: string) => {
-    if (!inkFile.trim()) {
-      setPreview({ loading: false, ok: false, inkFile, status: "missing" });
-      return;
-    }
-    setPreview((prev) => ({ ...prev, loading: true, inkFile }));
-    try {
-      const res = await fetch(
-        `/api/ops/ink/preview?inkFile=${encodeURIComponent(inkFile)}`,
-      );
-      const data = await res.json();
-      setPreview({
-        loading: false,
-        ok: Boolean(data.ok),
-        inkFile,
-        status: data.status || (data.ok ? "available" : "missing"),
-        lines: data.lines,
-        choices: data.choices,
-        ended: data.ended,
-        error: data.error,
-        sourcePath: data.sourcePath,
-        compiledPath: data.compiledPath,
-      });
-    } catch {
-      setPreview({
-        loading: false,
-        ok: false,
-        inkFile,
-        status: "load_failed",
-        error: "预览请求失败",
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    const inkFile = form.inkFile;
-    if (!inkFile.trim()) {
-      return;
-    }
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/ops/ink/preview?inkFile=${encodeURIComponent(inkFile)}`,
-        );
-        const data = await res.json();
-        if (cancelled) return;
-        setPreview({
-          loading: false,
-          ok: Boolean(data.ok),
-          inkFile,
-          status: data.status || (data.ok ? "available" : "missing"),
-          lines: data.lines,
-          choices: data.choices,
-          ended: data.ended,
-          error: data.error,
-          sourcePath: data.sourcePath,
-          compiledPath: data.compiledPath,
-        });
-      } catch {
-        if (cancelled) return;
-        setPreview({
-          loading: false,
-          ok: false,
-          inkFile,
-          status: "load_failed",
-          error: "预览请求失败",
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [form.inkFile]);
 
   function resetToCommitted() {
     setForm(committedForm);
@@ -525,7 +551,7 @@ export function ProjectFlowStoryWorkbench({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => void loadPreview(form.inkFile)}
+              onClick={resetPreview}
               className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1")}
             >
               <RefreshCw className="size-3.5" />
@@ -543,7 +569,7 @@ export function ProjectFlowStoryWorkbench({
           </div>
         </div>
         <p className="mt-1 text-xs leading-5 text-zinc-500">
-          预览当前 Ink 脚本的初始文本和玩家选项，用于检查调用是否正确。
+          预览当前 Ink 脚本的文本和玩家选项；点击选项可继续预览分支剧情。
         </p>
         <div className="mt-3 space-y-2 text-xs text-zinc-500">
           <p>源文件通常为：src/ink/stories/{form.inkFile || "…"}.ink</p>
@@ -557,20 +583,42 @@ export function ProjectFlowStoryWorkbench({
             </p>
           ) : preview.ok ? (
             <div className="space-y-4">
+              {choicePath.length > 0 ? (
+                <p className="text-xs text-zinc-500">
+                  已选分支：{choicePath.map((item) => item + 1).join(" → ")}
+                </p>
+              ) : null}
               <div className="space-y-2 text-sm leading-6 text-zinc-200">
+                {previewHistory.map((line, index) => (
+                  <p key={`history-${index}-${line}`} className="text-zinc-400">
+                    {line}
+                  </p>
+                ))}
                 {preview.lines?.length ? (
-                  preview.lines.map((line) => <p key={line}>{line}</p>)
-                ) : (
+                  preview.lines.map((line, index) => (
+                    <p key={`current-${index}-${line}`}>{line}</p>
+                  ))
+                ) : previewHistory.length === 0 ? (
                   <p className="text-zinc-500">（脚本暂无初始文本）</p>
-                )}
+                ) : null}
               </div>
               {preview.choices?.length ? (
                 <div>
-                  <p className="text-xs text-zinc-500">当前可选选项</p>
-                  <ul className="mt-2 space-y-1 text-sm text-sky-200">
+                  <p className="text-xs text-zinc-500">当前可选选项（点击继续预览）</p>
+                  <ul className="mt-2 space-y-2">
                     {preview.choices.map((choice) => (
                       <li key={choice.choiceId}>
-                        {choice.index + 1}. {choice.text}
+                        <button
+                          type="button"
+                          disabled={preview.loading}
+                          onClick={() => handlePreviewChoice(choice.index)}
+                          className={cn(
+                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "h-auto w-full justify-start whitespace-normal px-3 py-2 text-left text-sky-200",
+                          )}
+                        >
+                          {choice.index + 1}. {choice.text}
+                        </button>
                       </li>
                     ))}
                   </ul>
