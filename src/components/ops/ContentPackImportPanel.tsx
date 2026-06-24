@@ -166,7 +166,7 @@ export function ContentPackImportPanel() {
     }
   }
 
-  const canImport = !imported && (report === null || report.ok);
+  const canImport = !imported && report?.ok === true;
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -227,8 +227,8 @@ export function ContentPackImportPanel() {
               {loading === "import" ? "导入中..." : "确认导入"}
             </button>
           </div>
-          {!report?.ok && report && (
-            <p className="text-xs text-zinc-500">存在校验错误时无法导入。</p>
+          {!report?.ok && (
+            <p className="text-xs text-zinc-500">请先校验内容包，校验通过后才能导入。</p>
           )}
           {requestError && (
             <p className="text-sm text-red-300">{requestError}</p>

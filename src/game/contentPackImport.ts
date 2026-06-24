@@ -7,6 +7,7 @@ import {
   formatPrerequisiteCycleIssue,
 } from "./projectFlowNodeUtils";
 import { getOpsPayloadContext } from "./projectFlowNodeMutations";
+import { clearArtifactDefinitionCache } from "./artifactLoader";
 import { clearStoryEntryCache } from "./storyEntryLoader";
 import { bustContentOrchestrationCache } from "@/lib/contentOrchestrationCache";
 import { bustOpsDataCache } from "@/lib/opsDataCache";
@@ -114,6 +115,72 @@ function readSlug(item: Record<string, unknown>): string {
   return typeof slug === "string" ? slug.trim() : "";
 }
 
+function toPayloadTextRows(items: unknown, field: string): Record<string, string>[] {
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((item) => {
+    if (typeof item === "string") {
+      const value = item.trim();
+      return value ? [{ [field]: value }] : [];
+    }
+    if (item && typeof item === "object") {
+      const value = (item as Record<string, string | undefined>)[field]?.trim();
+      return value ? [{ [field]: value }] : [];
+    }
+    return [];
+  });
+}
+
+function toItemArray(items: unknown): { item: string }[] {
+  return toPayloadTextRows(items, "item") as { item: string }[];
+}
+
+function toQuoteArray(items: unknown): { quote: string }[] {
+  return toPayloadTextRows(items, "quote") as { quote: string }[];
+}
+
+function toJobArray(items: unknown): { job: string }[] {
+  return toPayloadTextRows(items, "job") as { job: string }[];
+}
+
+function toMetricArray(items: unknown): { metric: string }[] {
+  return toPayloadTextRows(items, "metric") as { metric: string }[];
+}
+
+function toHookArray(items: unknown): { hook: string }[] {
+  return toPayloadTextRows(items, "hook") as { hook: string }[];
+}
+
+function toMilestoneArray(items: unknown): { milestone: string }[] {
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((item) => {
+    if (typeof item === "string") {
+      const value = item.trim();
+      return value ? [{ milestone: value }] : [];
+    }
+    if (item && typeof item === "object") {
+      const milestone = (item as { milestone?: string }).milestone?.trim();
+      return milestone ? [{ milestone }] : [];
+    }
+    return [];
+  });
+}
+
+function toAllowedStatuses(items: unknown) {
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((item) => {
+    if (typeof item === "string") {
+      const status = item.trim();
+      return status ? [{ status, label: status }] : [];
+    }
+    if (item && typeof item === "object") {
+      const row = item as { status?: string; label?: string };
+      if (!row.status?.trim()) return [];
+      return [{ status: row.status.trim(), label: row.label?.trim() || row.status.trim() }];
+    }
+    return [];
+  });
+}
+
 function toSlugArray(items: unknown): string[] {
   if (!Array.isArray(items)) return [];
   return items.flatMap((item) => {
@@ -177,6 +244,12 @@ function toTagArray(items: unknown): string[] {
 function toInputArtifacts(items: unknown) {
   if (!Array.isArray(items)) return [];
   return items.flatMap((item) => {
+    if (typeof item === "string") {
+      const artifactSlug = item.trim();
+      return artifactSlug
+        ? [{ artifactSlug, minStatus: "draft", quantity: 1 }]
+        : [];
+    }
     if (!item || typeof item !== "object") return [];
     const row = item as {
       artifactSlug?: string;
@@ -197,6 +270,12 @@ function toInputArtifacts(items: unknown) {
 function toOutputArtifacts(items: unknown) {
   if (!Array.isArray(items)) return [];
   return items.flatMap((item) => {
+    if (typeof item === "string") {
+      const artifactSlug = item.trim();
+      return artifactSlug
+        ? [{ artifactSlug, status: "draft", versionBump: false }]
+        : [];
+    }
     if (!item || typeof item !== "object") return [];
     const row = item as {
       artifactSlug?: string;
@@ -217,6 +296,10 @@ function toOutputArtifacts(items: unknown) {
 function toTaskEffects(items: unknown) {
   if (!Array.isArray(items)) return [];
   return items.flatMap((item) => {
+    if (typeof item === "string") {
+      const taskSlug = item.trim();
+      return taskSlug ? [{ action: "spawn", taskSlug }] : [];
+    }
     if (!item || typeof item !== "object") return [];
     const row = item as { action?: string; taskSlug?: string };
     if (!row.taskSlug?.trim()) return [];
@@ -233,15 +316,20 @@ function toMilestoneEffectList(
   milestoneEffects: unknown,
   list: unknown,
 ): { milestone: string; value: boolean }[] {
-  const fromList = Array.isArray(list)
-    ? list.flatMap((item) => {
-        if (!item || typeof item !== "object") return [];
+  if (Array.isArray(list) && list.length > 0) {
+    return list.flatMap((item) => {
+      if (typeof item === "string") {
+        const milestone = item.trim();
+        return milestone ? [{ milestone, value: true }] : [];
+      }
+      if (item && typeof item === "object") {
         const row = item as { milestone?: string; value?: boolean };
         if (!row.milestone?.trim()) return [];
         return [{ milestone: row.milestone.trim(), value: row.value ?? true }];
-      })
-    : [];
-  if (fromList.length > 0) return fromList;
+      }
+      return [];
+    });
+  }
   if (!milestoneEffects || typeof milestoneEffects !== "object") return [];
   return Object.entries(milestoneEffects as Record<string, boolean>)
     .filter(([key, value]) => key.trim() && value)
@@ -600,9 +688,7 @@ function toPayloadArtifact(item: Record<string, unknown>) {
     versioned: item.versioned ?? true,
     expires: item.expires ?? 0,
     defaultStatus: item.defaultStatus || "draft",
-    allowedStatuses: Array.isArray(item.allowedStatuses)
-      ? item.allowedStatuses
-      : (item.allowedStatuses as unknown),
+    allowedStatuses: toAllowedStatuses(item.allowedStatuses),
     sourceNpcNames: toNameArray(item.sourceNpcNames).map((name) => ({ name })),
     sourceLocationSlugs: toSlugArray(item.sourceLocationSlugs).map((slug) => ({ slug })),
     tags: toTagArray(item.tags).map((tag) => ({ tag })),
@@ -622,9 +708,7 @@ function toPayloadArea(item: Record<string, unknown>) {
     category: item.category || "management",
     riskTags: toTagArray(item.riskTags).map((tag) => ({ tag })),
     unlockStage: item.unlockStage || "INITIATION",
-    unlockMilestones: Array.isArray(item.unlockMilestones)
-      ? item.unlockMilestones
-      : toSlugArray(item.unlockMilestones).map((milestone) => ({ milestone })),
+    unlockMilestones: toMilestoneArray(item.unlockMilestones),
     relatedLocationSlugs: toSlugArray(item.relatedLocationSlugs).map((slug) => ({ slug })),
     visibleWhenLocked: item.visibleWhenLocked ?? false,
     sortOrder: item.sortOrder ?? 0,
@@ -643,16 +727,12 @@ function toPayloadMapLocation(item: Record<string, unknown>) {
     description: item.description || String(item.name || "").trim(),
     category: item.category || "management",
     unlockStage: item.unlockStage || "INITIATION",
-    unlockMilestones: Array.isArray(item.unlockMilestones)
-      ? item.unlockMilestones
-      : toSlugArray(item.unlockMilestones).map((milestone) => ({ milestone })),
+    unlockMilestones: toMilestoneArray(item.unlockMilestones),
     relatedTaskSlugs: toSlugArray(item.relatedTaskSlugs).map((slug) => ({ slug })),
     relatedAreaNames: toNameArray(item.relatedAreaNames).map((name) => ({ name })),
     relatedNpcNames: toNameArray(item.relatedNpcNames).map((name) => ({ name })),
     riskTags: toTagArray(item.riskTags).map((tag) => ({ tag })),
-    achievementHooks: Array.isArray(item.achievementHooks)
-      ? item.achievementHooks
-      : [],
+    achievementHooks: toHookArray(item.achievementHooks),
     sortOrder: item.sortOrder ?? 0,
     enabled: item.enabled !== false,
   };
@@ -674,8 +754,17 @@ function toPayloadNpc(item: Record<string, unknown>) {
     taskFunction: item.taskFunction || item.description,
     personality: item.personality,
     agenda: item.agenda,
+    helpsWith: toItemArray(item.helpsWith),
+    blocksWhen: toItemArray(item.blocksWhen),
+    riskTags: toTagArray(item.riskTags).map((tag) => ({ tag })),
+    defaultRelation: item.defaultRelation ?? 50,
+    quotes: toQuoteArray(item.quotes),
+    relatedMetrics: toMetricArray(item.relatedMetrics),
     category: item.category || "management",
     unlockStage: item.unlockStage || "INITIATION",
+    unlockMilestones: toMilestoneArray(item.unlockMilestones),
+    relatedLocationSlugs: toSlugArray(item.relatedLocationSlugs).map((slug) => ({ slug })),
+    visibleWhenLocked: item.visibleWhenLocked ?? false,
     enabled: item.enabled !== false,
   };
 }
@@ -716,11 +805,7 @@ function toPayloadTaskTemplate(item: Record<string, unknown>, pack: ParsedConten
     sourceName: item.sourceName || pack.name,
     area: String(item.area || "").trim(),
     npcList: toNpcList(item.npcList).map((npc) => ({ npc })),
-    requiredJobs: Array.isArray(item.requiredJobs)
-      ? item.requiredJobs.map((job) =>
-          typeof job === "string" ? { job } : (job as { job: string }),
-        )
-      : [],
+    requiredJobs: toJobArray(item.requiredJobs),
     requiredCount: item.requiredCount ?? 1,
     deadlineHours: item.deadlineHours,
     inkFile: String(item.inkFile || "").trim(),
@@ -739,9 +824,7 @@ function toPayloadTaskTemplate(item: Record<string, unknown>, pack: ParsedConten
     inputArtifacts: toInputArtifacts(item.inputArtifacts),
     outputArtifacts: toOutputArtifacts(item.outputArtifacts),
     prerequisiteTaskSlugs: toSlugArray(item.prerequisiteTaskSlugs).map((s) => ({ slug: s })),
-    requiredMilestones: Array.isArray(item.requiredMilestones)
-      ? item.requiredMilestones
-      : toSlugArray(item.requiredMilestones).map((milestone) => ({ milestone })),
+    requiredMilestones: toMilestoneArray(item.requiredMilestones),
     blockPolicy: item.blockPolicy || "hard_block",
     enabled: item.enabled !== false,
   };
@@ -759,11 +842,7 @@ function toPayloadEventTemplate(item: Record<string, unknown>) {
     eventType: item.eventType,
     storySlug: item.storySlug,
     inkFile: String(item.inkFile || "").trim(),
-    recommendedJobs: Array.isArray(item.recommendedJobs)
-      ? item.recommendedJobs.map((job) =>
-          typeof job === "string" ? { job } : (job as { job: string }),
-        )
-      : [],
+    recommendedJobs: toJobArray(item.recommendedJobs),
     baseSuccessRate: item.baseSuccessRate ?? 60,
     triggerBroadcast: item.triggerBroadcast ?? false,
     triggerStage: item.triggerStage,
@@ -771,9 +850,7 @@ function toPayloadEventTemplate(item: Record<string, unknown>) {
     triggerAreaNames: toNameArray(item.triggerAreaNames).map((name) => ({ name })),
     triggerNpcNames: toNameArray(item.triggerNpcNames).map((name) => ({ name })),
     riskTags: toTagArray(item.riskTags).map((tag) => ({ tag })),
-    unlockMilestones: Array.isArray(item.unlockMilestones)
-      ? item.unlockMilestones
-      : toSlugArray(item.unlockMilestones).map((milestone) => ({ milestone })),
+    unlockMilestones: toMilestoneArray(item.unlockMilestones),
     minDay: item.minDay,
     maxDay: item.maxDay,
     weight: item.weight ?? 10,
@@ -796,9 +873,7 @@ function toPayloadLocationAction(item: Record<string, unknown>) {
     description: item.description || "",
     locationSlug: String(item.locationSlug || item.locationId || "").trim(),
     unlockStage: item.unlockStage || "INITIATION",
-    unlockMilestones: Array.isArray(item.unlockMilestones)
-      ? item.unlockMilestones
-      : toSlugArray(item.unlockMilestones).map((milestone) => ({ milestone })),
+    unlockMilestones: toMilestoneArray(item.unlockMilestones),
     triggerTaskSlugs: toSlugArray(item.triggerTaskSlugs).map((slug) => ({ slug })),
     storySlug: item.storySlug,
     relatedNpcNames: toNameArray(item.relatedNpcNames).map((name) => ({ name })),
@@ -816,6 +891,7 @@ function toPayloadLocationAction(item: Record<string, unknown>) {
 
 function refreshContentPackCaches() {
   clearStoryEntryCache();
+  clearArtifactDefinitionCache();
   bustContentOrchestrationCache();
   bustOpsDataCache();
   revalidatePath("/ops/project-flow");
